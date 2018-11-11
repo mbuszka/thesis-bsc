@@ -1,54 +1,28 @@
 #lang racket
-(require redex)
-(provide F in)
 
-(define-language F
-  ; Values
-  (v ::= number (λ (x : t) e) (Λ α e))
+(require redex
+         "lib.rkt")
 
-  ; Expressions
-  (e ::= v (e e) (e @ t) x)
+(provide AlgEff)
 
-  ; Types
-  (t ::= num (t -> t) (∀ α t) α)
-
-  ; Variables
-  (x α ::= variable-not-otherwise-mentioned)
-
-  ; Typing contexts
-  (Γ ::= · (x : t Γ) (α Γ))
-
-  ; Evaluation contexts
-  (E ::= hole (E e) (E @ t) (v E))
-
+(define-extended-language AlgEff Base
+  (v   ::= number (λ [x t] m) (Λ a m))
+  (m n ::= v (m m) (m t) x (do op l m)
+     (handle l m  row with (return x m) hs))
+  (hs  ::= (h ...))
+  (h   ::= (op x y m))
+  (t   ::= Int (t -> t ! row) (∀ a t))
+  (x y ::= (variable-prefix var:))
+  (a b ::= (variable-prefix tvar:))
+  (l   ::= (variable-prefix lbl:))
+  (op  ::= (variable-prefix op:))
+  (uv  ::= (variable-prefix uvar:))
+  (row ::= (l ...) (l ... a) (l ... uv))
+ 
   #:binding-forms
-  (λ (x : t) e #:refers-to x)
-  (Λ α e #:refers-to α)
-  (∀ α t #:refers-to α)
+  (λ [x t] m #:refers-to x)
+  (Λ a m #:refers-to a)
+  (∀ a t #:refers-to a)
+  (op x y m #:refers-to x y)
+  (return x m #:refers-to x)
   )
-
-(define-metafunction F
-  [(in x_1 (x_1 : t_1 Γ)) t_1]
-  [(in x_1 (x_1 Γ)) #t]
-  [(in x_1 (x_2 : _ Γ)) (in x_1 Γ)]
-  [(in x_1 (x_2 Γ)) (in x_1 Γ)]
-  [(in x_1 ·) #f])
-
-(define-metafunction F
-  [(different x_1 x_1) #t]
-  [(different x_1 x_2) #f])
-
-(define value? (redex-match? F v))
-
-(define expression? (redex-match? F e))
-
-(define type? (redex-match? F t))
-
-(module+ test
-  (provide id)
-  (define id (term (Λ α (λ (x : α) x))))
-  (test-equal (expression? id) #t)
-  (test-equal (value? id) #t)
-  (test-equal (expression? (term (,id @ num))) #t)
-  )
-  

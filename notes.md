@@ -1,16 +1,31 @@
 # The language
   - small calculus with numbers, lambda abstractions, effects and handlers
-  - type system with simple types for values and polymorphism for types
-  - core calculus with explicit types:
-    * binders
-    * function eval effects
-    * type arg application
-    
-    only type checking
-  
-  - maybe add surface language with type reconstruction/inference (bidirectional?)
-    which translates into core
+  - type system with implicit, predicative, higher rank polymorphism
+  - allow type annotations on binders
 
 # The implementation
   - call by value reduction
-  - effect/type subsumption relation
+  - bidirectional type checking, with application and inference mode
+  - solving monotypes with unification
+  - solving effect environments with unification
+
+# Problems
+  - Merging of effects when using polymorphic function
+    ```
+    λ f : ∀ e num -> num ! e.
+        f (do SomeEffect)
+    ```
+    Without unions and intersections we cannot assign a resonable type to body ot the function above
+
+  - But on the other hand given type `(eff1, eff2 eff3) ⊔ α` we cannot
+    really use it with any handler
+
+# Links
+  - https://dvanhorn.github.io/redex-aam-tutorial/
+
+# Papers
+  - Let Arguments Go First
+  - Koka
+  - TAPL
+  - Complete And Easy Bidirectional ...
+  - Algebraic Subtyping
