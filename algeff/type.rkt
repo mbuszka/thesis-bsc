@@ -1,26 +1,14 @@
 #lang racket
 (require redex
          "lang.rkt"
-         "lib.rkt")
+         "lib.rkt"
+         "examples.rkt")
 
-(provide example-1)
+(provide handlers->row synth)
 
 (define-extended-language AlgEffT AlgEff 
   (Γ ::= (γ ...))
-  (γ ::= [x t] a [l Δ])
-  (Δ ::= ([op t t] ...))
-  ;; (Ψ ::= (t ...))
-  ;; (S ::= ([uv t] ...))
-  (N ::= number))
-
-(define-metafunction AlgEffT
-  gen-name : N any -> (N any)
-  [(gen-name N any_n)
-   (,(+ 1 (term N))
-    ,(string->symbol (string-append
-                      (symbol->string (term any_n))
-                      (number->string (term N)))))
-   (side-condition (symbol? (term any_n)))])
+  (γ ::= [x t] a))
 
 (define-judgment-form AlgEffT
   #:mode (synth I I O O)
@@ -43,7 +31,7 @@
   ;; Application
   [(synth Γ (m n) t_2 row_res)
    (synth Γ m (t_1 -> t_2 ! row_1) row_2)
-   (synth Γ n t_2 row_3)
+   (synth Γ n t_1 row_3)
    (row-merge-all (row_1 row_2 row_3) row_res)]
 
   ;; Type application
@@ -52,46 +40,72 @@
    (where t_2 (substitute t_1 a t))]
 
   ;; Operator invocation
-  [(synth Γ (do op l m) t_2 row_2)
-   (find Γ l (Δ))
-   (find Δ op (t_1 t_2))
+  [(synth Γ (do op t_out m) t_out row_out)
    (synth Γ m t_1 row_1)
-   (row-merge (l) row_1 row_2)]
+   (row-merge ([op t_1 t_out]) row_1 row_out)]
 
   ;; Effect lifting
-  [(synth Γ (lift l m) t (ext l row))
-   (synth Γ m t row)]
+  [(synth Γ (lift row_1 m) t (ext* row_1 row_2))
+   (synth Γ m t row_2)]
 
   ;; Handler expression
-  [(synth Γ (handle l m row_out with (return x n) hs) t_out row_out)
+  [(synth Γ (handle m row_out (return x n) hs) t_out row_out)
    (synth Γ m t_m row_m)
-   (split row_m l _ row_1)
-   (synth (ext [x t_m] Γ) n t_out row_2)
-   (row-merge row_1 row_2 row_ret)
-   (row-sub row_ret row_out)
-   (find Γ l (Δ))
-   (check-handlers Γ Δ hs t_out row_out)]
+   (handlers->row hs row_req)
+;   (side-condition ,(begin (println (term row_req)) #t))
+   (synth (ext [x t_m] Γ) n t_out row_ret)
+;   (side-condition ,(begin (println (term t_out)) #t))
+   (row-merge-all (row_m row_ret row_req) row_all)
+;   (side-condition ,(begin (println (term row_all)) #t))
+   (row-diff row_all row_req row_res)
+;   (side-condition ,(begin (println (term row_res)) #t))
+   (row-sub row_res row_out)
+;   (side-condition ,(begin (println 'ok) #t))
+   (check-handlers Γ hs t_out row_out)]
   )
 
 (define-judgment-form AlgEffT
- #:mode (check-handlers I I I I I)
- #:contract (check-handlers Γ Δ (h ...) t row)
+  #:mode (handlers->row I O)
+  #:contract (handlers->row hs row)
 
-  [(check-handlers Γ () () _ _)]
+  [(handlers->row hs (ext [op t_in t_out] row))
+   (uncons hs [op [_ t_in] [_ t_out] _] hs_rest)
+   (handlers->row hs_rest row)]
 
-  [(check-handlers Γ Δ_1 hs_1 t_res row_out)
-   (uncons Δ_1 [op t_in t_out] Δ_2)
-   (split hs_1 op (x y m) hs_2)
-   (synth (ext* ([x t_in] [y (t_out -> t_res ! row_out)]) Γ)
-          m t_res row_2)
-   (row-sub row_2 row_out)
-   (check-handlers Γ Δ_2 hs_2 t_res row_out)])
-          
+  [(handlers->row () ())])
+  
 
-;; [(synth-handlers Γ Δ hs_1 t_out row_out)
-;;  (uncons Δ op (t_in t_out))
-;;  (split hs_1 op (x y m) hs_2)
-;;  (synth (ext* ([x t_in]
+(define-judgment-form AlgEffT
+  #:mode (check-handlers I I I I)
+  #:contract (check-handlers Γ hs t row)
+
+  [(check-handlers Γ () _ _)]
+
+  [(check-handlers Γ hs t_res row_out)
+   (uncons hs [op [x t_in] [r t_out] m] hs_rest)
+   (synth (ext* ([x t_in] [r (t_out -> t_res ! row_out)]) Γ)
+          m t_1 row_handler)
+;   (side-condition ,(begin (println 'check-handler (term op)) (println (term t_1)) #t))
+   (row-sub row_handler row_out)
+   (check-handlers Γ hs_rest t_res row_out)])
+
+(define-judgment-form AlgEffT
+  #:mode (row-eq I I)
+
+  [(row-eq row_1 row_2)
+   (row-sub row_1 row_2)
+   (row-sub row_2 row_1)])
+
+(define-judgment-form AlgEffT
+  #:mode (row-diff I I O)
+  #:contract (row-diff row row row)
+
+  [(row-diff row () row)]
+
+  [(row-diff row (any_h any_tl ...) row_out)
+   (uncons any_h op any_ts)
+   (split row op any_ts row_tl)
+   (row-diff row_tl (any_tl ...) row_out)])
 
 (define-judgment-form AlgEffT
   #:mode (row-merge I I O)
@@ -101,9 +115,18 @@
   [(row-merge () row row)]
   [(row-merge row () row)]
 
-  [(row-merge (l any_tl ...) row_2 (l any_rest ...))
-   (split row_2 l _ row_t)
-   (row-merge (any_tl ...) row_t (any_rest ...))])
+  [(row-merge row_1 row_2 (ext any_h row_res))
+   (uncons row_1 any_h row_1-tl)
+   (uncons any_h op any_type)
+   (split row_2 op any_type row_2-tl)
+   (row-merge row_1-tl row_2-tl row_res)]
+
+  [(row-merge row_1 row_2 (ext any_h row_res))
+   (uncons row_1 any_h row_1-tl)
+   (uncons any_h op any_type)
+   (not-in row_2 op)
+   (row-merge row_1-tl row_2 row_res)])
+   
 
 (define-judgment-form AlgEffT
   #:mode (row-merge-all I O)
@@ -122,133 +145,8 @@
 
   [(row-sub (a) (a))]
 
-  [(row-sub (l any_tl ...) row_1)
-   (split row_1 l _ row_2)
-   (row-sub (any_tl ...) row_2)])
-
-(define-term eff-IO
-  (lbl:IO ([op:print Int Int])))
-
-(define-term eff-RD
-  (lbl:RD ([op:read Int Int])))
-
-(define-term init-Γ
-  (eff-IO eff-RD))
-
-(define (rd-handler expr)
-  (term
-   ((λ [var:y Int]
-     (handle lbl:RD ,expr () with
-             (return var:x var:x)
-             ((op:read var:ignore var:r
-                       (var:r var:y)))))
-    5)))
-
-(define-term example-1
-  ,(rd-handler (term (do op:read lbl:RD 5))))
-
-
-(module+ test
-  (define-term id-int (λ [var:x Int] var:x))
-  (println (term (ext [var:x Int] ())))
-  (println (judgment-holds (synth () id-int t row)
-                           (t row)))
-  (println (judgment-holds
-            (synth init-Γ (do op:read lbl:RD 5) t row)
-            (t row)))
-  (println
-   (judgment-holds
-    (synth init-Γ example-1 t row)
-           (t row))))
-
-;;(define-judgment-form ArgsFirstT
-;;  #:mode (sub-eff I I)
-;;  #:contract (sub-eff eff eff)
-;;
-;;  [(sub-eff () eff)]
-;;  [(sub-eff (l_h l_t ...) eff)
-;;   (remove eff l_h eff_t)
-;;   (sub-eff (l_t ...) eff_t)]
-;;  [(sub-eff (l_l ... a) (l_r ... a))
-;;   (eqv-eff (l_l ...) (l_r ...))])
-;;  
-;;(define-judgment-form ArgsFirstT
-;;  #:mode (eqv-eff I I)
-;;
-;;  [(eqv-eff () ())]
-;;  [(eqv-eff (a) (a))]
-;;  [(eqv-eff (l any_rest ...) eff)
-;;   (remove eff l eff_res)
-;;   (eqv-eff (any_rest ...) eff_res)])
-;;  
-;;(define-judgment-form ArgsFirstT
-;;  #:mode (synth-eff I I O)
-;;  #:contract (synth-eff eff eff eff)
-;;
-;;  [(synth-eff (l_1 ... a) (l_2 ... a) (l_1 ... a))
-;;   (eqv-eff (l_1 ...) (l_2 ...))]
-;;  [(synth-eff (l_1 ... a) (l_2 ...) (l_1 ... a))
-;;   (sub-eff (l_2 ...) (l_1 ... a))]
-;;  [(synth-eff (l_1 ...) (l_2 ... a) (l_2 ... a))
-;;   (sub-eff (l_1 ...) (l_2 ... a))]
-;;  [(synth-eff (l_1 ...) (l_2 ...) (synth-eff-closed (l_1 ...) (l_2 ...)))])
-;;
-;;(define-metafunction ArgsFirstT
-;;  synth-eff-closed : (l ...) (l ...) -> (l ...)
-;;
-;;  [(synth-eff-closed () (l ...)) (l ...)]
-;;  [(synth-eff-closed (l l_1 ...) (l_2 ...))
-;;   (cons l (synth-eff-closed (l_1 ...) (l_3 ...)))
-;;   (judgment-holds (remove (l_2 ...) l (l_3 ...)))]
-;;  [(synth-eff-closed (l l_1 ...) (l_2 ...))
-;;   (cons l (synth-eff-closed (l_1 ...) (l_2 ...)))])
-;;  
-;;  
-;(define-judgment-form ArgsFirstT
-;  #:mode (unif I I I O)
-;
-;  [(unif Sub UVar UVar Sub)] [(unif Sub Var Var Sub)] [(unif Sub num num Sub)]
-;
-;  [(lookup Sub_0 UVar MTyp_0) (unif Sub_0 MTyp_0 MTyp Sub_1)
-;   -------------------------------------
-;   (unif Sub_0 UVar MTyp Sub_1)]
-;
-;  [(unif Sub_0 UVar MTyp Sub_1)
-;   ----------------------------
-;   (unif Sub_0 MTyp UVar Sub_1)]
-;
-;  [(side-condition (not-in (dom Sub_0) UVar))
-;   (where MTyp_1 (apply-subst Sub_0 MTyp_0))
-;   (side-condition (not-in (fuv MTyp_1) UVar))
-;   ------------------------------------------------
-;   (unif Sub_0 UVar MTyp_0 (ext Sub_0 UVar MTyp_1))]
-;
-;  [(unif Sub_0 MTyp_1 MTyp_3 Sub_1) (unif Sub_1 MTyp_2 MTyp_4 Sub_2)
-;   --------------------------------------------------------
-;   (unif Sub_0 (MTyp_1 -> MTyp_2) (MTyp_3 -> MTyp_4) Sub_2)]
-;  )
-;
-;(define-judgment-form ArgsFirstT
-;  #:mode (unif-arr I I O O)
-;
-;  [(unif-arr Sub (Type_0 -> Type_1) (Type_0 -> Type_1) Sub)]
-;
-;  [(where UVar_1 ,(gensym "$"))
-;   (where UVar_2 ,(gensym "$"))
-;   (unif Sub_0 UVar_0 (UVar_1 -> UVar_2) Sub_2)
-;   -----------------
-;   (unif-arr Sub_0 UVar_0 (UVar_1 -> UVar_2) Sub_2)]
-;  )
-;
-;(define-metafunction ArgsFirstT
-;  apply-subst : ([UVar MTyp] ...) MTyp -> MTyp
-;  [(apply-subst () MTyp) MTyp]
-;  [(apply-subst ([UVar MTyp_0] any_rest ...) MTyp)
-;   (apply-subst (any_rest ...) (substitute MTyp UVar MTyp_0))])
-;
-;(define-metafunction ArgsFirstT
-;  fuv : MTyp -> (UVar ...)
-;  [(fuv num) ()]
-;  [(fuv (MTyp_1 -> MTyp_2)) (sum (fuv MTyp_1) (fuv MTyp_2))]
-;  [(fuv a) ()]
-;  [(fuv UVar) (UVar)])
+  [(row-sub row_1 row_2)
+   (uncons row_1 any_h row_1-tl)
+   (uncons any_h op any_ts)
+   (split row_2 op any_ts row_2-tl)
+   (row-sub row_1-tl row_2-tl)])

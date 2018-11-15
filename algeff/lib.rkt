@@ -1,6 +1,6 @@
 #lang racket
 (require redex)
-(provide Base find split uncons ext ext*)
+(provide Base find split uncons ext ext* not-in)
 
 (define-language Base)
 
@@ -32,6 +32,15 @@
    (uncons any_hd any_y _)
    (side-condition (not-equal any_x any_y))
    (find (any_tl ...) any_x any_v)])
+
+(define-judgment-form Base
+  #:mode (not-in I I)
+  [(not-in () any)]
+
+  [(not-in (any_hd any_tl ...) any_x)
+   (uncons any_hd any_y _)
+   (side-condition (not-equal any_x any_y))
+   (not-in (any_tl ...) any_x)])
 
 (define-judgment-form Base
   #:mode (split I I O O)

@@ -5,35 +5,44 @@
          "lib.rkt"
          "type.rkt")
 
+(provide red)
+
+
 (define-judgment-form AlgEff
   #:mode (free I I O)
-  #:contract (free l E natural)
+  #:contract (free op E natural)
 
-  [(free l hole 0)]
+  [(free op hole 0)]
 
-  [(free l (lift l E) ,(+ (term n) 1))
-   (free l E n)]
+  [(free op (lift row E) ,(+ (term n) 1))
+   (find row op _)
+   (free op E n)]
 
-  [(free (name lbl l_!_1) (lift l_!_1 E) n)
+  [(free op (lift row E) n)
+   (not-in row op)
    (free lbl E n)]
 
-  [(free l (handle l E with any_rest ...) ,(- (term n) 1))
-   (free l E n)]
+  [(free op (handle E row ret hs) ,(- (term n) 1))
+   (handlers->row hs row)
+   (find row op _)
+   (free op E n)]
 
-  [(free (name lbl l_!_1) (handle l_!_1 E with any_rest ...) n)
-   (free lbl E n)]
+  [(free op (handle E row ret hs) n)
+   (handlers->row hs row)
+   (not-in row op)
+   (free op E n)]
 
-  [(free l (E e) n)
-   (free l E n)]
+  [(free op (E e) n)
+   (free op E n)]
 
-  [(free l (v E) n)
-   (free l E n)]
+  [(free op (v E) n)
+   (free op E n)]
 
-  [(free l (E t) n)
-   (free l E n)]
+  [(free op (E t) n)
+   (free op E n)]
 
-  [(free l_1 (do op l_2 E) n)
-   (free l_1 E n)])
+  [(free op_1 (do op_2 t E) n)
+   (free op_1 E n)])
 
 
 (define red
@@ -45,21 +54,18 @@
    (--> (in-hole E ((Λ a m) t))
         (in-hole E m))
 
-   (--> (in-hole E (lift l v))
+   (--> (in-hole E (lift row v))
         (in-hole E v))
 
-   (--> (in-hole E (handle l v row with (return x m) _ ...))
+   (--> (in-hole E (handle v row (return x m) hs))
         (in-hole E (substitute m x v)))
    
    (--> (in-hole E_out
-                 (handle l
-                         (in-hole E_in (do op l v)) row
-                         with any_ret (any_1 ... (op x y m) any_2 ...)))
-   (in-hole E_out (substitute (substitute m x v) y
-                              (λ [var:z Int] (handle l (in-hole E_in var:z) row
-                                                     with any_ret (any_1 ... (op x y m) any_2 ...)))))
-   (judgment-holds (free l E_in 0))
+                 (handle (in-hole E_in (do op t v)) row
+                         ret hs))
+   (in-hole E_out (substitute (substitute m x v)
+                              r (λ [var:z t] (handle (in-hole E_in var:z) row ret hs))))
+   (judgment-holds (find hs op ([x _] [r _] m)))
+   (judgment-holds (free op E_in 0))
    (fresh var:z))
   ))
-
-(traces red (term example-1))

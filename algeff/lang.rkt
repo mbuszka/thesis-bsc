@@ -7,23 +7,27 @@
 
 (define-extended-language AlgEff Base
   (v   ::= number (λ [x t] m) (Λ a m))
-  (m n ::= v (m m) (m t) x (do op l m)
-     (handle l m row with (return x m) hs)
-     (lift l m))
+  (m n ::=
+     v (m m) (m t) x
+     (do op t m)
+     (handle m row ret hs)
+     (lift row m))
+  (ret ::= (return x m))
   (hs  ::= (h ...))
-  (h   ::= (op x y m))
+  (h   ::= (op [x t] [r t] m))
+
   (t   ::= Int (t -> t ! row) (∀ a t))
-  (x y ::= (variable-prefix var:))
+  (x y r ::= (variable-prefix var:))
   (a b ::= (variable-prefix tvar:))
-  (l   ::= (variable-prefix lbl:))
   (op  ::= (variable-prefix op:))
-;  (uv  ::= (variable-prefix uvar:))
-  (row ::= (l ...) (l ... a) (l ... uv))
+  (row ::= ([op t t] ...) ([op t t] ... a))
 
   ; Execution context
-  (E ::= hole (E m) (E t) (v E) (do op l E)
-     (handle l E row with (return x m) hs)
-     (lift l E))
+  (E ::=
+     hole (E m) (E t) (v E)
+     (do op t E)
+     (handle E row ret hs)
+     (lift row E))
   
   #:binding-forms
   (λ [x t] m #:refers-to x)
