@@ -3,12 +3,14 @@
          "lang.rkt"
          "lib.rkt")
 
+(provide example-1)
+
 (define-extended-language AlgEffT AlgEff 
   (Γ ::= (γ ...))
   (γ ::= [x t] a [l Δ])
   (Δ ::= ([op t t] ...))
-  (Ψ ::= (t ...))
-  (S ::= ([uv t] ...))
+  ;; (Ψ ::= (t ...))
+  ;; (S ::= ([uv t] ...))
   (N ::= number))
 
 (define-metafunction AlgEffT
@@ -55,6 +57,10 @@
    (find Δ op (t_1 t_2))
    (synth Γ m t_1 row_1)
    (row-merge (l) row_1 row_2)]
+
+  ;; Effect lifting
+  [(synth Γ (lift l m) t (ext l row))
+   (synth Γ m t row)]
 
   ;; Handler expression
   [(synth Γ (handle l m row_out with (return x n) hs) t_out row_out)
