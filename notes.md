@@ -20,6 +20,14 @@
   - But on the other hand given type `(eff1 eff2 eff3) ⊔ α` we cannot
     really use it with any handler
 
+  - for redex counterexample search we need to generate random term.
+    To check any interesting properties we require the terms to be well typed.
+    Fully annontated terms are hard to generate properly (no well typed terms in 1000000 tries)
+    So we need to generate untyped terms and then infer their type.
+
+  - It's hard to mix parametric polymorphism with subtyping, so we have to use simpler type system
+    For now let-polymorphism seems to be a good starting point.
+
 # Design
   - Should operations be grouped into effects, a la sum types (as in Helium, Koka)
     or rather each operation should be mentioned in the row
