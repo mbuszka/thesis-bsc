@@ -3,7 +3,7 @@
 (require redex
          "lib.rkt")
 
-(provide AlgEff)
+(provide AlgEff value?)
 
 (define-extended-language AlgEff Base
   (v   ::= number (λ [x t] m) (Λ a m))
@@ -11,7 +11,7 @@
      v (m m) (m t) x
      (do op t m)
      (handle m row ret hs)
-     (lift row m))
+     (lift crow m))
   (ret ::= (return x m))
   (hs  ::= (h ...))
   (h   ::= (op [x t] [r t] m))
@@ -21,6 +21,7 @@
   (a b ::= (variable-prefix tvar:))
   (op  ::= (variable-prefix op:))
   (row ::= ([op t t] ...) ([op t t] ... a))
+  (crow ::= ([op t t] ...))
 
   ; Execution context
   (E ::=
@@ -36,3 +37,5 @@
   (op x y m #:refers-to x y)
   (return x m #:refers-to x)
   )
+
+(define value? (redex-match? AlgEff v))

@@ -15,7 +15,7 @@
   (h   ::= (op x x e h) ret)
   (t ::= Int (t -> row t) (t => t) row (∀ a ... t) a)
   (nvt ::= Int (t -> row t) (t => t) (op t row) (∀ a ... t))
-  (row ::= (op t row) a)
+  (row ::= (op t row) a ·)
 
   (x ::= (variable-prefix v:))
   (a ::= (variable-prefix t:))
@@ -54,6 +54,7 @@
   ftv/s : t -> any
 
   [(ftv/s a) ,(set (term a))]
+  [(ftv/s ·) ,(set)]
   [(ftv/s Int) ,(set)]
   [(ftv/s (t_1 -> row t_2)) ,(set-union (term any_1) (term any_2) (term any_3))
                             (where any_1 (ftv/s t_1))

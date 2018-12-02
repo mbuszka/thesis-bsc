@@ -5,7 +5,7 @@
          "lib.rkt"
          "type.rkt")
 
-(provide red)
+(provide red reduces?)
 
 
 (define-judgment-form AlgEff
@@ -69,3 +69,8 @@
    (judgment-holds (free op E_in 0))
    (fresh var:z))
   ))
+
+(define (reduces? e)
+ (let ([xs (apply-reduction-relation* red e)])
+   (and (= (length xs) 1)
+     (value? (car xs)))))

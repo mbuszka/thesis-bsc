@@ -4,7 +4,7 @@
          "lib.rkt"
          "examples.rkt")
 
-(provide handlers->row synth)
+(provide handlers->row synth types? AlgEffT)
 
 (define-extended-language AlgEffT AlgEff 
   (Γ ::= (γ ...))
@@ -150,3 +150,6 @@
    (uncons any_h op any_ts)
    (split row_2 op any_ts row_2-tl)
    (row-sub row_1-tl row_2-tl)])
+
+(define (types? t)
+  (judgment-holds (synth () ,t _ ())))

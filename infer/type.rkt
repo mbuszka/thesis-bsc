@@ -33,9 +33,10 @@
    (unify SN_4 t_1 t_3 SN_5)
 ;   (where #t ,(begin (println (term SN_5)) #t))
    (unify SN_5 row_1 row_2 SN_6)
+   (unify SN_6 row_1 row_a SN_7)
 ;   (where #t ,(begin (println (term SN_6)) #t))
    ---------------------------------
-   (infer Γ SN_1 (e_1 e_2) t_2 row_2 SN_6)]
+   (infer Γ SN_1 (e_1 e_2) t_2 row_2 SN_7)]
 
   [(infer Γ SN_1 e t_1 row_1 [S_1 N_1])
    (fresh-row N_1 row_2 N_2)
@@ -96,6 +97,9 @@
   [------------------
    (unify SN Int Int SN)]
 
+  [-----------------
+   (unify SN · · SN)]
+
   [(not-in a (dom-S S))
    (not-in a (ftv t))
    ---------------------
@@ -149,8 +153,8 @@
 (define-judgment-form Infer
   #:mode (types-top I O)
 
-  [(infer · [· 0] e t row [S _])
-   (where a (apply S row))
+  [(infer · [· 0] e t row SN_1)
+   (unify SN_1 row · [S _])
    -------------------------
    (types-top e (apply S t))])
 
@@ -169,6 +173,7 @@
 (define-metafunction Infer
   tail : row -> a
   [(tail a) a]
+  [(tail ·) ·]
   [(tail (op t row)) (tail row)])
 
 (define (types? e)

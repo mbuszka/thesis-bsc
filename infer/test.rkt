@@ -34,16 +34,23 @@
 ;               red
 ;               (term (,t))))))
 
+; loops the typechecker
+(define loops (term ((λ v:X ((op:y 0) 1)) (lift op:b 1))))
+
 (define (progress-holds? t)
+  (printf "term ~s " t)
   (if (types? t)
-      (or (reduces? t)
-          (value? t))
-      #t))
+      (begin
+        (println "ok")
+        (or (reduces? t)
+          (value? t)))
+      (begin (println "no type")
+             #t)))
 
 (let ([c (make-coverage red)])
     (parameterize ([relation-coverage (list c)])
       (redex-check Infer
                    e
                    (progress-holds? (term e))
-                   #:attempts 1000)
+                   #:attempts 100000)
       (covered-cases c)))
