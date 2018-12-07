@@ -2,7 +2,17 @@
 (require redex
          "lang.rkt")
 
-(provide lookup in not-in dom-S fresh-row fresh-arr fresh-var)
+(provide lookup in not-in dom-S fresh-row fresh-arr fresh-var neq eq)
+
+(define-judgment-form Infer
+  #:mode (eq I I)
+
+  [(eq any_1 any_1)])
+
+(define-judgment-form Infer
+  #:mode (neq I I)
+
+  [(neq any_!_1 any_!_1)])
 
 (define-judgment-form Infer
   #:mode (not-in I I)

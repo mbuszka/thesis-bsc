@@ -3,7 +3,7 @@
 (require redex
          racket/set)
 
-(provide Infer ftv ops value?)
+(provide Infer ftv ops subst value?)
 
 (define-language Infer
   (v ::= natural (λ x e))
@@ -12,9 +12,9 @@
      (lift op e))
   (easy ::= natural (λ x easy) x (easy easy) (op easy))
   (ret ::= (return x e))
-  (h   ::= (op x x e h) ret)
+  (h   ::= (op x_!_1 x_!_1 e h) ret)
   (t ::= Int (t -> row t) (t => t) row (∀ a ... t) a)
-  (nvt ::= Int (t -> row t) (t => t) (op t row) (∀ a ... t))
+  (nvt ::= Int (t -> row t) (t => t) (∀ a ... t))
   (row ::= (op t row) a ·)
 
   (x ::= (variable-prefix v:))
@@ -27,16 +27,21 @@
      (lift op E))
   
   (S ::= (a t S) ·)
-  (N ::= natural)
+  (N n ::= natural)
   (SN ::= (S N))
   
   #:binding-forms
   (λ x e #:refers-to x)
   (∀ a ... t #:refers-to (shadow a ...))
-  (op x_1 x_2 e #:refers-to (shadow x_1 x_2) h)
+  (op x_1 x_2 e #:refers-to (shadow x_2 x_1) h)
   (return x e #:refers-to x))
 
 (define value? (redex-match? Infer v))
+
+(define-metafunction Infer
+  subst : [S N] -> S
+
+  [(subst [S N]) S])
 
 (define-metafunction Infer
   ops : h -> (op ...)

@@ -54,14 +54,17 @@
   (reduction-relation
    Infer
    (--> (in-hole E ((λ x e) v))
-        (in-hole E (substitute e x v)))
+        (in-hole E (substitute e x v))
+        β)
 
    (--> (in-hole E (lift op v))
-        (in-hole E v))
+        (in-hole E v)
+        lift-compat)
 
    (--> (in-hole E (handle v h))
         (in-hole E (substitute e x v))
-        (where (return x e) (return-clause h)))
+        (where (return x e) (return-clause h))
+        handle-return)
    
    (--> (in-hole E_out
                  (handle (in-hole E_in (op v)) h))
@@ -69,7 +72,8 @@
                                    x_2 (λ v:z (handle (in-hole E_in v:z) h))))
         (judgment-holds (free op E_in 0))
         (judgment-holds (get-handler op h (x_1 x_2 e)))
-        (fresh v:z))
+        (fresh v:z)
+        handle-op)
    ))
 
 (define (reduces? e)

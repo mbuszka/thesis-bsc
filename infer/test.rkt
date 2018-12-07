@@ -3,7 +3,8 @@
 (require redex
          "type.rkt"
          "eval.rkt"
-         "lang.rkt")
+         "lang.rkt"
+         "examples.rkt")
 
 
 
@@ -34,23 +35,30 @@
 ;               red
 ;               (term (,t))))))
 
-; loops the typechecker
+; no longer loops the typechecker
 (define loops (term ((λ v:X ((op:y 0) 1)) (lift op:b 1))))
 
-(define (progress-holds? t)
-  (printf "term ~s " t)
-  (if (types? t)
-      (begin
-        (println "ok")
-        (or (reduces? t)
-          (value? t)))
-      (begin (println "no type")
-             #t)))
+(define cnt 0)
+(define typed 0)
 
-(let ([c (make-coverage red)])
+(define (progress-holds? t)
+  (begin
+    (when (= (modulo cnt 1000) 0)
+      (printf "checked ~s\n" cnt))
+    (set! cnt (+ cnt 1))
+    (if (types? t)
+        (begin
+          (set! typed (+ typed 1))
+          (or (reduces? t)
+              (value? t)))
+        #t)))
+
+(define (run-check)
+  (let ([c (make-coverage red)])
     (parameterize ([relation-coverage (list c)])
       (redex-check Infer
                    e
                    (progress-holds? (term e))
                    #:attempts 100000)
       (covered-cases c)))
+ (printf "well typed ~s\n" typed))
