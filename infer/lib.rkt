@@ -2,7 +2,18 @@
 (require redex
          "lang.rkt")
 
-(provide lookup in not-in dom-S fresh-row fresh-arr fresh-var neq eq)
+(provide lookup in not-in dom-S fresh-row fresh-arr fresh-var neq eq trace)
+
+(define trace-enabled? #f)
+
+(define-judgment-form Infer
+  #:mode (trace I)
+
+  [(trace (any_s any_vals ...))
+   (where #t ,(begin
+                (when trace-enabled?
+                  (apply printf (term (any_s any_vals ...))))
+                #t))])
 
 (define-judgment-form Infer
   #:mode (eq I I)
@@ -17,10 +28,12 @@
 (define-judgment-form Infer
   #:mode (not-in I I)
 
-  [(not-in a ())]
+  [-------------
+   (not-in a ())]
 
-  [(not-in (name a a_!_1) (a_!_1 a_rest ...))
-   (not-in a (a_rest ...))])
+  [(not-in a (a_rest ...))
+   -----------------------
+   (not-in (name a a_!_1) (a_!_1 a_rest ...))])
 
 (define-judgment-form Infer
   #:mode (in I I)

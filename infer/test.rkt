@@ -8,25 +8,13 @@
 
 
 
-;(define-term id-int (λ [var:x Int] var:x))
-;(println (judgment-holds
-;          (synth () id-int t row)
-;          (t row)))
-;(println (judgment-holds
-;          (synth () (do op:read Int 0) t row)
-;          (t row)))
-;(println (judgment-holds
-;          (synth () example-1 t row)
-;          (t row)))
-;(println (judgment-holds
-;          (synth () ,(handle-expr-state (term (do op:put Int 0)) '()) t row)
-;          (t row)))
-;(println (judgment-holds
-;          (synth () example-2 t row)
-;          (t row)))
-;(println (judgment-holds
-;          (synth () (example-3 5) t row)
-;          (t row)))
+(define-term id-int (λ v:x v:x))
+(println (infer-type (term id-int)))
+(println (infer-type (term (op:read 0))))
+(println (infer-type (term example-1)))
+(println (infer-type (handle-expr-state (term (op:put 0)))))
+(println (infer-type (term example-2)))
+(println (infer-type (term (example-3 5))))
 
 ;(traces red (term example-2))
 
@@ -36,7 +24,11 @@
 ;               (term (,t))))))
 
 ; no longer loops the typechecker
-(define loops (term ((λ v:X ((op:y 0) 1)) (lift op:b 1))))
+(define loops
+  (term
+   ((λ v:X
+      ((op:y 0) 1))
+    (lift op:b 1))))
 
 (define cnt 0)
 (define typed 0)
@@ -44,7 +36,7 @@
 (define (progress-holds? t)
   (begin
     (when (= (modulo cnt 1000) 0)
-      (printf "checked ~s\n" cnt))
+      (printf "checked ~s, well typed: ~s\n" cnt typed))
     (set! cnt (+ cnt 1))
     (if (types? t)
         (begin
@@ -61,4 +53,4 @@
                    (progress-holds? (term e))
                    #:attempts 100000)
       (covered-cases c)))
- (printf "well typed ~s\n" typed))
+  (printf "well typed ~s\n" typed))

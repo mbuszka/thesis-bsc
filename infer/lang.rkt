@@ -3,18 +3,18 @@
 (require redex
          racket/set)
 
-(provide Infer ftv ops subst value?)
+(provide Infer ftv ops subst is-var not-var value?)
 
 (define-language Infer
   (v ::= natural (λ x e))
   (e ::= v x (e e)
-     (op e) (handle e h)
+     (op e) (handle e hs ret)
      (lift op e))
-  (easy ::= natural (λ x easy) x (easy easy) (op easy))
+  (hs  ::= ((op_!_1 hexpr) ...))
+  (hexpr ::= (x_!_1 x_!_1 e))
   (ret ::= (return x e))
-  (h   ::= (op x_!_1 x_!_1 e h) ret)
-  (t ::= Int (t -> row t) (t => t) row (∀ a ... t) a)
-  (nvt ::= Int (t -> row t) (t => t) (∀ a ... t))
+  (h   ::= (op hexpr))
+  (t ::= Int (t -> row t) (t => t) row a)
   (row ::= (op t row) a ·)
 
   (x ::= (variable-prefix v:))
@@ -36,6 +36,18 @@
   (op x_1 x_2 e #:refers-to (shadow x_2 x_1) h)
   (return x e #:refers-to x))
 
+(define var?
+  (redex-match? Infer a))
+
+(define-relation Infer
+  is-var ⊂ t
+  [(is-var a)])
+
+(define-relation Infer
+  not-var ⊂ t
+  [(not-var t)
+   (side-condition (not (var? (term t))))])
+
 (define value? (redex-match? Infer v))
 
 (define-metafunction Infer
@@ -44,11 +56,11 @@
   [(subst [S N]) S])
 
 (define-metafunction Infer
-  ops : h -> (op ...)
+  ops : hs -> (op ...)
 
-  [(ops ret) ()]
-  [(ops (op _ _ _ h)) (op op_1 ...)
-                      (where (op_1 ...) (ops h))])
+  [(ops ()) ()]
+  [(ops ((op _) h ...)) (op op_1 ...)
+                        (where (op_1 ...) (ops (h ...)))])
 
 (define-metafunction Infer
   ftv : t -> (a ...)

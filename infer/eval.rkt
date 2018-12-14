@@ -20,12 +20,12 @@
   [(free (name op op_!_1) (lift op_!_1 E) n)
    (free op E n)]
 
-  [(free op (handle E h) ,(- (term n) 1))
-   (side-condition (in op (ops h)))
+  [(free op (handle E hs ret) ,(- (term n) 1))
+   (side-condition (in op (ops hs)))
    (free op E n)]
 
-  [(free op (handle E h) n)
-   (side-condition (not-in op (ops h)))
+  [(free op (handle E hs ret) n)
+   (side-condition (not-in op (ops hs)))
    (free op E n)]
 
   [(free op (E e) n)
@@ -37,18 +37,12 @@
   [(free op_1 (op_2 E) n)
    (free op_1 E n)])
 
-(define-metafunction Infer
-  return-clause : h -> h
-
-  [(return-clause (return x e)) (return x e)]
-  [(return-clause (op _ _ _ h)) (return-clause h)])
-
 (define-judgment-form Infer
   #:mode (get-handler I I O)
 
-  [(get-handler op (op x_1 x_2 e _) (x_1 x_2 e))]
-  [(get-handler (name op op_!_1) (op_!_1 _ _ _ h) any_r)
-   (get-handler op h any_r)])
+  [(get-handler op [(op (x_1 x_2 e)) h ...] (x_1 x_2 e))]
+  [(get-handler (name op op_!_1) [(op_!_1 _) h ...] any_r)
+   (get-handler op [h ...] any_r)])
 
 (define red
   (reduction-relation
@@ -61,17 +55,16 @@
         (in-hole E v)
         lift-compat)
 
-   (--> (in-hole E (handle v h))
+   (--> (in-hole E (handle v hs (return x e)))
         (in-hole E (substitute e x v))
-        (where (return x e) (return-clause h))
         handle-return)
    
    (--> (in-hole E_out
-                 (handle (in-hole E_in (op v)) h))
+                 (handle (in-hole E_in (op v)) hs ret))
         (in-hole E_out (substitute (substitute e x_1 v)
-                                   x_2 (λ v:z (handle (in-hole E_in v:z) h))))
+                                   x_2 (λ v:z (handle (in-hole E_in v:z) hs ret))))
         (judgment-holds (free op E_in 0))
-        (judgment-holds (get-handler op h (x_1 x_2 e)))
+        (judgment-holds (get-handler op hs (x_1 x_2 e)))
         (fresh v:z)
         handle-op)
    ))

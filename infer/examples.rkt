@@ -12,15 +12,15 @@
   (term
    (λ v:y
      (handle ,expr
-             [op:read v:ignore v:r (v:r v:y)
-                      (return v:x v:x)]))))
+             ([op:read (v:ignore v:r (v:r v:y))])
+             (return v:x v:x)))))
 
 (define (handle-expr-state expr)
   (term
    (handle ,expr
-           [op:get v:ignore v:r (λ v:s ((v:r v:s) v:s))
-                   [op:put v:new v:r (λ v:s ((v:r 0) v:new))
-                           (return v:x (λ v:s v:s))]])))
+           ([op:get (v:ignore v:r (λ v:s ((v:r v:s) v:s)))]
+            [op:put (v:new v:r (λ v:s ((v:r 0) v:new)))])
+           (return v:x (λ v:s v:s)))))
 
 (define-term example-1
   ,(handle-expr-read (term (op:read 0))))
