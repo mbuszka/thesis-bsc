@@ -15,6 +15,7 @@
 (println (infer-type (handle-expr-state (term (op:put 0)))))
 (println (infer-type (term example-2)))
 (println (infer-type (term (example-3 5))))
+(println (infer-type (term (+ 5 7))))
 
 ;(traces red (term example-2))
 

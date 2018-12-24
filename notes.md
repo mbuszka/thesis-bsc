@@ -28,6 +28,9 @@
   - It's hard to mix parametric polymorphism with subtyping, so we have to use simpler type system
     For now let-polymorphism seems to be a good starting point.
 
+  - during unififcation should we allow for unifying variable with a row,
+    if this variable exists in this row, but not in a tail position?
+
 # Design
   - Should operations be grouped into effects, a la sum types (as in Helium, Koka)
     or rather each operation should be mentioned in the row

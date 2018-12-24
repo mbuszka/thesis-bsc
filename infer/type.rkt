@@ -45,6 +45,15 @@
    ---------------------------------
    (infer Γ SN_1 (e_1 e_2) t_2 row_2 SN_7)]
 
+  [(trace ("=== inferring primitive op ===\n~s\n" (prim e_1 e_2)))
+   (infer Γ SN_1 e_1 t_1 row_1 SN_2)
+   (unify SN_2 t_1 Int SN_3)
+   (infer Γ SN_3 e_2 t_2 row_2 SN_4)
+   (unify SN_4 t_2 Int SN_5)
+   (unify SN_5 row_1 row_2 SN_6)
+   --------------------------------------------
+   (infer Γ SN_1 (prim e_1 e_2) Int row_1 SN_6)]
+
   [(trace ("=== inferring operation ===\n~s\n" (op e)))
    (infer Γ SN_1 e t_1 row_1 [S_1 N_1])
    (fresh-row N_1 row_2 N_2)

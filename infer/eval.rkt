@@ -34,6 +34,12 @@
   [(free op (v E) n)
    (free op E n)]
 
+  [(free op (prim E e) n)
+   (free op E n)]
+
+  [(free op (prim v E) n)
+   (free op E n)]
+
   [(free op_1 (op_2 E) n)
    (free op_1 E n)])
 
@@ -44,12 +50,25 @@
   [(get-handler (name op op_!_1) [(op_!_1 _) h ...] any_r)
    (get-handler op [h ...] any_r)])
 
+(define-metafunction Infer
+  prim-apply : prim number number -> number
+
+  [(prim-apply + number_1 number_2) ,(+ (term number_1) (term number_2))]
+  [(prim-apply - number_1 number_2) ,(- (term number_1) (term number_2))]
+  [(prim-apply * number_1 number_2) ,(* (term number_1) (term number_2))]
+  [(prim-apply / number_1 number_2) ,(/ (term number_1) (term number_2))]
+  )
+
 (define red
   (reduction-relation
    Infer
    (--> (in-hole E ((λ x e) v))
         (in-hole E (substitute e x v))
         β)
+
+   (--> (in-hole E (prim v_1 v_2))
+        (in-hole E (prim-apply prim v_1 v_2))
+        prim-op)
 
    (--> (in-hole E (lift op v))
         (in-hole E v)
