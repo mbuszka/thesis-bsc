@@ -6,29 +6,55 @@
 (provide Infer ftv ops subst is-var not-var value?)
 
 (define-language Infer
+  ; Values
   (v     ::= number (λ x e))
+
+  ; Primitive operations on numbers
   (prim  ::= + - *)
+
+  ; Expressions
   (e     ::= v x (e e)
          (op e) (handle e hs ret)
          (lift op e) (prim e e))
+
+  ; Handlers
   (hs    ::= ((op_!_1 hexpr) ...))
+
+  ; Operation handler expr
   (hexpr ::= (x_!_1 x_!_1 e))
+
+  ; Return clause
   (ret   ::= (return x e))
   (h     ::= (op hexpr))
+
+  ; Types
   (t     ::= Int (t -> row t) (t => t) row a)
   (row   ::= (op t row) a ·)
 
+  ; Term variables
   (x     ::= (variable-prefix v:))
+
+  ; Type variables
   (a     ::= (variable-prefix t:))
+
+  ; Operations
   (op    ::= (variable-prefix op:))
 
+  ; Typing environments
   (Γ     ::= (x t Γ) ·)
+
+  ; Evaluation contexts
   (E     ::= hole (E e) (v E) (prim E e) (prim v E)
          (op E) (handle E hs ret)
          (lift op E))
   
+  ; Substitution
   (S     ::= (a t S) ·)
+
+  ; Name supply token (a number)
   (N n   ::= natural)
+
+  ; Pair of substiution and token, passed around by relations
   (SN    ::= (S N))
   
   #:binding-forms
@@ -51,6 +77,7 @@
 
 (define value? (redex-match? Infer v))
 
+; Project substitution from pair
 (define-metafunction Infer
   subst : [S N] -> S
 

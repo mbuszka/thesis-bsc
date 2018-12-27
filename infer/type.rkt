@@ -7,6 +7,15 @@
 
 (provide types? infer-type)
 
+; Infers a type and effect row of an expression.
+; Takes:
+;   - typing environment
+;   - a pair of substitution and name supply
+;   - expression
+; Produces:
+;   - type
+;   - effect row
+;   - a pair of substitution and name supply
 (define-judgment-form Infer
   #:mode (infer I I I O O O)
   #:contract (infer Γ SN e t row SN)
@@ -83,6 +92,16 @@
    -----------------------------------
    (infer Γ SN_1 (handle e hs (return x e_ret)) t_ret row_out SN_6)])
 
+; Infers result effects and handled effects for a list of handlers.
+; Takes:
+;   - a typing evironment
+;   - a pair of substitution and name supply
+;   - result type (after return)
+;   - list of handlers
+; Produces:
+;   - result effect row
+;   - handled effect row
+;   - a pair of substitution and name supply
 (define-judgment-form Infer
   #:mode (infer-handlers I I I I O O O)
   #:contract (infer-handlers Γ SN t hs row row SN)
@@ -102,6 +121,7 @@
    -------------------------------------------------------------------------
    (infer-handlers Γ SN_1 t_ret ((op (x_v x_r e)) h ...) row_out (op (t_v => t_r) row_handled) SN_4)])
 
+; Unify a variable, or arrow constructor, returning arrow type.
 (define-judgment-form Infer
   #:mode (unify-arr I I O I O O O)
   #:contract (unify-arr SN t t -> row t SN)
@@ -114,6 +134,12 @@
   [---------------------------------------------------
    (unify-arr SN (t_1 -> row_1 t_2) t_1 -> row_1 t_2 SN)])
 
+; Unify two types. Variables are substituted lazily.
+; Takes:
+;    - a pair of substitution and name supply
+;    - two types
+; Returns:
+;    - a pair of substitution and name supply
 (define-judgment-form Infer
   #:mode (unify I I I O)
   #:contract (unify SN t t SN)
@@ -170,6 +196,7 @@
    (unify [S_1 N_1] (op t_1 row_1) row_2 SN_4)]
   )
 
+; Transform row, such that it contains op at the front.
 (define-judgment-form Infer
   #:mode (unify-row I I I O O O)
   #:contract (unify-row SN row op t row SN)
@@ -193,6 +220,7 @@
    (unify-row SN_1 ((name o1 op_!_1) t_1 row_1) (name o op_!_1) t_2 (o1 t_1 row_2) SN_2)]
   )
 
+; Checks if environment types with empty effect row
 (define-judgment-form Infer
   #:mode (types-top I O)
 
@@ -201,6 +229,7 @@
    -------------------------
    (types-top e (apply S t))])
 
+; Helper function, inferring type in empty environment
 (define (infer-type e)
   (judgment-holds
    (infer · [· 0] ,e t row [S N])
@@ -228,6 +257,8 @@
    (types-top ,e _)))
 
 (module+ test
-
-  (define loops (term ((λ v:X ((op:y 0) 1)) (lift op:b 1))))
+  ; Should this term typecheck?
+  ; Problem is that we unify functions row with ambient row and arg row,
+  ; but we disallow to unify variable with a type containing it.
+  (define does-not-typecheck (term ((λ v:X ((op:y 0) 1)) (lift op:b 1))))
   )

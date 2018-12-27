@@ -4,8 +4,11 @@
 
 (provide lookup in not-in dom-S fresh-row fresh-arr fresh-var neq eq trace)
 
+; Switch enabling tracing
 (define trace-enabled? #f)
 
+; Helper judgment which allows for printing arbitrary messages during
+; evalution of judgment forms
 (define-judgment-form Infer
   #:mode (trace I)
 
@@ -25,6 +28,7 @@
 
   [(neq any_!_1 any_!_1)])
 
+; checks whether variable is not in a list
 (define-judgment-form Infer
   #:mode (not-in I I)
 
