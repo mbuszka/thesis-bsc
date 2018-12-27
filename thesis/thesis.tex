@@ -11,19 +11,18 @@
 % Pamietaj o madrym (zgodnym z logicznym rozbiorem zdania oraz estetyka) recznym
 % zlamaniu wierszy w temacie pracy, zwlaszcza tego w jezyku pracy. Uzyj do tego
 % polecenia \fmlinebreak.
-\polishtitle    {Wymagający złamania wierszy\fmlinebreak tytuł pracy w~języku polskim}
-\englishtitle   {Implementation of static and dynamic semantics for a calculus with algebraic effects and handlers using PLT Radex} 
+\polishtitle    {Implementacja statycznej i dynamicznej semantyki rachunku z efektami algebraicznymi i ich obsługą z pomocą biblioteki \Redex}
+\englishtitle   {Implementation of static and~dynamic semantics for a calculus with algebraic effects and~handlers using \Redex} 
 \polishabstract {Abstrakt w języku polskim}
 \englishabstract{English abstract}
-% w pracach wielu autorow nazwiska mozna oddzielic poleceniem \and
+%
 \author         {Maciej Buszka}
-% w przypadku kilku promotorow, lub koniecznosci podania ich afiliacji, linie
-% w ponizszym poleceniu mozna zlamac poleceniem \fmlinebreak
+%
 \advisor        {dr hab. Dariusz Biernacki}
 %\date          {}                     % Data zlozenia pracy
 % Dane do oswiadczenia o autorskim wykonaniu
 %\transcriptnum {}                     % Numer indeksu
-%\advisorgen    {dr. Jana Kowalskiego} % Nazwisko promotora w dopelniaczu
+\advisorgen     {dr. hab. Dariusza Biernackiego} % Nazwisko promotora w dopelniaczu
 %%%%%
 
 %%%%% WLASNE DODATKOWE PAKIETY
@@ -39,6 +38,9 @@
 %\renewcommand \qedsymbol {\ensuremath{\square}}
 % ...
 %%%%%
+\newcommand{\Redex}{\texttt{PLT Redex} }
+\newcommand{\Racket}{\texttt{Racket} }
+\newcommand{\LC}{\(\lambda\)-calculus }
 
 \begin{document}
 
@@ -57,32 +59,67 @@
   
   \item Type inference
   
-  \item PLT Redex
+  \item \Redex
   \begin{itemize}
     \item Defining languages, relations on terms, reduction semantics
     \item Automatic testing, counterexample search
   \end{itemize}
 \end{itemize}
 
-Algebraic effects (Plotkin ...) are an increasingly % TODO add ref
-popular technique of structuring computational effects. They allow for seamless
-composition of multiple effects, while retaining (unlike monads) applicative style
-of programs. Coupled with handlers (Plotkin ...) which give programmers ability to
-interpret effects, they provide a great tool for abstracting over a set of operations
-which some program may perform and separating this interface from semantics of those
-operations defined as effect handlers.
+Algebraic effects \cite{Plotkin2003} are an increasingly popular technique of structuring computational effects.
+They allow for seamless composition of multiple effects, while retaining (unlike monads) applicative style of programs.
+Coupled with handlers \cite{Plotkin2013} which give programmers ability to interpret effects, they provide a great tool for abstracting over a set of operations which some program may perform and separating this interface from semantics of those operations defined as effect handlers.
+% Paragraph about effect systems
+While designing a calculus representing a core of programming language, one must be very careful deciding which features to add and keep in mind all the interactions between them.
+Following most of the functional language designers I chose \LC as a basis extended with operation invocation, effect lifting and handling.
+The type system for this calculus is defined in Curry style, which means that expressions do not contain types, which are assigned to them by the typing relation.
+In more practical terms I had to implement type inference, instead of type checking.
+Also besides the type system which specifies static semantics of calculus, one must specify the behavior of programs at runtime.
+I chose the format of reduction semantics, as it is quite readable and is supported by \Redex library.
 
-While designing a calculus representing a core of programming language, one must be very
-careful deciding which features to add and keep in mind all the interactions between them. Following
-most of the functional language designers I chose $\lambda$-calculus as a basis extended with operation
-invocation, effect lifting and handling. The type system for this calculus is defined in Curry style,
-which means that expressions do not contain types, which are assigned to them by the typing relation.
-In more practical terms I had to implement type inference, instead of type checking. Also besides the
-type system which specifies static semantics of calculus, one must specify the behavior of programs
-at runtime. I chose the format of reduction semantics, as it is quite readable and is supported by
-PLT Redex library. 
+\section{Algebraic effects and handlers}
 
-%%%%% BIBLIOGRAFIA
+\section{Type inference}
+
+\section{Reduction semantics and abstract machines}
+
+
+\chapter{The calculus}
+
+\section{Abstract syntax}
+
+\section{Type system}
+
+\section{Reduction semantics}
+
+\section{Abstract machine}
+
+
+\chapter{Implementation}
+
+\section{\Redex}
+
+\section{Typing relation}
+
+\section{Unification}
+
+\section{Reduction relation}
+
+\section{Automatic testing}
+
+
+\chapter{The \Racket environment}
+
+\subsection{Front-end}
+
+\subsection{Back-end}
+
+
+\chapter{User's manual}
+
+
+\bibliography{mybib}{}
+\bibliographystyle{plain}
 
 %\begin{thebibliography}{1}
 %\bibitem{example} \ldots

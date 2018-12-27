@@ -1,0 +1,13 @@
+\begin{thebibliography}{1}
+
+\bibitem{Plotkin2003}
+Gordon Plotkin and John Power.
+\newblock Algebraic operations and generic effects.
+\newblock {\em Applied Categorical Structures}, 11(1):69--94, Feb 2003.
+
+\bibitem{Plotkin2013}
+Gordon Plotkin and Matija Pretnar.
+\newblock Handling algebraic effects.
+\newblock {\em Logical Methods in Computer Science}, 9(4), Dec 2013.
+
+\end{thebibliography}
