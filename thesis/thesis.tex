@@ -1,0 +1,91 @@
+% Opcje klasy 'iithesis' opisane sa w komentarzach w pliku klasy. Za ich pomoca
+% ustawia sie przede wszystkim jezyk i rodzaj (lic/inz/mgr) pracy, oraz czy na
+% drugiej stronie pracy ma byc skladany wzor oswiadczenia o autorskim wykonaniu.
+\documentclass[inz, english, shortabstract]{iithesis}
+
+\usepackage[utf8]{inputenc}
+
+%%%%% DANE DO STRONY TYTUŁOWEJ
+% Niezaleznie od jezyka pracy wybranego w opcjach klasy, tytul i streszczenie
+% pracy nalezy podac zarowno w jezyku polskim, jak i angielskim.
+% Pamietaj o madrym (zgodnym z logicznym rozbiorem zdania oraz estetyka) recznym
+% zlamaniu wierszy w temacie pracy, zwlaszcza tego w jezyku pracy. Uzyj do tego
+% polecenia \fmlinebreak.
+\polishtitle    {Wymagający złamania wierszy\fmlinebreak tytuł pracy w~języku polskim}
+\englishtitle   {Implementation of static and dynamic semantics for a calculus with algebraic effects and handlers using PLT Radex} 
+\polishabstract {Abstrakt w języku polskim}
+\englishabstract{English abstract}
+% w pracach wielu autorow nazwiska mozna oddzielic poleceniem \and
+\author         {Maciej Buszka}
+% w przypadku kilku promotorow, lub koniecznosci podania ich afiliacji, linie
+% w ponizszym poleceniu mozna zlamac poleceniem \fmlinebreak
+\advisor        {dr hab. Dariusz Biernacki}
+%\date          {}                     % Data zlozenia pracy
+% Dane do oswiadczenia o autorskim wykonaniu
+%\transcriptnum {}                     % Numer indeksu
+%\advisorgen    {dr. Jana Kowalskiego} % Nazwisko promotora w dopelniaczu
+%%%%%
+
+%%%%% WLASNE DODATKOWE PAKIETY
+%
+%\usepackage{graphicx,listings,amsmath,amssymb,amsthm,amsfonts,tikz}
+%
+%%%%% WŁASNE DEFINICJE I POLECENIA
+%
+%\theoremstyle{definition} \newtheorem{definition}{Definition}[chapter]
+%\theoremstyle{remark} \newtheorem{remark}[definition]{Observation}
+%\theoremstyle{plain} \newtheorem{theorem}[definition]{Theorem}
+%\theoremstyle{plain} \newtheorem{lemma}[definition]{Lemma}
+%\renewcommand \qedsymbol {\ensuremath{\square}}
+% ...
+%%%%%
+
+\begin{document}
+
+%%%%% POCZĄTEK ZASADNICZEGO TEKSTU PRACY
+
+\chapter{Introduction}
+\begin{itemize}
+  \item Algebraic effects and handlers
+  \begin{itemize}
+    \item What are algebraic effects
+    \item Why do we need handlers
+    \item 
+  \end{itemize}
+  
+  \item Reduction semantics
+  
+  \item Type inference
+  
+  \item PLT Redex
+  \begin{itemize}
+    \item Defining languages, relations on terms, reduction semantics
+    \item Automatic testing, counterexample search
+  \end{itemize}
+\end{itemize}
+
+Algebraic effects (Plotkin ...) are an increasingly % TODO add ref
+popular technique of structuring computational effects. They allow for seamless
+composition of multiple effects, while retaining (unlike monads) applicative style
+of programs. Coupled with handlers (Plotkin ...) which give programmers ability to
+interpret effects, they provide a great tool for abstracting over a set of operations
+which some program may perform and separating this interface from semantics of those
+operations defined as effect handlers.
+
+While designing a calculus representing a core of programming language, one must be very
+careful deciding which features to add and keep in mind all the interactions between them. Following
+most of the functional language designers I chose $\lambda$-calculus as a basis extended with operation
+invocation, effect lifting and handling. The type system for this calculus is defined in Curry style,
+which means that expressions do not contain types, which are assigned to them by the typing relation.
+In more practical terms I had to implement type inference, instead of type checking. Also besides the
+type system which specifies static semantics of calculus, one must specify the behavior of programs
+at runtime. I chose the format of reduction semantics, as it is quite readable and is supported by
+PLT Redex library. 
+
+%%%%% BIBLIOGRAFIA
+
+%\begin{thebibliography}{1}
+%\bibitem{example} \ldots
+%\end{thebibliography}
+
+\end{document}
