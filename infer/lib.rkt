@@ -2,7 +2,7 @@
 (require redex
          "lang.rkt")
 
-(provide lookup in not-in dom-S fresh-row fresh-arr fresh-var neq eq trace)
+(provide lookup in not-in dom-S fresh-row fresh-arr fresh-var neq eq trace get-handler prim-apply)
 
 ; Switch enabling tracing
 (define trace-enabled? #f)
@@ -58,6 +58,22 @@
 
   [(dom-S (a t S)) (a a_s ...)
    (where (a_s ...) (dom-S S))])
+
+(define-metafunction Infer
+  prim-apply : prim number number -> number
+
+  [(prim-apply + number_1 number_2) ,(+ (term number_1) (term number_2))]
+  [(prim-apply - number_1 number_2) ,(- (term number_1) (term number_2))]
+  [(prim-apply * number_1 number_2) ,(* (term number_1) (term number_2))]
+  [(prim-apply / number_1 number_2) ,(/ (term number_1) (term number_2))]
+  )
+
+(define-judgment-form Infer
+  #:mode (get-handler I I O)
+
+  [(get-handler op [(op (x_1 x_2 e)) h ...] (x_1 x_2 e))]
+  [(get-handler (name op op_!_1) [(op_!_1 _) h ...] any_r)
+   (get-handler op [h ...] any_r)])
 
 (define-judgment-form Infer
   #:mode (fresh-row I O O)

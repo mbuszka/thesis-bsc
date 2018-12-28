@@ -42,7 +42,7 @@
     (if (types? t)
         (begin
           (set! typed (+ typed 1))
-          (or (reduces? t)
+          (or (reduce t)
               (value? t)))
         #t)))
 

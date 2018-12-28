@@ -5,7 +5,7 @@
          "lib.rkt"
          "type.rkt")
 
-(provide red reduces?)
+(provide red reduce)
 
 
 (define-judgment-form Infer
@@ -43,22 +43,6 @@
   [(free op_1 (op_2 E) n)
    (free op_1 E n)])
 
-(define-judgment-form Infer
-  #:mode (get-handler I I O)
-
-  [(get-handler op [(op (x_1 x_2 e)) h ...] (x_1 x_2 e))]
-  [(get-handler (name op op_!_1) [(op_!_1 _) h ...] any_r)
-   (get-handler op [h ...] any_r)])
-
-(define-metafunction Infer
-  prim-apply : prim number number -> number
-
-  [(prim-apply + number_1 number_2) ,(+ (term number_1) (term number_2))]
-  [(prim-apply - number_1 number_2) ,(- (term number_1) (term number_2))]
-  [(prim-apply * number_1 number_2) ,(* (term number_1) (term number_2))]
-  [(prim-apply / number_1 number_2) ,(/ (term number_1) (term number_2))]
-  )
-
 (define red
   (reduction-relation
    Infer
@@ -88,7 +72,9 @@
         handle-op)
    ))
 
-(define (reduces? e)
+(define (reduce e)
   (let ([xs (apply-reduction-relation* red e)])
-    (and (= (length xs) 1)
-         (value? (car xs)))))
+    (if (and (= (length xs) 1)
+             (value? (car xs)))
+        (car xs)
+        #f)))
