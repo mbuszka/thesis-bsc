@@ -5,6 +5,8 @@
          redex
          )
 
+(provide abstract-machine reduce)
+
 (define-extended-language AM Infer
   ; Machine configuration
   (C ::= (e ρ K) (V ρ K) (op V natural K K) V)

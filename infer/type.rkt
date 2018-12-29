@@ -5,7 +5,7 @@
          "lib.rkt"
          "examples.rkt")
 
-(provide types? infer-type)
+(provide types? types-int? infer-type)
 
 ; Infers a type and effect row of an expression.
 ; Takes:
@@ -220,7 +220,7 @@
    (unify-row SN_1 ((name o1 op_!_1) t_1 row_1) (name o op_!_1) t_2 (o1 t_1 row_2) SN_2)]
   )
 
-; Checks if environment types with empty effect row
+; Checks if expression types with empty effect row
 (define-judgment-form Infer
   #:mode (types-top I O)
 
@@ -228,6 +228,16 @@
    (unify SN_1 row · [S _])
    -------------------------
    (types-top e (apply S t))])
+
+; Checks if expression has type int with empty effect row
+(define-judgment-form Infer
+  #:mode (types-top-int I)
+
+  [(infer · [· 0] e t row SN_1)
+   (unify SN_1 row · SN_2)
+   (unify SN_2 t Int [S _])
+   -------------------------
+   (types-top-int e)])
 
 ; Helper function, inferring type in empty environment
 (define (infer-type e)
@@ -255,6 +265,10 @@
 (define (types? e)
   (judgment-holds
    (types-top ,e _)))
+
+(define (types-int? e)
+  (judgment-holds
+   (types-top-int ,e)))
 
 (module+ test
   ; Should this term typecheck?
