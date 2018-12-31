@@ -1,16 +1,23 @@
-#lang br/quicklang
+#lang racket
 
-(require "lang/parser.rkt" "lang/tokenizer.rkt")
-(provide (rename-out [parser-only-mb #%module-begin]))
+(require syntax/strip-context
+;         megaparsack
+;         megaparsack/parser-tools/lex
+         "lang/tokenizer.rkt"
+         "lang/parser.rkt")
 
 (define (read-syntax path port)
-  (define parse-tree (parse path (make-tokenizer port path)))
-  (strip-bindings
-   #`(module algeff-parser-mod algeff/parse-only
-       #,parse-tree)))
+  (define tokens (tokenize path port))
+  (define tree (parse tokens path))
+  (strip-context
+   #`(module algeff-tokenizer-mod algeff/parse-only
+       #,tree)))
 
 (module+ reader (provide read-syntax))
 
-(define-macro (parser-only-mb PARSE-TREE)
-  #'(#%module-begin
-     'PARSE-TREE))
+(define-syntax-rule (-#%module-begin tree)
+  (#%module-begin
+     tree))
+
+(provide (rename-out [-#%module-begin #%module-begin])
+         #%app #%datum #%top #%top-interaction)
