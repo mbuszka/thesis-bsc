@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (require syntax/strip-context
 ;         megaparsack
@@ -17,7 +17,7 @@
 
 (define-syntax-rule (-#%module-begin tree)
   (#%module-begin
-     tree))
+     (quote tree)))
 
 (provide (rename-out [-#%module-begin #%module-begin])
          #%app #%datum #%top #%top-interaction)

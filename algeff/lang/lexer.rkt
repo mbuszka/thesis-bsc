@@ -6,24 +6,28 @@
 (provide the-lexer base base* keywords)
 
 (define-empty-tokens keywords
-  (LAMBDA HANDLE WITH END))
+  (LAMBDA HANDLE WITH END LIFT RETURN))
 
 (define-tokens base
   (PRIM NUMBER VAR OP))
 
 (define-empty-tokens base*
-  (ARR PIPE SEMICOLON EOF))
+  (ARR PIPE SEMICOLON EOF LPAREN RPAREN))
 
 (define the-lexer
   (lexer-src-pos
    [(:or "λ"
          "fun")
     (token-LAMBDA)]
+   ["lift" (token-LIFT)]
    ["handle" (token-HANDLE)]
    ["with" (token-WITH)]
    ["end" (token-END)]
+   ["return" (token-RETURN)]
    ["|" (token-PIPE)]
    [";" (token-SEMICOLON)]
+   ["(" (token-LPAREN)]
+   [")" (token-RPAREN)]
    [(:or "->"
          "→")
     (token-ARR)]
