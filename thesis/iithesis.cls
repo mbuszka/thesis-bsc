@@ -404,7 +404,7 @@
 
 
 
-\RequirePackage[pdftex,unicode=true]{hyperref}
+\RequirePackage[xetex,unicode=true]{hyperref}
 
 
 

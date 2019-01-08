@@ -5,7 +5,7 @@
          "lib.rkt"
          "examples.rkt")
 
-(provide types? types-int? infer-type)
+(provide types? types-int? infer-type infer)
 
 ; Infers a type and effect row of an expression.
 ; Takes:

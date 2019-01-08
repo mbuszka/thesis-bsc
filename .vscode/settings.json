@@ -15,6 +15,7 @@
       "command": "latexmk",
       "args": [
         "-bibtex",
+        "-xelatex",
         "-synctex=1",
         "-interaction=nonstopmode",
         "-file-line-error",

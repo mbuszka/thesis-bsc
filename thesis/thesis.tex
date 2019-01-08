@@ -30,7 +30,13 @@
 \let\lll\undefined
 \usepackage{amsmath, amssymb}
 \usepackage{biblatex}
-\addbibresource{mybib.bib} 
+\usepackage[xetex]{graphicx}
+\addbibresource{mybib.bib}
+
+\usepackage{float}
+\floatstyle{boxed} 
+\restylefloat{figure}
+
 %
 %%%%% WŁASNE DEFINICJE I POLECENIA
 %
@@ -124,12 +130,33 @@ Then we have to define reduction relation, which generates a transition system f
 The rules usually take the form of redex in a context which reduces to some expression in a context.
 
 \chapter{The calculus}
+The calculus implemented in this thesis is based on lambda calculus with call-by-value semantics, similarly to other calculi which allow for computational effects, because fixed evaluation order is essential to obtaining sane program semantics.
+Inspired by Links \cite{Hillerstrom2016} the operations are truly ad-hoc meaning that they don't have to be declared before usage.
+Moreover the calculus requires no type annotations whatsoever in spirit of \emph{ML} family of languages while still tracking effects which occur in a program.
 
 \section{Abstract syntax}
+\begin{figure}
+  \centering
+  \includegraphics{language.eps}
+\end{figure}
+Abstract syntax of comprises of forms standard to \LC ($\lambda$ abstractions, variables and applications), extended with number literals and primitive numerical operations (which allow for some example computation), and syntactic forms used by algebraic effects - operation invocations, handle expressions and lift expressions.
+Inspired by calculus of Links described in ??? operations are a distinct syntactic category, while lift construct was introduced in Biernacki et. al. % TODO reference
 
-\section{Type system}
+\section{Static semantics}
+The type system is based on Koka (Leijen's style of row types) and Links systems (ad-hoc operations).
+As the calculus is defined in Curry-style the inference rules describe type reconstruction algorithm.
 
-\section{Reduction semantics}
+\subsection{Row types}
+Row types as described in \cite{Leijen2005}
+
+\subsection{Type inference}
+The main judgment \emph{infer} infers a type and effect row, and calculates new substitution, given typing environment, current substitution and an expression.
+As in \emph{ML} languages only simple types can be inferred, along with effect rows 
+
+\subsection{Effect handlers}
+
+
+\section{Dynamic semantics}
 
 \section{Abstract machine}
 
@@ -149,9 +176,9 @@ The rules usually take the form of redex in a context which reduces to some expr
 
 \chapter{The \Racket environment}
 
-\subsection{Front-end}
+\section{Front-end}
 
-\subsection{Back-end}
+\section{Back-end}
 
 
 \chapter{User's manual}
