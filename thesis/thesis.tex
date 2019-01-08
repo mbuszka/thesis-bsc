@@ -27,7 +27,10 @@
 
 %%%%% WLASNE DODATKOWE PAKIETY
 %
-%\usepackage{graphicx,listings,amsmath,amssymb,amsthm,amsfonts,tikz}
+\let\lll\undefined
+\usepackage{amsmath, amssymb}
+\usepackage{biblatex}
+\addbibresource{mybib.bib} 
 %
 %%%%% WŁASNE DEFINICJE I POLECENIA
 %
@@ -74,15 +77,51 @@ While designing a calculus representing a core of programming language, one must
 Following most of the functional language designers I chose \LC as a basis extended with operation invocation, effect lifting and handling.
 The type system for this calculus is defined in Curry style, which means that expressions do not contain types, which are assigned to them by the typing relation.
 In more practical terms I had to implement type inference, instead of type checking.
-Also besides the type system which specifies static semantics of calculus, one must specify the behavior of programs at runtime.
+Also besides the type system which specifies static semantics of calculus, one must specify the behavior of programs at run-time.
 I chose the format of reduction semantics, as it is quite readable and is supported by \Redex library.
 
 \section{Algebraic effects and handlers}
+Algebraic effects and handlers are a language level framework which allow for coherent presentation, abstraction, composition and reasoning about computational effects.
+The key idea is to separate invocation of an effectful operation in an expression from the meaning of such operation.
+When one invokes an operation, current continuation is captured and passed along with operation's argument to nearest handler.
+The handler in turn may execute arbitrary expression, using the continuation once, twice, returning a function which calls the continuation or simply ignoring it.
+This way many control structures can be modeled and generalized by algebraic effects and appropriate handlers.
+For example, the exceptions can be modeled using a single operation \texttt{throw} and a handler which either returns the result when computation succeeded or returns default value, ignoring passed continuation.
+\begin{verbatim}
+handler
+| throw () r -> // return default value
+| return x   -> x
+end
+\end{verbatim}
+From the language design standpoint algebraic effects provide single implementation of various phenomena which may happen during execution of a program, for example mutable state, I/O, environment lookup, exceptions etc. in a sense that every effect is treated the same, the typing rules are defined for invocation of any operation, and handling of any operation.
+Similarly the operational semantics is also quite simple and succinct thanks to uniform treatment of various effects.
+This framework is also extendable. With small additions if can handle built-in effects in addition to user-defined ones.
+
+From the language user perspective algebraic effects provide means of abstraction over effects used in a program.
+Thanks to easy creation of new effects, one can define special purpose operations and their handlers to better represent domain specific problems while simultaneously using well known effects, defined in standard library.
+With effects being tracked by the type system, programmers can enforce purity or specific set of used effects at compile-time, or using effect polymorphism they can write reusable functions which abstract over effects which may happen.
+The separation of definition and implementation of effects allows for various interpretations of operations, similar to a technique of \emph{dependency-injection} used for example during testing.
+% TODO anonymous vs defined effects, abstract effects, effect polymorphism
 
 \section{Type inference}
+Type inference is a technique of algorithmic reconstruction of types for various constructions used in a language.
+It allows programmers to write programs with no type annotations, which often feel redundant and obfuscate the meaning of a program.
+The most well known type system with inference is a system for \emph{ML} family of languages - \emph{Haskell}, \emph{OCaml}, \emph{SML} which infers the types with no annotations whatsoever.
+Formal type system defines grammar of types consisting of base types (\texttt{int}, \texttt{bool} etc.), type constructors (arrows, algebraic data types) and type variables.
+The typing rules require types which should be compatible (f.e. formal parameter and argument types) to unify.
+The key feature of this system is so called let-polymorphism - generalization of types of let-bound variables.
+This way code reuse can be accomplished without complicating the type system and compromising type safety.
+The basis of implementation of this system is first order unification algorithm, which syntactically decomposes types and builds a substitution from type variables to types.
 
 \section{Reduction semantics and abstract machines}
-
+Reduction semantics is a format for specifying dynamic semantics of a calculus in an operational style.
+The basic idea is to first define redexes - expressions which can be reduced, and contexts in which the reduction can happen.
+\begin{align*}
+  e &::= x \mid \lambda x . e \mid e e \\
+  E &::= \square \mid E e
+\end{align*}
+Then we have to define reduction relation, which generates a transition system for terms in the calculus.
+The rules usually take the form of redex in a context which reduces to some expression in a context.
 
 \chapter{The calculus}
 
@@ -117,9 +156,7 @@ I chose the format of reduction semantics, as it is quite readable and is suppor
 
 \chapter{User's manual}
 
-
-\bibliography{mybib}{}
-\bibliographystyle{plain}
+\printbibliography
 
 %\begin{thebibliography}{1}
 %\bibitem{example} \ldots
