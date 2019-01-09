@@ -1,0 +1,15 @@
+Thesis:
+  Chapter 1 - Introduction:
+    ☐ motivation (algebraic effects are trendy - experimentation with different features/flavors, experimentation with redex - as a platform for rapid semantics prototyping)
+    ☐ overview of my work
+    ☐ redex features/introduction
+    
+  Chapter 2 - Calculus:
+  Chapter 3 - Implementation:
+
+Language:
+  ☐ syntax highlighting
+
+Calculus:
+  ☐ recursive functions
+  ☐ booleans and ifs
