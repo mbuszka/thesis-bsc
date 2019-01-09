@@ -3,14 +3,14 @@
 % drugiej stronie pracy ma byc skladany wzor oswiadczenia o autorskim wykonaniu.
 \documentclass[inz, english, shortabstract]{iithesis}
 
-\usepackage[utf8]{inputenc}
+\usepackage[utf8]{inputenc} 
 
 %%%%% DANE DO STRONY TYTUŁOWEJ
 % Niezaleznie od jezyka pracy wybranego w opcjach klasy, tytul i streszczenie
 % pracy nalezy podac zarowno w jezyku polskim, jak i angielskim.
 % Pamietaj o madrym (zgodnym z logicznym rozbiorem zdania oraz estetyka) recznym
 % zlamaniu wierszy w temacie pracy, zwlaszcza tego w jezyku pracy. Uzyj do tego
-% polecenia \fmlinebreak.
+% polecenia \fmlinebreak. 
 \polishtitle    {Implementacja statycznej i dynamicznej semantyki rachunku z efektami algebraicznymi i ich obsługą z pomocą biblioteki \Redex}
 \englishtitle   {Implementation of static and~dynamic semantics for a calculus with algebraic effects and~handlers using \Redex} 
 \polishabstract {Abstrakt w języku polskim}
@@ -28,12 +28,11 @@
 %%%%% WLASNE DODATKOWE PAKIETY
 %
 \let\lll\undefined
-\usepackage{amsmath, amssymb}
-\usepackage{biblatex}
-\usepackage[xetex]{graphicx}
+\usepackage{amsmath, amssymb, biblatex, float}
+
+\usepackage[pdftex]{graphicx}
 \addbibresource{mybib.bib}
 
-\usepackage{float}
 \floatstyle{boxed} 
 \restylefloat{figure}
 
@@ -56,6 +55,26 @@
 %%%%% POCZĄTEK ZASADNICZEGO TEKSTU PRACY
 
 \chapter{Introduction}
+% TODO add motivation, how it all relates to my work, what I did whats the point (what, how, why)
+% thesis outline
+% odrobina reklamy, dlaczego i po co.
+
+% algebraic are trendy right now.
+
+% something about redex in introduction, why what it gives us
+% is redex suitable for more complicated languages
+% how does automatic counterexample works
+
+% dlaczego:
+% experimentation with algebraic effects (calculus with various features)
+% 
+% lightweight prototyping
+
+% goals:
+% calculus
+% implementation
+% automatic testing (failed)
+
 \begin{itemize}
   \item Algebraic effects and handlers
   \begin{itemize}
@@ -94,7 +113,7 @@ The handler in turn may execute arbitrary expression, using the continuation onc
 This way many control structures can be modeled and generalized by algebraic effects and appropriate handlers.
 For example, the exceptions can be modeled using a single operation \texttt{throw} and a handler which either returns the result when computation succeeded or returns default value, ignoring passed continuation.
 \begin{verbatim}
-handler
+handle e with
 | throw () r -> // return default value
 | return x   -> x
 end
@@ -137,7 +156,7 @@ Moreover the calculus requires no type annotations whatsoever in spirit of \emph
 \section{Abstract syntax}
 \begin{figure}
   \centering
-  \includegraphics{language.eps}
+  \includegraphics{language}
 \end{figure}
 Abstract syntax of comprises of forms standard to \LC ($\lambda$ abstractions, variables and applications), extended with number literals and primitive numerical operations (which allow for some example computation), and syntactic forms used by algebraic effects - operation invocations, handle expressions and lift expressions.
 Inspired by calculus of Links described in ??? operations are a distinct syntactic category, while lift construct was introduced in Biernacki et. al. % TODO reference
@@ -164,6 +183,7 @@ As in \emph{ML} languages only simple types can be inferred, along with effect r
 \chapter{Implementation}
 
 \section{\Redex}
+% scaling problems
 
 \section{Typing relation}
 
@@ -180,7 +200,7 @@ As in \emph{ML} languages only simple types can be inferred, along with effect r
 
 \section{Back-end}
 
-
+% TODO implementation architecture
 \chapter{User's manual}
 
 \printbibliography

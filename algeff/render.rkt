@@ -6,6 +6,6 @@
          (only-in "calculus/abstract-machine.rkt" abstract-machine))
 
 (define (render)
-  (render-language Infer "../thesis/language.ps")
-  (render-judgment-form infer "../thesis/infer.ps")
-  (render-reduction-relation red "../thesis/reduction.ps"))
+  (render-language Infer "../thesis/language.eps")
+  (render-judgment-form infer "../thesis/infer.eps")
+  (render-reduction-relation red "../thesis/reduction.eps"))
