@@ -1,16 +1,7 @@
-% Opcje klasy 'iithesis' opisane sa w komentarzach w pliku klasy. Za ich pomoca
-% ustawia sie przede wszystkim jezyk i rodzaj (lic/inz/mgr) pracy, oraz czy na
-% drugiej stronie pracy ma byc skladany wzor oswiadczenia o autorskim wykonaniu.
 \documentclass[inz, english, shortabstract]{iithesis}
-
-\usepackage[utf8]{inputenc} 
-
-%%%%% DANE DO STRONY TYTUŁOWEJ
-% Niezaleznie od jezyka pracy wybranego w opcjach klasy, tytul i streszczenie
-% pracy nalezy podac zarowno w jezyku polskim, jak i angielskim.
-% Pamietaj o madrym (zgodnym z logicznym rozbiorem zdania oraz estetyka) recznym
-% zlamaniu wierszy w temacie pracy, zwlaszcza tego w jezyku pracy. Uzyj do tego
-% polecenia \fmlinebreak. 
+%
+\usepackage[utf8]{inputenc}
+%
 \polishtitle    {Implementacja statycznej i dynamicznej semantyki rachunku z efektami algebraicznymi i ich obsługą z pomocą biblioteki \Redex}
 \englishtitle   {Implementation of static and~dynamic semantics for a calculus with algebraic effects and~handlers using \Redex} 
 \polishabstract {Abstrakt w języku polskim}
@@ -19,96 +10,69 @@
 \author         {Maciej Buszka}
 %
 \advisor        {dr hab. Dariusz Biernacki}
-%\date          {}                     % Data zlozenia pracy
-% Dane do oswiadczenia o autorskim wykonaniu
+%\date          {}                     % Data złożenia pracy
+% Dane do oświadczenia o autorskim wykonaniu
 %\transcriptnum {}                     % Numer indeksu
-\advisorgen     {dr. hab. Dariusza Biernackiego} % Nazwisko promotora w dopelniaczu
-%%%%%
-
-%%%%% WLASNE DODATKOWE PAKIETY
-%
+\advisorgen     {dr. hab. Dariusza Biernackiego}
 \let\lll\undefined
-\usepackage{amsmath, amssymb, biblatex, float}
-
+\usepackage{csquotes, amsmath, amssymb, biblatex, float}
+%
 \usepackage[pdftex]{graphicx}
 \addbibresource{mybib.bib}
-
+%
 \floatstyle{boxed} 
 \restylefloat{figure}
-
 %
-%%%%% WŁASNE DEFINICJE I POLECENIA
-%
-%\theoremstyle{definition} \newtheorem{definition}{Definition}[chapter]
-%\theoremstyle{remark} \newtheorem{remark}[definition]{Observation}
-%\theoremstyle{plain} \newtheorem{theorem}[definition]{Theorem}
-%\theoremstyle{plain} \newtheorem{lemma}[definition]{Lemma}
-%\renewcommand \qedsymbol {\ensuremath{\square}}
-% ...
-%%%%%
 \newcommand{\Redex}{\texttt{PLT Redex} }
 \newcommand{\Racket}{\texttt{Racket} }
 \newcommand{\LC}{\(\lambda\)-calculus }
-
+%
 \begin{document}
-
-%%%%% POCZĄTEK ZASADNICZEGO TEKSTU PRACY
-
+%
 \chapter{Introduction}
-% TODO add motivation, how it all relates to my work, what I did whats the point (what, how, why)
-% thesis outline
-% odrobina reklamy, dlaczego i po co.
-
-% algebraic are trendy right now.
-
-% something about redex in introduction, why what it gives us
-% is redex suitable for more complicated languages
-% how does automatic counterexample works
-
 % dlaczego:
 % experimentation with algebraic effects (calculus with various features)
 % 
 % lightweight prototyping
-
+%
 % goals:
 % calculus
 % implementation
 % automatic testing (failed)
-
-\begin{itemize}
-  \item Algebraic effects and handlers
-  \begin{itemize}
-    \item What are algebraic effects
-    \item Why do we need handlers
-    \item 
-  \end{itemize}
-  
-  \item Reduction semantics
-  
-  \item Type inference
-  
-  \item \Redex
-  \begin{itemize}
-    \item Defining languages, relations on terms, reduction semantics
-    \item Automatic testing, counterexample search
-  \end{itemize}
-\end{itemize}
-
+%
+%
+% What algebraic effects are, why are they interesting, why is it worth to experiment with different approaches/flavors
 Algebraic effects \cite{Plotkin2003} are an increasingly popular technique of structuring computational effects.
 They allow for seamless composition of multiple effects, while retaining (unlike monads) applicative style of programs.
 Coupled with handlers \cite{Plotkin2013} which give programmers ability to interpret effects, they provide a great tool for abstracting over a set of operations which some program may perform and separating this interface from semantics of those operations defined as effect handlers.
-% Paragraph about effect systems
-While designing a calculus representing a core of programming language, one must be very careful deciding which features to add and keep in mind all the interactions between them.
-Following most of the functional language designers I chose \LC as a basis extended with operation invocation, effect lifting and handling.
-The type system for this calculus is defined in Curry style, which means that expressions do not contain types, which are assigned to them by the typing relation.
-In more practical terms I had to implement type inference, instead of type checking.
-Also besides the type system which specifies static semantics of calculus, one must specify the behavior of programs at run-time.
-I chose the format of reduction semantics, as it is quite readable and is supported by \Redex library.
+
+% What are other approaches to algebraic effects
+As these features are highly desirable many calculi and languages have been developed in order to get them just right; most notable of them being: \emph{Koka} (featuring type inference, effect polymorphism with row-types and \emph{Javascript}-like syntax), \emph{Links} (featuring \emph{ML}-like syntax, row-typed effect polymorphism and ad-hoc effects) and \emph{Eff}\cite{Bauer2012} with implicit effect checking and recent work on direct compilation to \emph{OCaml}\cite{Kiselyov2018}.
+On more theoretical side, various approaches to semantics of algebraic effects can be spotted in literature, both in respect to type system and run-time semantics.
+Although most calculi use some form of row-types to implement tracking of effects there are differences in permitted shapes (at most one effect of given type or many effects), whether effects must be defined before use or not and how effects interact with polymorphism and abstraction.
+At run-time handlers can wrap the captured continuation (giving so-called deep handlers) or not (shallow handlers) and the very act of finding the right handler can be implemented in various ways, mainly depending on some constructs which skip handlers.
+
+% What am I implementing, what is interesting in this thesis, how it differs from other systems/languages (The main goal of the thesis)
+All this variety naturally invites Us to experiment with different features and components of a calculus.
+In this thesis I will build such a calculus, describing and justifying my choices and discussing the trade-offs I faced.
+In order to to rapidly iterate on design and test the calculus, I decided to use \Redex library which allows for building executable type system judgments and reduction relation.
+As such the other goal of my thesis was to assess viability of \Redex for development of bigger calculi.
+To briefly summarize my development, the calculus consists of: 
+\begin{itemize}
+  \item Curry style type system with ad-hoc effects in the style of \emph{Links}, effect rows based on \emph{Koka} and \emph{lift} construct first shown in \cite{Biernacki2017}, implemented as unification based type inference algorithm.
+  \item Executable reduction semantics most similar to system of \cite{Biernacki2017}.
+  \item CEK style abstract machine with stack and \emph{meta}-stack of handlers
+  \item Language front-end which translates human-friendly programs to calculus terms, integrated with \Racket environment, which allows for easy experimentation.
+\end{itemize}
+
+% Outline of the thesis
+The rest of this thesis is structured as follows: In \autoref{ch:calculus} I describe the calculus in greater detail, in \autoref{ch:implementation} I discuss technicalities of implementation, in \autoref{ch:racket} I summarize the process of integration with \Racket environment and \autoref{ch:manual} is user's manual.
+In the reminder of this chapter I introduce main topics of this thesis.
 
 \section{Algebraic effects and handlers}
 Algebraic effects and handlers are a language level framework which allow for coherent presentation, abstraction, composition and reasoning about computational effects.
 The key idea is to separate invocation of an effectful operation in an expression from the meaning of such operation.
-When one invokes an operation, current continuation is captured and passed along with operation's argument to nearest handler.
+When one invokes an operation, current continuation (up to nearest handler) is captured and passed along with operation's argument to nearest handler.
 The handler in turn may execute arbitrary expression, using the continuation once, twice, returning a function which calls the continuation or simply ignoring it.
 This way many control structures can be modeled and generalized by algebraic effects and appropriate handlers.
 For example, the exceptions can be modeled using a single operation \texttt{throw} and a handler which either returns the result when computation succeeded or returns default value, ignoring passed continuation.
@@ -148,7 +112,10 @@ The basic idea is to first define redexes - expressions which can be reduced, an
 Then we have to define reduction relation, which generates a transition system for terms in the calculus.
 The rules usually take the form of redex in a context which reduces to some expression in a context.
 
-\chapter{The calculus}
+\section{\Redex}
+% TODO: Redex section
+
+\chapter{The calculus}\label{ch:calculus}
 The calculus implemented in this thesis is based on lambda calculus with call-by-value semantics, similarly to other calculi which allow for computational effects, because fixed evaluation order is essential to obtaining sane program semantics.
 Inspired by Links \cite{Hillerstrom2016} the operations are truly ad-hoc meaning that they don't have to be declared before usage.
 Moreover the calculus requires no type annotations whatsoever in spirit of \emph{ML} family of languages while still tracking effects which occur in a program.
@@ -180,7 +147,7 @@ As in \emph{ML} languages only simple types can be inferred, along with effect r
 \section{Abstract machine}
 
 
-\chapter{Implementation}
+\chapter{Implementation}\label{ch:implementation}
 
 \section{\Redex}
 % scaling problems
@@ -194,14 +161,14 @@ As in \emph{ML} languages only simple types can be inferred, along with effect r
 \section{Automatic testing}
 
 
-\chapter{The \Racket environment}
+\chapter{The \Racket environment}\label{ch:racket}
 
 \section{Front-end}
 
 \section{Back-end}
 
 % TODO implementation architecture
-\chapter{User's manual}
+\chapter{User's manual}\label{ch:manual}
 
 \printbibliography
 
