@@ -120,21 +120,30 @@
     (pair <- handlers/p)
     (token/p 'END)
     (pure (list 'handle e (cdr pair) (car pair)))))
-    
+
+(define letrec/p
+  (do (token/p 'LETREC)
+    (f <- var/p)
+    (x <- var/p)
+    (token/p 'EQUALS)
+    (body <- expr/p)
+    (token/p 'IN)
+    (rest <- expr/p)
+    (pure (term ((λ ,f ,rest) (fix (λ ,f (λ ,x ,body))))))))
 
 (define term/p
-   (or/p
-    handle/p
-    op-call/p
-    lift/p
-    prim-call/p
-    lambda/p
-    number/p
-    var/p
-    (do (token/p 'LPAREN)
-      (e <- expr/p)
-      (token/p 'RPAREN)
-      (pure e))))
+  (or/p
+   handle/p
+   op-call/p
+   lift/p
+   prim-call/p
+   lambda/p
+   number/p
+   var/p
+   (do (token/p 'LPAREN)
+     (e <- expr/p)
+     (token/p 'RPAREN)
+     (pure e))))
 
 (define (applications xs)
   (define (aux acc xs)
@@ -146,6 +155,7 @@
     [(list-rest x ys) (aux x ys)]))
 
 (define expr/p
-  (do (terms <- (many+/p term/p))
-    (pure (applications terms))))
-     
+  (or/p
+   letrec/p
+   (do (terms <- (many+/p term/p))
+     (pure (applications terms)))))

@@ -56,7 +56,7 @@
                      e
                      (progress-holds? (term e))
                      #:attempts num-attempts)
-        (covered-cases c)))
+        (println (covered-cases c))))
     (printf "well typed ~s\n" typed)))
 
 (define (check-am num-attempts #:verbose [verbose #f])

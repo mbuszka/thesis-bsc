@@ -6,13 +6,13 @@
 (provide the-lexer base base* keywords)
 
 (define-empty-tokens keywords
-  (LAMBDA HANDLE WITH END LIFT RETURN))
+  (LAMBDA HANDLE WITH END LIFT RETURN LETREC IN))
 
 (define-tokens base
   (PRIM NUMBER VAR OP))
 
 (define-empty-tokens base*
-  (ARR PIPE SEMICOLON EOF LPAREN RPAREN))
+  (ARR PIPE SEMICOLON EOF LPAREN RPAREN EQUALS))
 
 (define the-lexer
   (lexer-src-pos
@@ -24,10 +24,13 @@
    ["with" (token-WITH)]
    ["end" (token-END)]
    ["return" (token-RETURN)]
+   ["letrec" (token-LETREC)]
+   ["in" (token-IN)]
    ["|" (token-PIPE)]
    [";" (token-SEMICOLON)]
    ["(" (token-LPAREN)]
    [")" (token-RPAREN)]
+   ["=" (token-EQUALS)]
    [(:or "->"
          "→")
     (token-ARR)]
@@ -39,6 +42,7 @@
     (token-VAR lexeme)]
    [(:: upper-case (:* alphabetic))
     (token-OP lexeme)]
+   [(:: "--" (:* (:~ #\newline)) #\newline) (return-without-pos (the-lexer input-port))]
    [(:or whitespace blank iso-control) (return-without-pos (the-lexer input-port))]
    [(eof) (token-EOF)]))
 

@@ -5,7 +5,7 @@
 (provide lookup in not-in dom-S fresh-row fresh-arr fresh-var neq eq trace get-handler prim-apply)
 
 ; Switch enabling tracing
-(define trace-enabled? #f)
+(define trace-enabled? #t)
 
 ; Helper judgment which allows for printing arbitrary messages during
 ; evalution of judgment forms
@@ -42,7 +42,7 @@
 (define-judgment-form Infer
   #:mode (in I I)
   
-  [(in a (a_1 ... a a_2 ...))])
+  [(in any (any_1 ... any any_2 ...))])
 
 (define-judgment-form Infer
   #:mode (lookup I I O)

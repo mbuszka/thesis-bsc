@@ -7,15 +7,14 @@
 
 (define-language Infer
   ; Values
-  (v     ::= number (λ x e))
-
+  (v     ::= number (λ x e) true false)
+  ; TODO add booleans, letrec.
   ; Primitive operations on numbers
   (prim  ::= + - *)
 
   ; Expressions
-  (e     ::= v x (e e)
-         (op e) (handle e hs ret)
-         (lift op e) (prim e e))
+  (e     ::= v x (e e) (if e e e) (fix e)
+         (op e) (handle e hs ret) (lift op e) (prim e ...))
 
   ; Handlers
   (hs    ::= ((op_!_1 hexpr) ...))
@@ -28,7 +27,7 @@
   (h     ::= (op hexpr))
 
   ; Types
-  (t     ::= Int (t -> row t) (t => t) row a)
+  (t     ::= Int Bool (t -> row t) (t => t) row a)
   (row   ::= (op t row) a ·)
 
   ; Term variables
@@ -44,9 +43,8 @@
   (Γ     ::= (x t Γ) ·)
 
   ; Evaluation contexts
-  (E     ::= hole (E e) (v E) (prim E e) (prim v E)
-         (op E) (handle E hs ret)
-         (lift op E))
+  (E     ::= hole (E e) (v E) (prim E e) (prim v E) (if E e e) (fix E)
+         (op E) (handle E hs ret) (lift op E))
   
   ; Substitution
   (S     ::= (a t S) ·)
@@ -101,6 +99,7 @@
   [(ftv/s a) ,(set (term a))]
   [(ftv/s ·) ,(set)]
   [(ftv/s Int) ,(set)]
+  [(ftv/s Bool) ,(set)]
   [(ftv/s (t_1 -> row t_2)) ,(set-union (term any_1) (term any_2) (term any_3))
                             (where any_1 (ftv/s t_1))
                             (where any_2 (ftv/s row))

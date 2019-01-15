@@ -20,6 +20,14 @@
   #:mode (infer I I I O O O)
   #:contract (infer Γ SN e t row SN)
 
+  [(fresh-row N_1 row N_2)
+   ---------------------------------------
+   (infer Γ [S N_1] true Bool row [S N_2])]
+
+  [(fresh-row N_1 row N_2)
+   ---------------------------------------
+   (infer Γ [S N_1] false Bool row [S N_2])]
+  
   [(trace ("=== inferring number ===\n~s\n" number))
    (fresh-row N_1 row N_2)
    (trace ("<<< inferred number <<<\n~s\n~s\n" (apply S Int) (apply S row)))
@@ -54,14 +62,27 @@
    ---------------------------------
    (infer Γ SN_1 (e_1 e_2) t_2 row_2 SN_7)]
 
-  [(trace ("=== inferring primitive op ===\n~s\n" (prim e_1 e_2)))
-   (infer Γ SN_1 e_1 t_1 row_1 SN_2)
-   (unify SN_2 t_1 Int SN_3)
-   (infer Γ SN_3 e_2 t_2 row_2 SN_4)
-   (unify SN_4 t_2 Int SN_5)
-   (unify SN_5 row_1 row_2 SN_6)
+  [(trace ("=== inferring primitive op ===\n~s\n" (prim e ...)))
+   (check-prim Γ SN_1 prim (e ...) t row SN_2)
    --------------------------------------------
-   (infer Γ SN_1 (prim e_1 e_2) Int row_1 SN_6)]
+   (infer Γ SN_1 (prim e ...) t row SN_2)]
+
+  [(infer Γ SN_1 e t row_e SN_2)
+   (unify SN_2 row_e · SN_3)
+   (unify-arr SN_3 t t_1 -> row_a t_2 SN_4)
+   (unify SN_4 t_1 t_2 SN_5)
+   -------------------------------------
+   (infer Γ SN_1 (fix e) t_1 row_a SN_5)]
+
+  [(infer Γ SN_1 e_cond t_cond row_cond SN_2)
+   (unify SN_2 t_cond Bool SN_3)
+   (infer Γ SN_3 e_then t_then row_then SN_4)
+   (infer Γ SN_4 e_else t_else row_else SN_5)
+   (unify SN_5 t_then t_else SN_6)
+   (unify SN_6 row_cond row_then SN_7)
+   (unify SN_7 row_then row_else SN_8)
+   -------------------------------------------------------------
+   (infer Γ SN_1 (if e_cond e_then e_else) t_then row_then SN_8)]
 
   [(trace ("=== inferring operation ===\n~s\n" (op e)))
    (infer Γ SN_1 e t_1 row_1 [S_1 N_1])
@@ -120,6 +141,20 @@
    (trace ("<<< inferred handlers <<<\n~s\n~s\n" (apply (subst SN_4) t_ret) (apply (subst SN_4) row_out)))
    -------------------------------------------------------------------------
    (infer-handlers Γ SN_1 t_ret ((op (x_v x_r e)) h ...) row_out (op (t_v => t_r) row_handled) SN_4)])
+
+(define-judgment-form Infer
+  #:mode (check-prim I I I I O O O)
+  #:contract (check-prim Γ SN prim (e ...) t row SN)
+
+  [(in prim (+ - *))
+   (infer Γ SN_1 e_1 t_1 row_1 SN_2)
+   (unify SN_2 t_1 Int SN_3)
+   (infer Γ SN_3 e_2 t_2 row_2 SN_4)
+   (unify SN_4 t_2 Int SN_5)
+   (unify SN_5 row_1 row_2 SN_6)
+   ------------------------------------------------
+   (check-prim Γ SN_1 prim (e_1 e_2) Int row_2 SN_6)]
+  )
 
 ; Unify a variable, or arrow constructor, returning arrow type.
 (define-judgment-form Infer
@@ -235,7 +270,7 @@
 
   [(infer · [· 0] e t row SN_1)
    (unify SN_1 row · SN_2)
-   (unify SN_2 t Int [S _])
+   ; (unify SN_2 t Int [S _])
    -------------------------
    (types-top-int e)])
 

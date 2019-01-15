@@ -41,7 +41,14 @@
    (free op E n)]
 
   [(free op_1 (op_2 E) n)
-   (free op_1 E n)])
+   (free op_1 E n)]
+
+  [(free op (if E e_1 e_2) n)
+   (free op E n)]
+
+  [(free op (fix E) n)
+   (free op E n)])
+  
 
 (define red
   (reduction-relation
@@ -53,6 +60,18 @@
    (--> (in-hole E (prim v_1 v_2))
         (in-hole E (prim-apply prim v_1 v_2))
         prim-op)
+
+   (--> (in-hole E (if true e_1 e_2))
+        (in-hole E e_1)
+        if-true)
+
+   (--> (in-hole E (if false e_1 e_2))
+        (in-hole E e_2)
+        if-false)
+
+   (--> (in-hole E (fix (λ x e)))
+        (in-hole E (substitute e x (fix (λ x e))))
+        fix)
 
    (--> (in-hole E (lift op v))
         (in-hole E v)
