@@ -4,7 +4,8 @@
          "lang/tokenizer.rkt"
          "lang/parser.rkt"
          "calculus/type.rkt"
-         "calculus/eval.rkt"
+         (prefix-in ev: "calculus/eval.rkt")
+         (prefix-in am: "calculus/abstract-machine.rkt")
          )
 
 (define (read-syntax path port)
@@ -24,7 +25,7 @@
   (begin
     (println t)
     (if (types? t)
-        (reduce t)
+        (list (ev:reduce t) (am:reduce t))
         '(error does not typecheck))))
 
 (provide (rename-out [-#%module-begin #%module-begin])

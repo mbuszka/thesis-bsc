@@ -7,7 +7,7 @@
 
 (define-language Infer
   ; Values
-  (v     ::= number (λ x e) true false)
+  (v     ::= number (λ x e) (rec x x e) true false)
   ; TODO add booleans, letrec.
   ; Primitive operations on numbers
   (prim  ::= + - * == <= >=)
@@ -43,7 +43,7 @@
   (Γ     ::= (x t Γ) ·)
 
   ; Evaluation contexts
-  (E     ::= hole (E e) (v E) (prim E e) (prim v E) (if E e e) (fix E)
+  (E     ::= hole (E e) (v E) (prim E e) (prim v E) (if E e e)
          (op E) (handle E hs ret) (lift op E))
   
   ; Substitution
@@ -59,6 +59,7 @@
   (λ x e #:refers-to x)
   (∀ a ... t #:refers-to (shadow a ...))
   (op x_1 x_2 e #:refers-to (shadow x_2 x_1) h)
+  (rec x_f x_a e #:refers-to (shadow x_f x_a))
   (return x e #:refers-to x))
 
 (define var?

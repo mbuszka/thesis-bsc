@@ -44,9 +44,6 @@
    (free op_1 E n)]
 
   [(free op (if E e_1 e_2) n)
-   (free op E n)]
-
-  [(free op (fix E) n)
    (free op E n)])
   
 
@@ -55,7 +52,11 @@
    Infer
    (--> (in-hole E ((λ x e) v))
         (in-hole E (substitute e x v))
-        β)
+        β-λ)
+
+   (--> (in-hole E ((rec x_f x_a e) v))
+        (in-hole E (substitute (substitute e x_f (rec x_f x_a e)) x_a v))
+        β-rec)
 
    (--> (in-hole E (prim v_1 v_2))
         (in-hole E (prim-apply prim v_1 v_2))
@@ -69,9 +70,6 @@
         (in-hole E e_2)
         if-false)
 
-   (--> (in-hole E (fix (λ x e)))
-        (in-hole E (substitute e x (fix (λ x e))))
-        fix)
 
    (--> (in-hole E (lift op v))
         (in-hole E v)

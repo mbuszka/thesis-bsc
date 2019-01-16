@@ -12,13 +12,13 @@
   (C ::= (e ρ K) (V ρ K) (op V natural K K) V)
 
   ; Machine values
-  (V ::= (λ ρ x e) (num number) K)
+  (V ::= (λ ρ x e) (rec ρ x x e) (val number) (val true) (val false) K)
 
   ; Value environment
   (ρ ::= ([x V] ...))
 
   ; Pure continuation frames
-  (σ ::= (arg e ρ) (app V) (do op) (prim-l prim e ρ) (prim-r prim V))
+  (σ ::= (arg e ρ) (app V) (do op) (prim-l prim e ρ) (prim-r prim V) (if e e ρ))
 
   ; Effect continuation frames
   (ϕ ::= (handle hs ret ρ) (lift op))
@@ -47,8 +47,11 @@
    (--> ((λ x e) ρ K)
         ((λ ρ x e) ρ K))
 
+   (--> ((rec x_f x_a e) ρ K)
+        ((rec ρ x_f x_a e) ρ K))
+
    (--> (number ρ K)
-        ((num number) ρ K))
+        ((val number) ρ K))
 
    ; Continuation building normal
    (--> ((e_1 e_2) ρ K)
@@ -59,6 +62,9 @@
 
    (--> ((prim e_1 e_2) ρ K)
         (e_1 ρ (push-normal (prim-l prim e_2 ρ) K)))
+
+   (--> ((if e_cond e_then e_else) ρ K)
+        (e_cond ρ (push-normal (if e_then e_else ρ) K)))
 
    ; Continuation building effect
    (--> ((handle e hs ret) ρ K)
@@ -80,11 +86,21 @@
 
    (--> (V ρ ([([app (κ_1 ...)] σ ...) ϕ] κ_2 ...))
         (V ρ (κ_1 ... [(σ ...) ϕ] κ_2 ...)))
-   
-   ; Primitive operation
-   (--> ((num number_2) ρ ([([prim-r prim (num number_1)] σ ...) ϕ] κ ...))
-        ((num (prim-apply prim number_1 number_2)) ρ ([(σ ...) ϕ] κ ...)))
 
+   (--> (V ρ_2 ([([app (rec ρ_1 x_f x_a e)] σ ...) ϕ] κ ...))
+        (e (extend (extend ρ_1 x_f (rec ρ_1 x_f x_a e)) x_a V) ([(σ ...) ϕ] κ ...)))
+
+   ; Primitive operation
+   (--> ((val number_2) ρ ([([prim-r prim (val number_1)] σ ...) ϕ] κ ...))
+        ((val (prim-apply prim number_1 number_2)) ρ ([(σ ...) ϕ] κ ...)))
+
+   ; If expression
+   (--> ((val true) ρ_1 ([([if e any ρ] σ ...) ϕ] κ ...))
+        (e ρ ([(σ ...) ϕ] κ ...)))
+
+   (--> ((val false) ρ_1 ([([if any e ρ] σ ...) ϕ] κ ...))
+        (e ρ ([(σ ...) ϕ] κ ...)))
+   
    ; Operation invocation
    (--> (V ρ ([([do op] σ ...) ϕ] κ ...))
         (op V 0 ([(σ ...) ϕ] κ ...) ()))

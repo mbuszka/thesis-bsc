@@ -148,7 +148,7 @@
     (body <- expr/p)
     (token/p 'IN)
     (rest <- expr/p)
-    (pure (term ((λ ,f ,rest) (fix (λ ,f (λ ,x ,body))))))))
+    (pure (term ((λ ,f ,rest) (rec ,f ,x ,body))))))
 
 (define term/p
   (or/p
