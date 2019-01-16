@@ -64,6 +64,7 @@
 
   [(trace ("=== inferring primitive op ===\n~s\n" (prim e ...)))
    (check-prim Γ SN_1 prim (e ...) t row SN_2)
+   (trace ("<<< inferred primitive op <<<\n~s\n" (apply (subst SN_2) t)))
    --------------------------------------------
    (infer Γ SN_1 (prim e ...) t row SN_2)]
 
@@ -154,6 +155,15 @@
    (unify SN_5 row_1 row_2 SN_6)
    ------------------------------------------------
    (check-prim Γ SN_1 prim (e_1 e_2) Int row_2 SN_6)]
+
+  [(in prim (== <= >=))
+   (infer Γ SN_1 e_1 t_1 row_1 SN_2)
+   (unify SN_2 t_1 Int SN_3)
+   (infer Γ SN_3 e_2 t_2 row_2 SN_4)
+   (unify SN_4 t_2 Int SN_5)
+   (unify SN_5 row_1 row_2 SN_6)
+   ------------------------------------------------
+   (check-prim Γ SN_1 prim (e_1 e_2) Bool row_2 SN_6)]
   )
 
 ; Unify a variable, or arrow constructor, returning arrow type.
@@ -184,6 +194,9 @@
 
   [------------------
    (unify SN Int Int SN)]
+
+  [------------------
+   (unify SN Bool Bool SN)]
 
   [-----------------
    (unify SN · · SN)]

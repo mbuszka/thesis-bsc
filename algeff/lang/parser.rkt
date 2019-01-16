@@ -121,6 +121,25 @@
     (token/p 'END)
     (pure (list 'handle e (cdr pair) (car pair)))))
 
+(define if/p
+  (do (token/p 'IF)
+    (cond <- expr/p)
+    (token/p 'THEN)
+    (then <- expr/p)
+    (token/p 'ELSE)
+    (else <- expr/p)
+    (token/p 'END)
+    (pure (term (if ,cond ,then ,else)))))
+
+(define let/p
+  (do (token/p 'LET)
+    (x <- var/p)
+    (token/p 'EQUALS)
+    (body <- expr/p)
+    (token/p 'IN)
+    (rest <- expr/p)
+    (pure (term ((λ ,x ,rest) ,body)))))
+
 (define letrec/p
   (do (token/p 'LETREC)
     (f <- var/p)
@@ -134,6 +153,7 @@
 (define term/p
   (or/p
    handle/p
+   if/p
    op-call/p
    lift/p
    prim-call/p
@@ -157,5 +177,6 @@
 (define expr/p
   (or/p
    letrec/p
+   let/p
    (do (terms <- (many+/p term/p))
      (pure (applications terms)))))

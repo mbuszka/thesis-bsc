@@ -60,12 +60,15 @@
    (where (a_s ...) (dom-S S))])
 
 (define-metafunction Infer
-  prim-apply : prim number number -> number
+  prim-apply : prim v v -> v
 
   [(prim-apply + number_1 number_2) ,(+ (term number_1) (term number_2))]
   [(prim-apply - number_1 number_2) ,(- (term number_1) (term number_2))]
   [(prim-apply * number_1 number_2) ,(* (term number_1) (term number_2))]
   [(prim-apply / number_1 number_2) ,(/ (term number_1) (term number_2))]
+  [(prim-apply == number_1 number_2) ,(if (= (term number_1) (term number_2)) 'true 'false)]
+  [(prim-apply <= number_1 number_2) ,(if (<= (term number_1) (term number_2)) 'true 'false)]
+  [(prim-apply >= number_1 number_2) ,(if (>= (term number_1) (term number_2)) 'true 'false)]
   )
 
 (define-judgment-form Infer

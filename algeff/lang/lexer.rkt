@@ -6,7 +6,7 @@
 (provide the-lexer base base* keywords)
 
 (define-empty-tokens keywords
-  (LAMBDA HANDLE WITH END LIFT RETURN LETREC IN))
+  (LAMBDA HANDLE WITH END LIFT RETURN LETREC LET IN IF THEN ELSE))
 
 (define-tokens base
   (PRIM NUMBER VAR OP))
@@ -25,7 +25,11 @@
    ["end" (token-END)]
    ["return" (token-RETURN)]
    ["letrec" (token-LETREC)]
+   ["let" (token-LET)]
    ["in" (token-IN)]
+   ["if" (token-IF)]
+   ["then" (token-THEN)]
+   ["else" (token-ELSE)]
    ["|" (token-PIPE)]
    [";" (token-SEMICOLON)]
    ["(" (token-LPAREN)]
@@ -34,7 +38,7 @@
    [(:or "->"
          "→")
     (token-ARR)]
-   [(:or #\+ #\- #\*)
+   [(:or #\+ #\- #\* "==" "<=" ">=")
     (token-PRIM lexeme)]
    [(:+ (:/ #\0 #\9))
     (token-NUMBER (string->number lexeme))]

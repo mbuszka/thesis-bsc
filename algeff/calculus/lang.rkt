@@ -10,7 +10,7 @@
   (v     ::= number (λ x e) true false)
   ; TODO add booleans, letrec.
   ; Primitive operations on numbers
-  (prim  ::= + - *)
+  (prim  ::= + - * == <= >=)
 
   ; Expressions
   (e     ::= v x (e e) (if e e e) (fix e)
