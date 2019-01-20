@@ -15,7 +15,7 @@
 %\transcriptnum {}                     % Numer indeksu
 \advisorgen     {dr. hab. Dariusza Biernackiego}
 \let\lll\undefined
-\usepackage{csquotes, amsmath, amssymb, biblatex, float}
+\usepackage{csquotes, amsmath, amssymb, biblatex, float, ebproof}
 %
 \usepackage[pdftex]{graphicx}
 \addbibresource{mybib.bib}
@@ -47,7 +47,7 @@ They allow for seamless composition of multiple effects, while retaining (unlike
 Coupled with handlers \cite{Plotkin2013} which give programmers ability to interpret effects, they provide a great tool for abstracting over a set of operations which some program may perform and separating this interface from semantics of those operations defined as effect handlers.
 
 % What are other approaches to algebraic effects
-As these features are highly desirable many calculi and languages have been developed in order to get them just right; most notable of them being: \emph{Koka} (featuring type inference, effect polymorphism with row-types and \emph{Javascript}-like syntax), \emph{Links} (featuring \emph{ML}-like syntax, row-typed effect polymorphism and ad-hoc effects) and \emph{Eff}\cite{Bauer2012} with implicit effect checking and recent work on direct compilation to \emph{OCaml}\cite{Kiselyov2018}.
+As these features are highly desirable many calculi and languages have been developed in order to get them just right; most notable of them being: \emph{Koka}\cite{Leijen2014} (featuring type inference, effect polymorphism with row-types and \emph{Javascript}-like syntax), \emph{Links}\cite{Hillerstrom2016} (featuring \emph{ML}-like syntax, row-typed effect polymorphism and ad-hoc effects) and \emph{Eff}\cite{Bauer2012} with implicit effect checking and recent work on direct compilation to \emph{OCaml}\cite{Kiselyov2018}.
 On more theoretical side, various approaches to semantics of algebraic effects can be spotted in literature, both in respect to type system and run-time semantics.
 Although most calculi use some form of row-types to implement tracking of effects there are differences in permitted shapes (at most one effect of given type or many effects), whether effects must be defined before use or not and how effects interact with polymorphism and abstraction.
 At run-time handlers can wrap the captured continuation (giving so-called deep handlers) or not (shallow handlers) and the very act of finding the right handler can be implemented in various ways, mainly depending on some constructs which skip handlers.
@@ -75,10 +75,10 @@ The key idea is to separate invocation of an effectful operation in an expressio
 When one invokes an operation, current continuation (up to nearest handler) is captured and passed along with operation's argument to nearest handler.
 The handler in turn may execute arbitrary expression, using the continuation once, twice, returning a function which calls the continuation or simply ignoring it.
 This way many control structures can be modeled and generalized by algebraic effects and appropriate handlers.
-For example, the exceptions can be modeled using a single operation \texttt{throw} and a handler which either returns the result when computation succeeded or returns default value, ignoring passed continuation.
+For example, the exceptions can be modeled using a single operation \texttt{Throw} and a handler which either returns the result when computation succeeded or returns default value, ignoring passed continuation.
 \begin{verbatim}
 handle e with
-| throw () r -> // return default value
+| Throw () r -> // return default value
 | return x   -> x
 end
 \end{verbatim}
@@ -103,14 +103,49 @@ This way code reuse can be accomplished without complicating the type system and
 The basis of implementation of this system is first order unification algorithm, which syntactically decomposes types and builds a substitution from type variables to types.
 
 \section{Reduction semantics and abstract machines}
+% TODO add reference to canonical definitions for good definition of reduction semantics and abstract machines, especially CEK
 Reduction semantics is a format for specifying dynamic semantics of a calculus in an operational style.
 The basic idea is to first define redexes - expressions which can be reduced, and contexts in which the reduction can happen.
-\begin{align*}
-  e &::= x \mid \lambda x . e \mid e e \\
-  E &::= \square \mid E e
-\end{align*}
-Then we have to define reduction relation, which generates a transition system for terms in the calculus.
-The rules usually take the form of redex in a context which reduces to some expression in a context.
+Taking \LC with call-by-value reduction order as an example, the only redex is application of a function to value $ (\lambda x . e) v $.
+The possible contexts are: empty context $ \square $ or evaluation of operator part of application $ E e $ or evaluation of operand $ v E $.
+\begin{figure}
+  \LC language definition  
+  \label{fig:lc-lang}
+\end{figure}
+With these possibilities in mind, we will define binary relation $ \longrightarrow $ which describes single step of reduction.
+Such relation can be thought of as a transition system, rewriting terms into simpler ones step by step.
+There usually are two approaches to definition of such relation:
+\begin{itemize}
+  \item Definition of primitive reduction $ (\lambda x . e) v \longrightarrow_p e\{v/x\} $ which operates only on redexes and giving it a closure via following inference rule:
+  \begin{prooftree}
+    \Hypo{e \longrightarrow_p e'}
+    \Infer1{E[e] \longrightarrow E[e']}
+  \end{prooftree},
+  which says that if we can primitively reduce some expression, than we can do it in any context.
+  \item Or definition of $ \longrightarrow $ directly, with decomposition of terms on both sides: $ E[(\lambda x . e) v] \longrightarrow E[e\{v/x\}] $
+\end{itemize}
+where the syntax $ e\{v/x\} $ means term $ e $ with value $ v $ substituted for variable $ x $, and $ E[e] $ means some context $ E $ with expression $ e $ inserted into the hole.
+For both approaches it is important, that any term can be uniquely decomposed into redex and context, because when it is the case, then the relation is deterministic and gives good basis for formulation of abstract machines, interpreters or transformations to some other intermediate representations.
+\begin{figure}
+  \LC reduction relation
+  \label{fig:lc-red}
+\end{figure}
+\begin{figure}
+  \LC reduction example
+  \label{fig:lc-red-example}
+\end{figure}
+
+Abstract machine is a mathematical construction, usually defined as a set of configurations with deterministic transformations, which are computationally simple.
+The goal for formulation of an abstract machine is to mechanize evaluation of terms while retaining semantics given in more abstract format, f.e. reduction semantics, with the correspondence being provable\cite{Felleisen2009}.
+As an example I will show a \emph{CEK}-machine for the \LC defined earlier.
+The name \emph{CEK} comes from \emph{C}ommand, \emph{E}nvironment and \emph{K}ontinuation.
+The machine configuration is a triple $ (e, \rho, \kappa) $ where $ e $ is an expression which is decomposed or reduced, $ \rho $ is an environment mapping variables to values, and the last component $ \kappa $ is a continuation stack, which determines what will happen with value, to which first component eventually reduces.
+Thanks to the environment we no longer have to explicitly perform substitution, leading to more machine friendly and efficient implementation.
+Given an initial state, the machine can then repeatedly apply transformation relation, either looping, arriving at a final value, or getting stuck. 
+\begin{figure}
+  \emph{CEK}-machine for \LC
+  \label{fig:lc-cek}
+\end{figure}
 
 \section{\Redex}
 % TODO: Redex section
