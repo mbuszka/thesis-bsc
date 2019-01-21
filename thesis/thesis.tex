@@ -55,7 +55,7 @@ At run-time handlers can wrap the captured continuation (giving so-called deep h
 % What am I implementing, what is interesting in this thesis, how it differs from other systems/languages (The main goal of the thesis)
 All this variety naturally invites Us to experiment with different features and components of a calculus.
 In this thesis I will build such a calculus, describing and justifying my choices and discussing the trade-offs I faced.
-In order to to rapidly iterate on design and test the calculus, I decided to use \Redex library which allows for building executable type system judgments and reduction relation.
+In order to rapidly iterate on design and test the calculus, I decided to use \Redex library which allows for building language model with executable type system judgments and reduction relation.
 As such the other goal of my thesis was to assess viability of \Redex for development of bigger calculi.
 To briefly summarize my development, the calculus consists of: 
 \begin{itemize}
@@ -66,7 +66,7 @@ To briefly summarize my development, the calculus consists of:
 \end{itemize}
 
 % Outline of the thesis
-The rest of this thesis is structured as follows: In \autoref{ch:calculus} I describe the calculus in greater detail, in \autoref{ch:implementation} I discuss technicalities of implementation, in \autoref{ch:racket} I summarize the process of integration with \Racket environment and \autoref{ch:manual} is user's manual.
+The rest of this thesis is structured as follows: in \autoref{ch:calculus} I describe the calculus in greater detail, in \autoref{ch:implementation} I discuss technicalities of implementation, in \autoref{ch:racket} I summarize the process of integration with \Racket environment and \autoref{ch:manual} is user's manual.
 In the reminder of this chapter I introduce main topics of this thesis.
 
 \section{Algebraic effects and handlers}
@@ -151,9 +151,12 @@ Given an initial state, the machine can then repeatedly apply transformation rel
 % TODO: Redex section
 
 \chapter{The calculus}\label{ch:calculus}
-The calculus implemented in this thesis is based on lambda calculus with call-by-value semantics, similarly to other calculi which allow for computational effects, because fixed evaluation order is essential to obtaining sane program semantics.
+The calculus implemented in this thesis is based on lambda calculus with call-by-value semantics.
+This choice follows other calculi which allow for computational effects, because fixed evaluation order is essential to obtaining sane program semantics.
 Inspired by Links \cite{Hillerstrom2016} the operations are truly ad-hoc meaning that they don't have to be declared before usage.
 Moreover the calculus requires no type annotations whatsoever in spirit of \emph{ML} family of languages while still tracking effects which occur in a program.
+The \LC is extended with base types (Numeric and Boolean) with corresponding operations and literals, conditional expression and recursive functions.
+Effectful operations are invoked similarly to function calls and are handled using \textit{handle} construct, they may also be lifted with \textit{lift} syntactic form.
 
 \section{Abstract syntax}
 \begin{figure}
