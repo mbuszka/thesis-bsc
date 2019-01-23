@@ -110,6 +110,7 @@ Taking \LC with call-by-value reduction order as an example, the only redex is a
 The possible contexts are: empty context $ \square $ or evaluation of operator part of application $ E e $ or evaluation of operand $ v E $.
 \begin{figure}
   \LC language definition  
+  \caption{\LC abstract syntax}
   \label{fig:lc-lang}
 \end{figure}
 With these possibilities in mind, we will define binary relation $ \longrightarrow $ which describes single step of reduction.
@@ -128,10 +129,12 @@ where the syntax $ e\{v/x\} $ means term $ e $ with value $ v $ substituted for 
 For both approaches it is important, that any term can be uniquely decomposed into redex and context, because when it is the case, then the relation is deterministic and gives good basis for formulation of abstract machines, interpreters or transformations to some other intermediate representations.
 \begin{figure}
   \LC reduction relation
+  \caption{\LC reduction relation}
   \label{fig:lc-red}
 \end{figure}
 \begin{figure}
   \LC reduction example
+  \caption{\LC example reduction sequence}
   \label{fig:lc-red-example}
 \end{figure}
 
@@ -144,6 +147,7 @@ Thanks to the environment we no longer have to explicitly perform substitution, 
 Given an initial state, the machine can then repeatedly apply transformation relation, either looping, arriving at a final value, or getting stuck. 
 \begin{figure}
   \emph{CEK}-machine for \LC
+  \caption{\LC abstract machine}
   \label{fig:lc-cek}
 \end{figure}
 
@@ -153,27 +157,34 @@ Given an initial state, the machine can then repeatedly apply transformation rel
 \chapter{The calculus}\label{ch:calculus}
 The calculus implemented in this thesis is based on lambda calculus with call-by-value semantics.
 This choice follows other calculi which allow for computational effects, because fixed evaluation order is essential to obtaining sane program semantics.
-Inspired by Links \cite{Hillerstrom2016} the operations are truly ad-hoc meaning that they don't have to be declared before usage.
+Inspired by \emph{Links} \cite{Hillerstrom2016} the operations are truly ad-hoc meaning that they don't have to be declared before usage.
 Moreover the calculus requires no type annotations whatsoever in spirit of \emph{ML} family of languages while still tracking effects which occur in a program.
 The \LC is extended with base types (Numeric and Boolean) with corresponding operations and literals, conditional expression and recursive functions.
-Effectful operations are invoked similarly to function calls and are handled using \textit{handle} construct, they may also be lifted with \textit{lift} syntactic form.
+Effectful operations are invoked similarly to function calls (although they are a distinct syntactic category) and are handled using \textit{handle} construct, they may also be lifted with \textit{lift} syntactic form.
+Usually the operation will be handled by the closest handler with appropriate case, unless there is a lift for this operation in between, each one causing operation to skip one handler.
+Abstract syntax of the calculus is presented in \autoref{fig:algeff-syntax}
 
-\section{Abstract syntax}
 \begin{figure}
-  \centering
-  \includegraphics{language}
+  Calculus abstract syntax
+  \caption{Abstract syntax}
+  \label{fig:algeff-syntax}
 \end{figure}
-Abstract syntax of comprises of forms standard to \LC ($\lambda$ abstractions, variables and applications), extended with number literals and primitive numerical operations (which allow for some example computation), and syntactic forms used by algebraic effects - operation invocations, handle expressions and lift expressions.
-Inspired by calculus of Links described in ??? operations are a distinct syntactic category, while lift construct was introduced in Biernacki et. al. % TODO reference
 
 \section{Static semantics}
-The type system is based on Koka (Leijen's style of row types) and Links systems (ad-hoc operations).
-As the calculus is defined in Curry-style the inference rules describe type reconstruction algorithm.
+The type system is based on \emph{Koka}(Leijen's style of row types\cite{Leijen2005}), \emph{Links}\cite{Hillerstrom2016} (ad-hoc operations) and Biernacki et al. \cite{Biernacki2017} (lift construct) systems.
+Initially I implemented a variant of System-F extended with row-types but it proved to be a bit of a mouthful to write even simplest programs.
+Moreover the \texttt{Redex}'s facilities for automatic testing were not able to generate well typed terms, so some type inference was inevitable.
+To limit the amount of work I decided to present the calculus in Curry style, with typing relation inferring the type for unannotated terms.
+Building on well known foundations, types are inferred via first order unification.
+The system does not feature polymorphism in first class fashion, as there is no rule where types are generalized, but I believe it to be a straightforward addition, following the \emph{Koka}\cite{Leijen2014} calculus.
+Still, after inferring type of an expression, we can see which unification variables are left abstract and could be generalized.
+There are two main features differentiating this system from \emph{Koka}'s; firstly effects need not be defined before use, their signature is inferred as with any other construction; secondly the system is algorithmic, with rules explicitly encoding a recursive function which can infer the type of an expression.
 
-\subsection{Row types}
+\subsection{Row-types}
 Row types as described in \cite{Leijen2005}
 
 \subsection{Type inference}
+The judgment $ (infer \, \Gamma \, [S_1 \, N_1] \, e \, t \, row \, [S_2 \, N_2]) $ asserts that in typing context $ \Gamma $ under type substitution $ S $, with name supply state $ N_1 $ expression $ e $ has type $ t $ with effects $ row $ under type substitution $ S_2 $ and with name supply state $ S_2 $.
 The main judgment \emph{infer} infers a type and effect row, and calculates new substitution, given typing environment, current substitution and an expression.
 As in \emph{ML} languages only simple types can be inferred, along with effect rows 
 
