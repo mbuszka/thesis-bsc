@@ -6,6 +6,8 @@ FIGURES = $(patsubst %,$(TDIR)/%.pdf,$(_FIGURES))
 
 .PHONY : figures thesis clean
 
+all: figures thesis
+
 figures:
 	algeff/render.rkt
 
@@ -17,4 +19,4 @@ thesis: $(FIGURES)
 
 clean:
 	rm -f figures/* $(FIGURES)
-	cd thesis && latexmk -c && rm thesis.bbl thesis.run.xml thesis.synctex.gz
+	cd thesis && latexmk -c && rm -f thesis.bbl thesis.run.xml thesis.synctex.gz

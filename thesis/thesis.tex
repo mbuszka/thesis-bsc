@@ -185,15 +185,33 @@ There are two main features differentiating this system from \emph{Koka}'s; firs
 Row types as described in \cite{Leijen2005}
 
 \subsection{Type inference}
-The judgment $ (infer \, \Gamma \, [S_1 \, N_1] \, e \, t \, row \, [S_2 \, N_2]) $ asserts that in typing context $ \Gamma $ under type substitution $ S $, with name supply state $ N_1 $ expression $ e $ has type $ t $ with effects $ row $ under type substitution $ S_2 $ and with name supply state $ S_2 $.
-The main judgment \emph{infer} infers a type and effect row, and calculates new substitution, given typing environment, current substitution and an expression.
-As in \emph{ML} languages only simple types can be inferred, along with effect rows
+The judgment $ \Gamma \mid [S_1 \, N_1] \vdash e \, : \, t \, ! \, row \mid [S_2 \, N_2] $ asserts that in typing context $ \Gamma $ under type substitution $ S_1 $, with name supply state $ N_1 $ expression $ e $ has type $ t $ with effects $ row $ under type substitution $ S_2 $ and with name supply state $ S_2 $.
+Algorithmically this judgment infers a type and effect row, and calculates new substitution, given typing environment, current substitution and an expression.
+As in \emph{ML} languages only simple types can be inferred, along with effect rows.
+Base rules for constants and variable lookup are straightforward, each introducing fresh effect row variable.
+To check $ \lambda $ expression, we first introduce fresh type variable, and then check the body in extended environment.
+The arrow gets annotated with effects which may occur during evaluation of the body and the $ \lambda $ abstraction itself is returned with fresh effect row.
+The recursive function checking is similar to normal functions.
+First variable denotes function itself, while second it's argument.
+Accordingly the environment gets extended with functional type $ t_1 \rightarrow row_1 t_2 $ to check the body of the function, and afterwards the result type of body $ t $ gets unified with the result type of function $ t_2 $, same with effect row.
+Whole function, as it is a value, is returned with fresh effect row.
+The application requires expression at function position to be of functional type and parameter type to unify with argument type.
+All effect rows (from evaluation of function value, argument value and function body) must unify as well.
+The checking of primitive operation gets deferred to auxiliary judgment, which checks arity and argument types, returning result type and usually fresh effect row.
+Conditional expression requires the condition expression to be of type $ Bool $ and types of two branches to unify.
+As usual all effect rows must also unify.
+Operation invocation requires the effect row to contain operation $ op $ whose input type is the inferred type for $ e $ and output type being fresh.
+Operation lifting prepends fresh $ op $ to the effect row of $ e $.
+Finally, to check handle expression we first infer the type of enclosed expression $ e $, then in environment extended with $e$'s type $ t_1 $ we infer return expression's type $ t_ret $.
+Helper judgment \textit{infer-handlers} returns the result effect row of handlers $ row_{out} $ and row marking handled effects $ row_{handled} $ whose tail is the same as result's.
+By unifying result row with return row and handled row with $ row_1 $ we ensure that effects which may occur during handling of operations, at return and leftovers from the inner expression are all accounted for.
+
 
 \begin{figure}
   \centering
   \includegraphics{algeff-infer.pdf}
   \caption{Type system} 
-  \label{fig:algeff-infer}
+  \label{fig:algeff-infer} 
 \end{figure}
 
 \subsection{Effect handlers}
@@ -202,7 +220,7 @@ As in \emph{ML} languages only simple types can be inferred, along with effect r
 \section{Reduction semantics}
 \begin{figure}
   \centering
-  \includegraphics{algeff-red.pdf} 
+  \includegraphics{algeff-red.pdf}
   \caption{Reduction relation} 
   \label{fig:algeff-red}
 \end{figure}

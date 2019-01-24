@@ -7,7 +7,9 @@
 
 (define-language Infer
   ; Values
-  (v     ::= number (λ x e) (rec x x e) true false)
+  (b     ::= true false)
+  (m     ::= number)
+  (v     ::= m b (λ x e) (rec x x e))
   ; TODO add booleans, letrec.
   ; Primitive operations on numbers
   (prim  ::= + - * == <= >=)

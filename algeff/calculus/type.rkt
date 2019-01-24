@@ -22,17 +22,13 @@
 
   [(fresh-row N_1 row N_2)
    ---------------------------------------
-   (infer Γ [S N_1] true Bool row [S N_2])]
+   (infer Γ [S N_1] b Bool row [S N_2])]
 
-  [(fresh-row N_1 row N_2)
-   ---------------------------------------
-   (infer Γ [S N_1] false Bool row [S N_2])]
-  
   [;(trace ("=== inferring number ===\n~s\n" number))
    (fresh-row N_1 row N_2)
    ;(trace ("<<< inferred number <<<\n~s\n~s\n" (apply S Int) (apply S row)))
    --------------
-   (infer Γ [S N_1] number Int row [S N_2])]
+   (infer Γ [S N_1] m Int row [S N_2])]
   
   [;(trace ("=== inferring variable ===\n~s\n" x))
    (lookup Γ x t) (fresh-row N_1 row N_2)
