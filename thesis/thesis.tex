@@ -109,9 +109,9 @@ The basic idea is to first define redexes - expressions which can be reduced, an
 Taking \LC with call-by-value reduction order as an example, the only redex is application of a function to value $ (\lambda x . e) v $.
 The possible contexts are: empty context $ \square $ or evaluation of operator part of application $ E e $ or evaluation of operand $ v E $.
 \begin{figure}
-  \LC language definition  
+  \includegraphics{lc-syntax.pdf}
   \caption{\LC abstract syntax}
-  \label{fig:lc-lang}
+  \label{fig:lc-syntax}
 \end{figure}
 With these possibilities in mind, we will define binary relation $ \longrightarrow $ which describes single step of reduction.
 Such relation can be thought of as a transition system, rewriting terms into simpler ones step by step.
@@ -128,7 +128,7 @@ There usually are two approaches to definition of such relation:
 where the syntax $ e\{v/x\} $ means term $ e $ with value $ v $ substituted for variable $ x $, and $ E[e] $ means some context $ E $ with expression $ e $ inserted into the hole.
 For both approaches it is important, that any term can be uniquely decomposed into redex and context, because when it is the case, then the relation is deterministic and gives good basis for formulation of abstract machines, interpreters or transformations to some other intermediate representations.
 \begin{figure}
-  \LC reduction relation
+  \includegraphics{lc-red.pdf} 
   \caption{\LC reduction relation}
   \label{fig:lc-red}
 \end{figure}
@@ -165,7 +165,8 @@ Usually the operation will be handled by the closest handler with appropriate ca
 Abstract syntax of the calculus is presented in \autoref{fig:algeff-syntax}
 
 \begin{figure}
-  Calculus abstract syntax
+  \centering
+  \includegraphics{algeff-syntax.pdf}
   \caption{Abstract syntax}
   \label{fig:algeff-syntax}
 \end{figure}
@@ -186,12 +187,26 @@ Row types as described in \cite{Leijen2005}
 \subsection{Type inference}
 The judgment $ (infer \, \Gamma \, [S_1 \, N_1] \, e \, t \, row \, [S_2 \, N_2]) $ asserts that in typing context $ \Gamma $ under type substitution $ S $, with name supply state $ N_1 $ expression $ e $ has type $ t $ with effects $ row $ under type substitution $ S_2 $ and with name supply state $ S_2 $.
 The main judgment \emph{infer} infers a type and effect row, and calculates new substitution, given typing environment, current substitution and an expression.
-As in \emph{ML} languages only simple types can be inferred, along with effect rows 
+As in \emph{ML} languages only simple types can be inferred, along with effect rows
+
+\begin{figure}
+  \centering
+  \includegraphics{algeff-infer.pdf}
+  \caption{Type system} 
+  \label{fig:algeff-infer}
+\end{figure}
 
 \subsection{Effect handlers}
 
 
-\section{Dynamic semantics}
+\section{Reduction semantics}
+\begin{figure}
+  \centering
+  \includegraphics{algeff-red.pdf} 
+  \caption{Reduction relation} 
+  \label{fig:algeff-red}
+\end{figure}
+
 
 \section{Abstract machine}
 

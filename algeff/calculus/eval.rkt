@@ -79,10 +79,9 @@
         (in-hole E (substitute e x v))
         handle-return)
    
-   (--> (in-hole E_out
-                 (handle (in-hole E_in (op v)) hs ret))
-        (in-hole E_out (substitute (substitute e x_1 v)
-                                   x_2 (λ v:z (handle (in-hole E_in v:z) hs ret))))
+   (--> (in-hole E_1 (handle (in-hole E_2 (op v)) hs ret))
+        (in-hole E_1 (substitute (substitute e x_1 v)
+                                 x_2 (λ v:z (handle (in-hole E_2 v:z) hs ret))))
         (judgment-holds (free op E_in 0))
         (judgment-holds (get-handler op hs (x_1 x_2 e)))
         (fresh v:z)

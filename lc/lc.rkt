@@ -2,6 +2,8 @@
 
 (require redex)
 
+(provide LC red)
+
 (define-language LC
   (v ::= (λ x e) number)
   (e ::= v (e e) x)
