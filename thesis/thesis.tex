@@ -188,6 +188,14 @@ Row types as described in \cite{Leijen2005}
 The judgment $ \Gamma \mid [S_1 \, N_1] \vdash e \, : \, t \, ! \, row \mid [S_2 \, N_2] $ asserts that in typing context $ \Gamma $ under type substitution $ S_1 $, with name supply state $ N_1 $ expression $ e $ has type $ t $ with effects $ row $ under type substitution $ S_2 $ and with name supply state $ S_2 $.
 Algorithmically this judgment infers a type and effect row, and calculates new substitution, given typing environment, current substitution and an expression.
 As in \emph{ML} languages only simple types can be inferred, along with effect rows.
+
+\begin{figure}
+  \centering
+  \includegraphics{algeff-infer.pdf}
+  \caption{Type system} 
+  \label{fig:algeff-infer} 
+\end{figure}
+
 Base rules for constants and variable lookup are straightforward, each introducing fresh effect row variable.
 To check $ \lambda $ expression, we first introduce fresh type variable, and then check the body in extended environment.
 The arrow gets annotated with effects which may occur during evaluation of the body and the $ \lambda $ abstraction itself is returned with fresh effect row.
@@ -206,18 +214,25 @@ Finally, to check handle expression we first infer the type of enclosed expressi
 Helper judgment \textit{infer-handlers} returns the result effect row of handlers $ row_{out} $ and row marking handled effects $ row_{handled} $ whose tail is the same as result's.
 By unifying result row with return row and handled row with $ row_1 $ we ensure that effects which may occur during handling of operations, at return and leftovers from the inner expression are all accounted for.
 
-
-\begin{figure}
-  \centering
-  \includegraphics{algeff-infer.pdf}
-  \caption{Type system} 
-  \label{fig:algeff-infer} 
-\end{figure}
-
 \subsection{Effect handlers}
 
 
-\section{Reduction semantics}
+\section{Dynamic semantics}
+The dynamic semantics is defined in the format of contextual reduction semantics.
+With syntax of execution contexts in \autoref{fig:algeff-syntax} we see that they describe computation in call-by-value order, with expressions in applications (both normal and primitive) being evaluated left to right.
+All rules perform reduction in some context $ E $ leaving it unchanged.
+First rule describes standard $ \beta $ reduction via substitution of argument for variable in function body, while the second $ \beta $ reduction of recursive function, where first we substitute the function for function variable and then substitute the argument.
+Next rule deals with built-in primitive operations, delegating to auxiliary function \textit{prim-apply} which pattern matches on $ prim $ and performs appropriate operation.
+Next two rules perform choice of correct branch in conditional expression depending on value of condition.
+The rule \textit{lift-compat} returns value from lift expression, leaving it unchanged.
+The rule \textit{handle-return} handles the case when inner expression of handle expression evaluates to a value, which means we have to evaluate return clause - by substituting the result value for $ x $, and plugging this expression into evaluation context $ E $.
+The last rule \textit{handle-op} describes the behavior when an expression calls some operation.
+Before we can define it's behavior we must define notion of \textit{free}ness.
+The judgment $ free[ \, op , \, E , \, n] $ asserts that operation $ op $ is $ n $ free in evaluation context $ E $, which means that it will be handled by $ n + 1 $-st handler \emph{outside} the context $ E $ \cite{Biernacki2017}.
+With this definition in mind, we can see that to handle an operation we must find $0$-$free$ inner context $ E_2 $ which is directly surrounded by handle expression which has a case for $ op $.
+Then we substitute value $ v $ for first variable of operation handler and the inner context $ E_2 $ surrounded with the very same handler (the continuation delimited by the handler) closed in a lambda for the second argument.
+This way the operation handler can resume the evaluation of expression which invoked the handled operation.
+
 \begin{figure}
   \centering
   \includegraphics{algeff-red.pdf}
