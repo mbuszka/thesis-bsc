@@ -29,6 +29,7 @@
       (begin
         (render-language Infer (mk-path "algeff-syntax.eps"))
         (render-judgment-form infer (mk-path "algeff-infer.eps"))
+        (render-judgment-form infer-handlers (mk-path "algeff-infer-handlers.eps"))
         (render-reduction-relation red (mk-path "algeff-red.eps"))
         (render-language lc:LC (mk-path "lc-syntax.eps"))
         (render-reduction-relation lc:red (mk-path "lc-red.eps"))

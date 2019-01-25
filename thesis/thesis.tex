@@ -26,6 +26,7 @@
 \newcommand{\Redex}{\texttt{PLT Redex} }
 \newcommand{\Racket}{\texttt{Racket} }
 \newcommand{\LC}{\(\lambda\)-calculus }
+\mathchardef\mhyphen="2D % Define a "math hyphen"
 %
 \begin{document}
 %
@@ -215,6 +216,25 @@ Helper judgment \textit{infer-handlers} returns the result effect row of handler
 By unifying result row with return row and handled row with $ row_1 $ we ensure that effects which may occur during handling of operations, at return and leftovers from the inner expression are all accounted for.
 
 \subsection{Effect handlers}
+
+\begin{figure}
+  \centering
+  \includegraphics{algeff-infer-handlers.pdf}
+  \caption{Handlers type inference} 
+  \label{fig:algeff-infer-handlers} 
+\end{figure} 
+
+List of effect handlers $ hs $ is processed right-to-left by judgment 
+$$ infer\mhyphen handlers [\Gamma , \, SN_{in} , \, t_{ret} , \, hs , \, row_{out} , \, row_{handled} , \, SN_{out}] $$
+The $ t_{ret} $ is the type of return clause, $ row_{out} $ is the combined row of effects which may occur in any handler and $ row_{handled} $ is the row of handled operations, with appropriate types.
+The base case of empty list initializes both rows with the same type variable, this way $ row_{handled} $ returned by $infer\mhyphen handlers$ judgment will first have all handled operations and it's tail will be the same as $ row_{out} $.
+The inductive case first calculates $ row_{out} $ and $ row_{handled} $ for the tail of the list.
+Then two new fresh variables are created: $ t_v $ for the type of value passed to handler and $ t_r $ for type of resumption parameter.
+Resumption's result type is the result type of return clause as it should eventually evaluate to a value, which will be transformed by that clause.
+It's effect row is the same as the result row of whole handle expression, this means that any subsequent uses of operations will be handled by this handler.
+With environment extended with $ t_v $ for first parameter - an argument to handler expression and $ t_r \rightarrow row_{out} \, t_{ret} $ for second parameter - the resumption, we check the handler expression $ e $.
+We then unify the effects of evaluating $ e $ with all effects of handlers, and result type $ t_{h} $ with return type $ t_{ret} $.
+At last we extend handled row with current operation $ (op (t_v \Rightarrow t_r)) $
 
 
 \section{Dynamic semantics}
