@@ -98,7 +98,7 @@ Type inference is a technique of algorithmic reconstruction of types for various
 It allows programmers to write programs with no type annotations, which often feel redundant and obfuscate the meaning of a program.
 The most well known type system with inference is a system for \emph{ML} family of languages - \emph{Haskell}, \emph{OCaml}, \emph{SML} which infers the types with no annotations whatsoever.
 Formal type system defines grammar of types consisting of base types (\texttt{int}, \texttt{bool} etc.), type constructors (arrows, algebraic data types) and type variables.
-The typing rules require types which should be compatible (f.e. formal parameter and argument types) to unify.
+The typing rules require types which should be compatible (e.g. formal parameter and argument types) to unify.
 The key feature of this system is so called let-polymorphism - generalization of types of let-bound variables.
 This way code reuse can be accomplished without complicating the type system and compromising type safety.
 The basis of implementation of this system is first order unification algorithm, which syntactically decomposes types and builds a substitution from type variables to types.
@@ -140,7 +140,7 @@ For both approaches it is important, that any term can be uniquely decomposed in
 \end{figure}
 
 Abstract machine is a mathematical construction, usually defined as a set of configurations with deterministic transformations, which are computationally simple.
-The goal for formulation of an abstract machine is to mechanize evaluation of terms while retaining semantics given in more abstract format, f.e. reduction semantics, with the correspondence being provable\cite{Felleisen2009}.
+The goal for formulation of an abstract machine is to mechanize evaluation of terms while retaining semantics given in more abstract format, e.g. reduction semantics, with the correspondence being provable\cite{Felleisen2009}.
 As an example I will show a \emph{CEK}-machine for the \LC defined earlier.
 The name \emph{CEK} comes from \emph{C}ommand, \emph{E}nvironment and \emph{K}ontinuation.
 The machine configuration is a triple $ (e, \rho, \kappa) $ where $ e $ is an expression which is decomposed or reduced, $ \rho $ is an environment mapping variables to values, and the last component $ \kappa $ is a continuation stack, which determines what will happen with value, to which first component eventually reduces.
@@ -258,20 +258,87 @@ This way the operation handler can resume the evaluation of expression which inv
   \includegraphics{algeff-red.pdf}
   \caption{Reduction relation} 
   \label{fig:algeff-red}
-\end{figure}
+\end{figure} 
 
 
 \section{Abstract machine}
+Abstract machine is based on \emph{CEK}-machine of Hillerström and Lindley\cite{Hillerstrom2016}, with the difference that during the search for operation handler, machine must count handlers and lifts it passes.
 
+\begin{figure}
+  \centering
+  \includegraphics{algeff-am-syntax.pdf}
+  \caption{Abstract machine configurations}
+  \label{fig:algeff-am-syntax}
+\end{figure}
+
+Possible configurations are given in \autoref{fig:algeff-am-syntax}.
+Meta-variable $ C $ ranges over shapes of machine configurations, meta-variable $ V $ ranges over machine values, which are distinct from calculus value, e.g. function values must now keep their environment $ \rho $ which maps variables to machine values.
+Additionally one of possible values is a \emph{meta-stack} which one may think of as a continuation captured during operation invocation.
+Meta-variable $ \sigma $ defines normal (or pure) continuation frames and $ \Sigma $ denotes pure continuation \emph{stack}, while $ \phi $ ranges over effect frames - \emph{handle}, \emph{lift} and \emph{done} token which marks final continuation.
+Meta-variable $ \kappa $ denotes meta-frame which consists of pure stack and one effect frame.
+Finally $ K $ ranges over stacks of meta-frames, which I will call \emph{meta-stack}s.
+Meta-function \emph{initial-conf} in \autoref{fig:algeff-am-initial-conf} transforms an expression into initial configuration - initializing machine with empty stack and meta-stack and '\emph{done}' effect frame.
+
+\begin{figure}
+  \centering
+  \includegraphics{algeff-am-initial-conf.pdf}
+  \caption{Abstract machine - initial configuration}
+  \label{fig:algeff-am-initial-conf}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics{algeff-am-a.pdf} 
+  \caption{Abstract machine - administrative transitions}
+  \label{fig:algeff-am-a}
+\end{figure}
+
+The first group of transitions depicted in \autoref{fig:algeff-am-a} performs mostly administrative functions - capturing environment for functional values, transforming from value terms to machine values, sequencing binary operations, switching to special configuration for search of handler and a transition for returning final value.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics{algeff-am-b.pdf} 
+  \caption{Abstract machine - continuation building}
+  \label{fig:algeff-am-b}
+\end{figure}
+
+Second group of transitions (\autoref{fig:algeff-am-b}) decomposes current expression and builds continuation by growing either stack or meta-stack.
+First four rules - for function application, operation invocation, primitive operation call and conditional expression - all create a new pure frame and push it onto stack.
+Last two transitions deal with effectful operations - handle and lift; they build meta-stack by bundling previous effect frame with current stack into meta-frame, pushing it onto meta-stack and then installing fresh stack and new effect frame into machine configuration.
+
+\begin{figure}[h]
+  \centering 
+  \includegraphics{algeff-am-c.pdf}
+  \caption{Abstract machine - contractions}
+  \label{fig:algeff-am-c}
+\end{figure}
+
+Third group of transitions (\autoref{fig:algeff-am-c}) perform various reductions.
+First rule looks up value of a variable in current environment, second rule performs contraction of normal function, by extending the environment with mapping from function's formal parameter $ x $ to calculated value $ V $.
+Third rule reduces recursive function, extending environment with argument value $ V $ and function value, allowing for recursive calls.
+Last rule handling application deals with continuation resumption, by pushing current stack and effect frame ($ [(\sigma \ldots) \, \phi_1] $) onto meta-stack, installing the top ($ [\Sigma \, \phi_2] $) of captured meta-stack and prepending it's tail ($ (\kappa_1 \ldots) $) to meta-stack.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics{algeff-am-e.pdf}
+  \caption{Abstract machine - effect handling}
+  \label{fig:algeff-am-e}
+\end{figure}
+
+Transitions in last group form essence of this machine, performing all tasks related to effect handling.
+First four rules search for appropriate handler for $ op $ by maintaining a counter $ n $ which is incremented by every lift for $ op $ and decremented by every handler for $ op $.
+Fifth rule matches when the counter is $ 0 $ and handler has a case for operation which was invoked. 
+In this situation, the machine must begin evaluation of handling expression, first extending environment with passed argument and captured continuation with current meta-frame appended.
+Two last rules deal with returning values - in case of handler the return clause is installed, and in case of lift it's frame is simply discarded.
 
 \chapter{Implementation}\label{ch:implementation}
 
 \section{\Redex}
 % scaling problems
 
-\section{Typing relation}
-
 \section{Unification}
+
+\section{Typing relation}
 
 \section{Reduction relation}
 

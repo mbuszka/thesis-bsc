@@ -4,8 +4,9 @@
          racket/match
          "calculus/lang.rkt"
          "calculus/type.rkt"
+         "calculus/abstract-machine.rkt"
          (only-in "calculus/eval.rkt" red)
-         (only-in "calculus/abstract-machine.rkt" abstract-machine)
+         (only-in "calculus/abstract-machine.rkt" am-a am-b am-c am-e initial-conf)
          (prefix-in lc: "../lc/lc.rkt"))
 
 (define (render path)
@@ -31,6 +32,14 @@
         (render-judgment-form infer (mk-path "algeff-infer.eps"))
         (render-judgment-form infer-handlers (mk-path "algeff-infer-handlers.eps"))
         (render-reduction-relation red (mk-path "algeff-red.eps"))
+        (render-language AM (mk-path "algeff-am-syntax.eps"))
+        (render-reduction-relation am-a (mk-path "algeff-am-a.eps"))
+        (render-reduction-relation am-b (mk-path "algeff-am-b.eps"))
+        (parameterize ([rule-pict-style 'vertical])
+          (begin
+            (render-reduction-relation am-c (mk-path "algeff-am-c.eps"))
+            (render-reduction-relation am-e (mk-path "algeff-am-e.eps"))))
+        (render-metafunction initial-conf (mk-path "algeff-am-initial-conf.eps"))
         (render-language lc:LC (mk-path "lc-syntax.eps"))
         (render-reduction-relation lc:red (mk-path "lc-red.eps"))
         ))))

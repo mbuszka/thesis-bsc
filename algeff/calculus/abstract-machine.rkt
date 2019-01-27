@@ -5,11 +5,11 @@
          redex
          )
 
-(provide abstract-machine reduce)
+(provide abstract-machine am-a am-b am-c am-e reduce initial-conf AM)
 
 (define-extended-language AM Infer
   ; Machine configuration
-  (C ::= (e ρ K) (V ρ K) (op V natural K K) V)
+  (C ::= (e ρ Σ ϕ K) (V ρ Σ ϕ K) (op V n K K) V)
 
   ; Machine values
   (V ::= (λ ρ x e) (rec ρ x x e) (val number) (val true) (val false) K)
@@ -19,12 +19,13 @@
 
   ; Pure continuation frames
   (σ ::= (arg e ρ) (app V) (do op) (prim-l prim e ρ) (prim-r prim V) (if e e ρ))
+  (Σ ::= (σ ...))
 
   ; Effect continuation frames
-  (ϕ ::= (handle hs ret ρ) (lift op))
+  (ϕ ::= (handle hs ret ρ) (lift op) done)
 
   ; Continuation frame
-  (κ ::= ([σ ...] ϕ))
+  (κ ::= (Σ ϕ))
 
   ; Continuation
   (K ::= (κ ...)))
@@ -34,108 +35,123 @@
 (define-metafunction AM
   initial-conf : e -> C
 
-  [(initial-conf e) (e () ([() (handle () (return v:x v:x) ())]))])
+  [(initial-conf e) (e () () done ())])
 
-(define abstract-machine
+(define am-a
+  (reduction-relation
+   AM
+   ; Value conversion
+   (--> ((λ x e) ρ Σ ϕ K)
+        ((λ ρ x e) ρ Σ ϕ K))
+
+   (--> ((rec x_f x_a e) ρ Σ ϕ K)
+        ((rec ρ x_f x_a e) ρ Σ ϕ K))
+
+   (--> (number ρ Σ ϕ K)
+        ((val number) ρ Σ ϕ K))
+
+   ; Binary operation sequencing
+   (--> (V ρ_1 ([arg e ρ_2] σ ...) ϕ K)
+        (e ρ_2 ([app V] σ ...) ϕ K))
+
+   (--> (V ρ_1 ([prim-l prim e ρ_2] σ ...) ϕ K)
+        (e ρ_2 ([prim-r prim V] σ ...) ϕ K))
+
+   ; Operation invocation
+   (--> (V ρ ([do op] σ ...) ϕ (κ ...))
+        (op V 0 ([(σ ...) ϕ] κ ...) ()))
+
+   (--> (V ρ () done ())
+        V)
+   ))
+
+(define am-b
+  (reduction-relation
+   AM
+   ; Continuation building normal
+   (--> ((e_1 e_2) ρ (σ ...) ϕ K)
+        (e_1 ρ ([arg e_2 ρ] σ ...) ϕ K))
+
+   (--> ((op e) ρ (σ ...) ϕ K)
+        (e ρ ([do op] σ ...) ϕ K))
+
+   (--> ((prim e_1 e_2) ρ (σ ...) ϕ K)
+        (e_1 ρ ([prim-l prim e_2 ρ] σ ...) ϕ K))
+
+   (--> ((if e_cond e_then e_else) ρ (σ ...) ϕ K)
+        (e_cond ρ ([if e_then e_else ρ] σ ...) ϕ K))
+
+   ; Continuation building effect
+   (--> ((handle e hs ret) ρ Σ ϕ (κ ...))
+        (e ρ () (handle hs ret ρ) ([Σ ϕ] κ ...)))
+
+   (--> ((lift op e) ρ  Σ ϕ (κ ...))
+        (e ρ () (lift op) ([Σ ϕ] κ ...)))
+   ))
+
+(define am-c
   (reduction-relation
    AM
    ; Variable lookup
-   (--> (x ρ K)
-        ((lookup-ρ ρ x) ρ K))
-
-   ; Value conversion
-   (--> ((λ x e) ρ K)
-        ((λ ρ x e) ρ K))
-
-   (--> ((rec x_f x_a e) ρ K)
-        ((rec ρ x_f x_a e) ρ K))
-
-   (--> (number ρ K)
-        ((val number) ρ K))
-
-   ; Continuation building normal
-   (--> ((e_1 e_2) ρ K)
-        (e_1 ρ (push-normal (arg e_2 ρ) K)))
-
-   (--> ((op e) ρ K)
-        (e ρ (push-normal (do op) K)))
-
-   (--> ((prim e_1 e_2) ρ K)
-        (e_1 ρ (push-normal (prim-l prim e_2 ρ) K)))
-
-   (--> ((if e_cond e_then e_else) ρ K)
-        (e_cond ρ (push-normal (if e_then e_else ρ) K)))
-
-   ; Continuation building effect
-   (--> ((handle e hs ret) ρ K)
-        (e ρ (push-effect (handle hs ret ρ) K)))
-
-   (--> ((lift op e) ρ K)
-        (e ρ (push-effect (lift op) K)))
-
-   ; Binary operation sequencing
-   (--> (V ρ_1 ([([arg e ρ_2] σ ...) ϕ] κ ...))
-        (e ρ_2 ([([app V] σ ...) ϕ] κ ...)))
-
-   (--> (V ρ_1 ([([prim-l prim e ρ_2] σ ...) ϕ] κ ...))
-        (e ρ_2 ([([prim-r prim V] σ ...) ϕ] κ ...)))
+   (--> (x ρ Σ ϕ K)
+        ((lookup-ρ ρ x) ρ Σ ϕ K))
 
    ; Contraction
-   (--> (V ρ_2 ([([app (λ ρ_1 x e)] σ ...) ϕ] κ ...))
-        (e (extend ρ_1 x V) ([(σ ...) ϕ] κ ...)))
+   (--> (V ρ_2 ([app (λ ρ_1 x e)] σ ...) ϕ K)
+        (e (extend ρ_1 x V) (σ ...) ϕ K))
 
-   (--> (V ρ ([([app (κ_1 ...)] σ ...) ϕ] κ_2 ...))
-        (V ρ (κ_1 ... [(σ ...) ϕ] κ_2 ...)))
+   (--> (V ρ_2 ([app (rec ρ_1 x_f x_a e)] σ ...) ϕ K)
+        (e (extend (extend ρ_1 x_f (rec ρ_1 x_f x_a e)) x_a V) (σ ...) ϕ K))
 
-   (--> (V ρ_2 ([([app (rec ρ_1 x_f x_a e)] σ ...) ϕ] κ ...))
-        (e (extend (extend ρ_1 x_f (rec ρ_1 x_f x_a e)) x_a V) ([(σ ...) ϕ] κ ...)))
+   (--> (V ρ ([app ([Σ ϕ_1] κ_1 ...)] σ ...) ϕ_2 (κ_2 ...))
+        (V ρ Σ ϕ_1 (κ_1 ... [(σ ...) ϕ_2] κ_2 ...)))
 
    ; Primitive operation
-   (--> ((val number_2) ρ ([([prim-r prim (val number_1)] σ ...) ϕ] κ ...))
-        ((val (prim-apply prim number_1 number_2)) ρ ([(σ ...) ϕ] κ ...)))
+   (--> ((val number_2) ρ ([prim-r prim (val number_1)] σ ...) ϕ K)
+        ((val (prim-apply prim number_1 number_2)) ρ (σ ...) ϕ K))
 
    ; If expression
-   (--> ((val true) ρ_1 ([([if e any ρ] σ ...) ϕ] κ ...))
-        (e ρ ([(σ ...) ϕ] κ ...)))
+   (--> ((val true) ρ_1 ([if e any ρ] σ ...) ϕ K)
+        (e ρ (σ ...) ϕ K))
 
-   (--> ((val false) ρ_1 ([([if any e ρ] σ ...) ϕ] κ ...))
-        (e ρ ([(σ ...) ϕ] κ ...)))
-   
-   ; Operation invocation
-   (--> (V ρ ([([do op] σ ...) ϕ] κ ...))
-        (op V 0 ([(σ ...) ϕ] κ ...) ()))
+   (--> ((val false) ρ_1 ([if any e ρ] σ ...) ϕ K)
+        (e ρ (σ ...) ϕ K))
+  ))
 
+(define am-e
+  (reduction-relation
+   AM
    ; Lift
-   (--> (op V n ([(σ ...) (lift op)] κ_1 ...) (κ_2 ...))
-        (op V ,(+ (term n) 1) (κ_1 ...) (κ_2 ... [(σ ...) (lift op)])))
+   (--> (op V n ([Σ (lift op)] κ_1 ...) (κ_2 ...))
+        (op V ,(+ (term n) 1) (κ_1 ...) (κ_2 ... [Σ (lift op)])))
 
-   (--> ((name op_1 op_!_1) V n ([(σ ...) (lift (name op_2 op_!_1))] κ_1 ...) (κ_2 ...))
-        (op V ,(+ (term n) 1) (κ_1 ...) (κ_2 ... [(σ ...) (lift op)])))
+   (--> ((name op_1 op_!_1) V n ([Σ (lift (name op_2 op_!_1))] κ_1 ...) (κ_2 ...))
+        (op V ,(+ (term n) 1) (κ_1 ...) (κ_2 ... [Σ (lift op)])))
 
    ; Handle
-   (--> (op V n ([(σ ...) (handle hs ret ρ)] κ_1 ...) (κ_2 ...))
-        (op V ,(- (term n) 1) (κ_1 ...) (κ_2 ... [(σ ...) (handle hs ret ρ)]))
+   (--> (op V n ([Σ (handle hs ret ρ)] κ_1 ...) (κ_2 ...))
+        (op V ,(- (term n) 1) (κ_1 ...) (κ_2 ... [Σ (handle hs ret ρ)]))
         (judgment-holds (in op (ops hs)))
         (side-condition (> (term n) 0)))
 
-   (--> (op V n ([(σ ...) (handle hs ret ρ)] κ_1 ...) (κ_2 ...))
-        (op V n (κ_1 ...) (κ_2 ... [(σ ...) (handle hs ret ρ)]))
+   (--> (op V n ([Σ (handle hs ret ρ)] κ_1 ...) (κ_2 ...))
+        (op V n (κ_1 ...) (κ_2 ... [Σ (handle hs ret ρ)]))
         (judgment-holds (not-in op (ops hs))))
 
-   (--> (op V 0 ([(σ ...) (handle hs ret ρ)] κ_1 ...) (κ_2 ...))
-        (e (extend (extend ρ x_1 V) x_2 (κ_2 ... [(σ ...) (handle hs ret ρ)])) (κ_1 ...))
+   (--> (op V 0 ([Σ (handle hs ret ρ)] [Σ_2 ϕ] κ_1 ...) (κ_2 ...))
+        (e (extend (extend ρ x_1 V) x_2 (κ_2 ... [Σ (handle hs ret ρ)])) Σ_2 ϕ (κ_1 ...))
         (judgment-holds (get-handler op hs (x_1 x_2 e))))
 
    ; Return
-   (--> (V ρ_1 ([() (handle hs (return x e) ρ)] κ_1 ...))
-        (e (extend ρ x V) (κ_1 ...)))
+   (--> (V ρ_1 () (handle hs (return x e) ρ) ([Σ ϕ] κ ...))
+        (e (extend ρ x V) Σ ϕ (κ ...)))
 
-   (--> (V ρ ([() (lift op)] κ ...))
-        (V ρ (κ ...)))
-
-   (--> (V ρ ())
-        V)
+   (--> (V ρ () (lift op) ([Σ ϕ] κ ...))
+        (V ρ Σ ϕ (κ ...)))
    ))
+
+(define abstract-machine
+  (union-reduction-relations am-a am-b am-c am-e))
 
 (define-metafunction AM
   push-normal : σ K -> K
