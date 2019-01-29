@@ -159,15 +159,14 @@ Given an initial state, the machine can then repeatedly apply transformation rel
 The calculus implemented in this thesis is based on \LC{} with call-by-value semantics.
 It's abstract syntax is presented in \autoref{fig:algeff-syntax}.
 Meta-variable $ x $ ranges over variables used in value binders and their references, while $ op $ ranges over operation names, which are distinct from normal variables.
-Meta-variable $ v $ ranges over values, which may be: Boolean $ b $, numeric $ m $, $ \lambda $-abstraction $ (\lambda \, x \, e) $ or recursive function $ (rec \, x \, x \, e) $.
-Meta-variable $ e $ ranges over expressions, which include values $ v $, forms standard to \LC{}: variables $ x $, function applications $ (e \, e) $, conditionals $ (if \, e \,e \, e) $ and primitive operations $ (prim \, e \ldots) $.
-Expressions also include three constructs specific to effects -- operation invocations $ (op \, e) $, lifts $ (lift \, op \, e) $ and handlers $ (handle \, e \, hs \, ret) $ where $ ret $ is return expression $ (return \, x \, e) $ and $ hs $ is a list of handler clauses.
+Meta-variable $ v $ ranges over values, which are one of: boolean $ b $, number $ m $, $ \lambda $-abstraction $ (\lambda \, x \, e) $ or recursive function $ (rec \, x \, x \, e) $.
+Meta-variable $ e $ ranges over expressions, which include values $ v $, forms standard to \LC{} -- variables $ x $, function applications $ (e \, e) $, conditionals $ (if \, e \,e \, e) $ and primitive operations $ (prim \, e \ldots) $; expressions also include three constructs specific to effects -- operation invocations $ (op \, e) $, lifts $ (lift \, op \, e) $ and handlers $ (handle \, e \, hs \, ret) $ where $ ret $ is return expression $ (return \, x \, e) $ and $ hs $ is a list of handler clauses.
 
 To achieve call-by-value, left-to-right reduction order I use evaluation contexts $ E $; this choice follows other calculi which allow for computational effects\cite{Biernacki2017, Leijen2014, Hillerstrom2016}.
 One interesting aspect of these contexts is notion of \emph{free}ness\cite{Biernacki2017}, defined in \autoref{fig:algeff-free}.
-The judgment $ free[ \, op , \, E , \, n] $ asserts that operation $ op $ is $ n $ free in evaluation context $ E $, meaning that it will be handled by $(n + 1)$-st handler for $ op $ \emph{outside} the context $ E $.
+The judgment $ free[ \, op , \, E , \, n] $ asserts that operation $ op $ is $ n $-free in evaluation context $ E $, meaning that it will be handled by $(n + 1)$st handler for $ op $ \emph{outside} the context $ E $.
 
-The syntax of types, ranged over by $ t $ meta-variable comprises of base types ($Int$, $Bool$), arrow types $(t \rightarrow row \, t)$, operation types $(t \Rightarrow t)$, rows and type variables $ a $.
+The syntax of types, ranged over by meta-variable $ t $, comprises of base types ($Int$, $Bool$), arrow types $(t \rightarrow row \, t)$, operation types $(t \Rightarrow t)$, rows and type variables $ a $.
 Rows are defined inductively as either empty row $\cdot$, variable $ a $ or extension $(op \,\, t \,\, row)$ of a row $row$ with type $t$ assigned to operation label $op$, and are ranged over by meta-variable $row$.
 Finally, meta-variable $\Gamma$ ranges over typing contexts, $S$ over type substitutions and $SN$ denotes pair of substitution and name supply.
 
@@ -186,19 +185,19 @@ Finally, meta-variable $\Gamma$ ranges over typing contexts, $S$ over type subst
 \end{figure}
 
 \section{Dynamic semantics}
-The dynamic semantics for a calculus with algebraic effects defines besides the standard reductions known from \LC{}, the control structure of operations and handlers.
+The dynamic semantics for a calculus with algebraic effects defines, besides the standard reductions known from \LC{}, the control structure of operations and handlers.
 Intuitively, when an operation $op$ is invoked, it will be handled by dynamically closest handler, with a caveat that for each lift passed in search of handler, it must skip one handler.
-Formally, when an operation $ op $ is invoked, it will be handled by lexically enclosing handler $ (handle \, E[op \, e] \, hs \, ret) $ if and only if the intermediate context $ E $ is $0$ free\cite{Biernacki2017}.
+Formally, when an operation $ op $ is invoked, it will be handled by lexically enclosing handler $ (handle \, E[op \, e] \, hs \, ret) $ if and only if the intermediate context $ E $ is $0$-free\cite{Biernacki2017}.
 
 The dynamic semantics is defined in the format of contextual reduction semantics in \autoref{fig:algeff-red}.
 All rules perform reduction in a context $ E $ leaving it unchanged.
-First rule describes standard $ \beta $ reduction via substitution of argument value for variable in function body, while the second is the $ \beta $ reduction of recursive function, where first we substitute the function for function variable and then substitute the argument.
+First rule describes standard $ \beta $-reduction via substitution of argument value for variable in function body, while the second is the $ \beta $-reduction of recursive function, where first we substitute the function for function variable and then substitute the argument.
 Next rule deals with built-in primitive operations, delegating to auxiliary function \textit{prim-apply} which pattern matches on $ prim $ and performs appropriate operation.
 Next two rules perform choice of correct branch in conditional expression depending on value of condition.
 The rule \textit{lift-compat} returns value from lift expression, leaving it unchanged.
 The rule \textit{handle-return} handles the case when inner expression of handle expression evaluates to a value, which means we have to evaluate return clause by substituting the result value for $ x $, and plugging this expression into evaluation context $ E $.
 The last rule \textit{handle-op} describes the behavior when an expression calls some operation.
-To handle an operation we must find $0$-$free$ inner context $ E_2 $ which is directly surrounded by handle expression which has a case for $ op $.
+To handle an operation we must find $0$-free inner context $ E_2 $ which is directly surrounded by handle expression which has a case for $ op $.
 Then we substitute value $ v $ for first variable of operation handler and the inner context $ E_2 $ surrounded with the very same handler (the continuation delimited by the handler) closed in a lambda for the second argument.
 This way the operation handler can resume the evaluation of expression which invoked the handled operation.
 
@@ -210,7 +209,7 @@ This way the operation handler can resume the evaluation of expression which inv
 \end{figure} 
 
 \section{Static semantics}
-The type system is based on \emph{Koka}(Leijen's style of row types\cite{Leijen2005}), \emph{Links}\cite{Hillerstrom2016} (ad-hoc operations) and Biernacki et al. \cite{Biernacki2017} (lift construct) systems.
+The type system is based on \emph{Koka}\cite{Leijen2014} (Leijen's style of row types\cite{Leijen2005}), \emph{Links}\cite{Hillerstrom2016} (ad-hoc operations) and Biernacki et al. \cite{Biernacki2017} (lift construct) systems.
 Initially I implemented a variant of System-F extended with row-types but it proved to be a bit of a mouthful to write even simplest programs.
 Additionally the \texttt{Redex}'s facilities for automatic testing were not able to generate sufficiently many well typed terms, so some type inference was inevitable.
 To limit the amount of work I decided to present the calculus in Curry style, with typing relation inferring the type for unannotated terms.
@@ -291,7 +290,7 @@ Additionally one of possible values is a \emph{meta-stack} which one may think o
 Meta-variable $ \sigma $ defines normal (or pure) continuation frames and $ \Sigma $ denotes pure continuation \emph{stack}, while $ \phi $ ranges over effect frames -- \emph{handle}, \emph{lift} and \emph{done} token which marks final continuation.
 Meta-variable $ \kappa $ denotes meta-frame which consists of pure stack and one effect frame.
 Finally $ K $ ranges over stacks of meta-frames, which I will call \emph{meta-stack}s.
-Meta-function \emph{initial-conf} in \autoref{fig:algeff-am-initial-conf} transforms an expression into initial configuration -- initializing machine with empty stack and meta-stack and '\emph{done}' effect frame.
+Meta-function \emph{initial-conf} in \autoref{fig:algeff-am-initial-conf} transforms an expression into initial configuration -- initializing machine with empty stack, '\emph{done}' effect frame and empty meta-stack.
 
 \begin{figure}
   \centering
