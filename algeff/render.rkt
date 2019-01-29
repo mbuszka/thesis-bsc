@@ -5,8 +5,9 @@
          "calculus/lang.rkt"
          "calculus/type.rkt"
          "calculus/abstract-machine.rkt"
-         (only-in "calculus/eval.rkt" red)
-         (only-in "calculus/abstract-machine.rkt" am-a am-b am-c am-e initial-conf)
+         (only-in "calculus/eval.rkt" red free)
+         (only-in "calculus/abstract-machine.rkt"
+                  am-a am-b am-c am-e initial-conf)
          (prefix-in lc: "../lc/lc.rkt"))
 
 (define (render path)
@@ -31,6 +32,7 @@
         (render-language Infer (mk-path "algeff-syntax.eps"))
         (render-judgment-form infer (mk-path "algeff-infer.eps"))
         (render-judgment-form infer-handlers (mk-path "algeff-infer-handlers.eps"))
+        (render-judgment-form free (mk-path "algeff-free.eps"))
         (render-reduction-relation red (mk-path "algeff-red.eps"))
         (render-language AM (mk-path "algeff-am-syntax.eps"))
         (render-reduction-relation am-a (mk-path "algeff-am-a.eps"))

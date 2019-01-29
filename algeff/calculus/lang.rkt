@@ -15,8 +15,8 @@
   (prim  ::= + - * == <= >=)
 
   ; Expressions
-  (e     ::= v x (e e) (if e e e) (fix e)
-         (op e) (handle e hs ret) (lift op e) (prim e ...))
+  (e     ::= v x (e e) (if e e e) (prim e ...)
+         (op e) (handle e hs ret) (lift op e))
 
   ; Handlers
   (hs    ::= ((op_!_1 hexpr) ...))

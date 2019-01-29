@@ -96,19 +96,19 @@ The separation of definition and implementation of effects allows for various in
 \section{Type inference}
 Type inference is a technique of algorithmic reconstruction of types for various constructions used in a language.
 It allows programmers to write programs with no type annotations, which often feel redundant and obfuscate the meaning of a program.
-The most well known type system with inference is a system for \emph{ML} family of languages - \emph{Haskell}, \emph{OCaml}, \emph{SML} which infers the types with no annotations whatsoever.
+The most well known type system with inference is a system for \emph{ML} family of languages -- \emph{Haskell}, \emph{OCaml}, \emph{SML} which infers the types with no annotations whatsoever.
 Formal type system defines grammar of types consisting of base types (\texttt{int}, \texttt{bool} etc.), type constructors (arrows, algebraic data types) and type variables.
 The typing rules require types which should be compatible (e.g. formal parameter and argument types) to unify.
-The key feature of this system is so called let-polymorphism - generalization of types of let-bound variables.
+The key feature of this system is so called let-polymorphism -- generalization of types of let-bound variables.
 This way code reuse can be accomplished without complicating the type system and compromising type safety.
 The basis of implementation of this system is first order unification algorithm, which syntactically decomposes types and builds a substitution from type variables to types.
 
 \section{Reduction semantics and abstract machines}
 % TODO add reference to canonical definitions for good definition of reduction semantics and abstract machines, especially CEK
 Reduction semantics is a format for specifying dynamic semantics of a calculus in an operational style.
-The basic idea is to first define redexes - expressions which can be reduced, and contexts in which the reduction can happen.
+The basic idea is to first define redexes -- expressions which can be reduced, and contexts in which the reduction can happen.
 Taking \LC with call-by-value reduction order as an example, the only redex is application of a function to value $ (\lambda x . e) v $.
-The possible contexts are: empty context $ \square $ or evaluation of operator part of application $ E e $ or evaluation of operand $ v E $.
+The possible contexts are: empty context $ \square $ or evaluation of operator part of application $ E e $ or evaluation of operand $ v E $ when left part has already been evaluated to a value.
 \begin{figure}
   \includegraphics{lc-syntax.pdf}
   \caption{\LC abstract syntax}
@@ -156,14 +156,20 @@ Given an initial state, the machine can then repeatedly apply transformation rel
 % TODO: Redex section
 
 \chapter{The calculus}\label{ch:calculus}
-The calculus implemented in this thesis is based on lambda calculus with call-by-value semantics.
-This choice follows other calculi which allow for computational effects, because fixed evaluation order is essential to obtaining sane program semantics.
-Inspired by \emph{Links} \cite{Hillerstrom2016} the operations are truly ad-hoc meaning that they don't have to be declared before usage.
-Moreover the calculus requires no type annotations whatsoever in spirit of \emph{ML} family of languages while still tracking effects which occur in a program.
-The \LC is extended with base types (Numeric and Boolean) with corresponding operations and literals, conditional expression and recursive functions.
-Effectful operations are invoked similarly to function calls (although they are a distinct syntactic category) and are handled using \textit{handle} construct, they may also be lifted with \textit{lift} syntactic form.
-Usually the operation will be handled by the closest handler with appropriate case, unless there is a lift for this operation in between, each one causing operation to skip one handler.
-Abstract syntax of the calculus is presented in \autoref{fig:algeff-syntax}
+The calculus implemented in this thesis is based on \LC with call-by-value semantics.
+It's abstract syntax is presented in \autoref{fig:algeff-syntax}.
+Meta-variable $ x $ ranges over variables used in value binders and their references, while $ op $ ranges over operation names, which are distinct from normal variables.
+Meta-variable $ v $ ranges over values, which may be: Boolean $ b $, numeric $ m $, $ \lambda $-abstraction $ (\lambda \, x \, e) $ or recursive function $ (rec \, x \, x \, e) $.
+Meta-variable $ e $ ranges over expressions, which include values $ v $, forms standard to \LC: variables $ x $, function applications $ (e \, e) $, conditionals $ (if \, e \,e \, e) $ and primitive operations $ (prim \, e \ldots) $.
+Expressions also include three constructs specific to effects -- operation invocations $ (op \, e) $, lifts $ (lift \, op \, e) $ and handlers $ (handle \, e \, hs \, ret) $ where $ ret $ is return expression $ (return \, x \, e) $ and $ hs $ is a list of handler clauses.
+
+To achieve call-by-value, left-to-right reduction order I use evaluation contexts $ E $; this choice follows other calculi which allow for computational effects\cite{Biernacki2017, Leijen2014, Hillerstrom2016}.
+One interesting aspect of these contexts is notion of \emph{free}ness\cite{Biernacki2017}, defined in \autoref{fig:algeff-free}.
+The judgment $ free[ \, op , \, E , \, n] $ asserts that operation $ op $ is $ n $ free in evaluation context $ E $, meaning that it will be handled by $(n + 1)$-st handler for $ op $ \emph{outside} the context $ E $.
+
+The syntax of types, ranged over by $ t $ meta-variable comprises of base types ($Int$, $Bool$), arrow types $(t \rightarrow row \, t)$, operation types $(t \Rightarrow t)$, rows and type variables $ a $.
+Rows are defined inductively as either empty row $\cdot$, variable $ a $ or extension $(op \,\, t \,\, row)$ of a row $row$ with type $t$ assigned to operation label $op$, and are ranged over by meta-variable $row$.
+Finally, meta-variable $\Gamma$ ranges over typing contexts, $S$ over type substitutions and $SN$ denotes pair of substitution and name supply.
 
 \begin{figure}
   \centering
@@ -172,22 +178,55 @@ Abstract syntax of the calculus is presented in \autoref{fig:algeff-syntax}
   \label{fig:algeff-syntax}
 \end{figure}
 
+\begin{figure}
+  \centering
+  \includegraphics{algeff-free.pdf}
+  \caption{Context freeness}
+  \label{fig:algeff-free}  
+\end{figure}
+
+\section{Dynamic semantics}
+The dynamic semantics for a calculus with algebraic effects defines besides the standard reductions known from \LC , the control structure of operations and handlers.
+Intuitively, when an operation $op$ is invoked, it will be handled by dynamically closest handler, with a caveat that for each lift passed in search of handler, it must skip one handler.
+Formally, when an operation $ op $ is invoked, it will be handled by lexically enclosing handler $ (handle \, E[op \, e] \, hs \, ret) $ if and only if the intermediate context $ E $ is $0$ free\cite{Biernacki2017}.
+
+The dynamic semantics is defined in the format of contextual reduction semantics in \autoref{fig:algeff-red}.
+All rules perform reduction in a context $ E $ leaving it unchanged.
+First rule describes standard $ \beta $ reduction via substitution of argument value for variable in function body, while the second is the $ \beta $ reduction of recursive function, where first we substitute the function for function variable and then substitute the argument.
+Next rule deals with built-in primitive operations, delegating to auxiliary function \textit{prim-apply} which pattern matches on $ prim $ and performs appropriate operation.
+Next two rules perform choice of correct branch in conditional expression depending on value of condition.
+The rule \textit{lift-compat} returns value from lift expression, leaving it unchanged.
+The rule \textit{handle-return} handles the case when inner expression of handle expression evaluates to a value, which means we have to evaluate return clause by substituting the result value for $ x $, and plugging this expression into evaluation context $ E $.
+The last rule \textit{handle-op} describes the behavior when an expression calls some operation.
+To handle an operation we must find $0$-$free$ inner context $ E_2 $ which is directly surrounded by handle expression which has a case for $ op $.
+Then we substitute value $ v $ for first variable of operation handler and the inner context $ E_2 $ surrounded with the very same handler (the continuation delimited by the handler) closed in a lambda for the second argument.
+This way the operation handler can resume the evaluation of expression which invoked the handled operation.
+
+\begin{figure}
+  \centering
+  \includegraphics{algeff-red.pdf}
+  \caption{Reduction relation} 
+  \label{fig:algeff-red}
+\end{figure} 
+
 \section{Static semantics}
 The type system is based on \emph{Koka}(Leijen's style of row types\cite{Leijen2005}), \emph{Links}\cite{Hillerstrom2016} (ad-hoc operations) and Biernacki et al. \cite{Biernacki2017} (lift construct) systems.
 Initially I implemented a variant of System-F extended with row-types but it proved to be a bit of a mouthful to write even simplest programs.
-Moreover the \texttt{Redex}'s facilities for automatic testing were not able to generate well typed terms, so some type inference was inevitable.
+Additionally the \texttt{Redex}'s facilities for automatic testing were not able to generate sufficiently many well typed terms, so some type inference was inevitable.
 To limit the amount of work I decided to present the calculus in Curry style, with typing relation inferring the type for unannotated terms.
-Building on well known foundations, types are inferred via first order unification.
+
+Building on well known foundations\cite{Pierce2002}, types are inferred via first order unification.
+While exact algorithm is presented in \autoref{sec:unification}, the notion of unification is used extensively in the remainder of this chapter and as such I will present intuitive definition here.
+Two types $t_1$ and $t_2$ \emph{unify} (written $t_1 \sim t_2$) if they are structurally the same, where variables can be substituted with any type.
+Two rows unify, if they are the same list of operation-type pairs, up to permutation of different operations.
+
 The system does not feature polymorphism in first class fashion, as there is no rule where types are generalized, but I believe it to be a straightforward addition, following the \emph{Koka}\cite{Leijen2014} calculus.
 Still, after inferring type of an expression, we can see which unification variables are left abstract and could be generalized.
-There are two main features differentiating this system from \emph{Koka}'s; firstly effects need not be defined before use, their signature is inferred as with any other construction; secondly the system is algorithmic, with rules explicitly encoding a recursive function which can infer the type of an expression.
-
-\subsection{Row-types}
-Row types as described in \cite{Leijen2005}
+There are two main features differentiating this system from \emph{Koka}'s; firstly effects need not be defined before use, their signature is inferred the same way as any other construction; secondly the system is algorithmic, with rules explicitly encoding a recursive function which can infer the type of an expression.
 
 \subsection{Type inference}
-The judgment $ \Gamma \mid [S_1 \, N_1] \vdash e \, : \, t \, ! \, row \mid [S_2 \, N_2] $ asserts that in typing context $ \Gamma $ under type substitution $ S_1 $, with name supply state $ N_1 $ expression $ e $ has type $ t $ with effects $ row $ under type substitution $ S_2 $ and with name supply state $ S_2 $.
-Algorithmically this judgment infers a type and effect row, and calculates new substitution, given typing environment, current substitution and an expression.
+The judgment $ \Gamma \mid [S_1 \, N_1] \vdash e \, : \, t \, ! \, row \mid [S_2 \, N_2] $ asserts that in typing context $ \Gamma $ under type substitution $ S_1 $, with name supply state $ N_1 $ expression $ e $ has type $ t $ with effects $ row $ under type substitution $ S_2 $ and with name supply state $ N_2 $.
+Algorithmically this judgment infers a type and an effect row, and calculates new substitution, given typing environment, current substitution and an expression.
 As in \emph{ML} languages only simple types can be inferred, along with effect rows.
 
 \begin{figure}
@@ -202,20 +241,20 @@ To check $ \lambda $ expression, we first introduce fresh type variable, and the
 The arrow gets annotated with effects which may occur during evaluation of the body and the $ \lambda $ abstraction itself is returned with fresh effect row.
 The recursive function checking is similar to normal functions.
 First variable denotes function itself, while second it's argument.
-Accordingly the environment gets extended with functional type $ t_1 \rightarrow row_1 t_2 $ to check the body of the function, and afterwards the result type of body $ t $ gets unified with the result type of function $ t_2 $, same with effect row.
+Accordingly, the environment gets extended with functional type $ t_1 \rightarrow row_1 t_2 $ and argument type $ t_1 $, to check the body of the function, and afterwards the result type of body $ t $ gets unified with the result type of function $ t_2 $, same with effect row.
 Whole function, as it is a value, is returned with fresh effect row.
 The application requires expression at function position to be of functional type and parameter type to unify with argument type.
 All effect rows (from evaluation of function value, argument value and function body) must unify as well.
-The checking of primitive operation gets deferred to auxiliary judgment, which checks arity and argument types, returning result type and usually fresh effect row.
-Conditional expression requires the condition expression to be of type $ Bool $ and types of two branches to unify.
+Inference for primitive operation call is deferred to auxiliary judgment, which checks arity and argument types, returning result type and usually fresh effect row.
+Conditional expression requires the condition to be of type $ Bool $ and types of two branches to unify.
 As usual all effect rows must also unify.
-Operation invocation requires the effect row to contain operation $ op $ whose input type is the inferred type for $ e $ and output type being fresh.
+Operation invocation requires the effect row to contain operation $ op $ with type $ (t_1 \Rightarrow t_2) $ where input type $ t_1 $ is the inferred type for $ e $ and output type $ t_2 $ is fresh.
 Operation lifting prepends fresh $ op $ to the effect row of $ e $.
-Finally, to check handle expression we first infer the type of enclosed expression $ e $, then in environment extended with $e$'s type $ t_1 $ we infer return expression's type $ t_ret $.
+Finally, to check handle expression we first infer the type of enclosed expression $ e $, then in environment extended with $e$'s type $ t_1 $ we infer return expression's type $ t_{ret} $.
 Helper judgment \textit{infer-handlers} returns the result effect row of handlers $ row_{out} $ and row marking handled effects $ row_{handled} $ whose tail is the same as result's.
-By unifying result row with return row and handled row with $ row_1 $ we ensure that effects which may occur during handling of operations, at return and leftovers from the inner expression are all accounted for.
+By unifying result row with return row and handled row with $ row_1 $ we ensure that effects which may occur during handling of operations, evaluation of return clause and leftovers from the inner expression are all accounted for.
 
-\subsection{Effect handlers}
+\subsection{Inference for effect handlers}
 
 \begin{figure}
   \centering
@@ -227,39 +266,14 @@ By unifying result row with return row and handled row with $ row_1 $ we ensure 
 List of effect handlers $ hs $ is processed right-to-left by judgment 
 $$ infer\mhyphen handlers [\Gamma , \, SN_{in} , \, t_{ret} , \, hs , \, row_{out} , \, row_{handled} , \, SN_{out}] $$
 The $ t_{ret} $ is the type of return clause, $ row_{out} $ is the combined row of effects which may occur in any handler and $ row_{handled} $ is the row of handled operations, with appropriate types.
-The base case of empty list initializes both rows with the same type variable, this way $ row_{handled} $ returned by $infer\mhyphen handlers$ judgment will first have all handled operations and it's tail will be the same as $ row_{out} $.
+The base case of empty list initializes both rows with the same type variable, this way $ row_{handled} $ returned by $infer\mhyphen handlers$ judgment will consist of all handled operations and it's tail will be $ row_{out} $.
 The inductive case first calculates $ row_{out} $ and $ row_{handled} $ for the tail of the list.
-Then two new fresh variables are created: $ t_v $ for the type of value passed to handler and $ t_r $ for type of resumption parameter.
+Then, two new fresh variables are created: $ t_v $ for the type of value passed to handler and $ t_r $ for type of resumption parameter.
 Resumption's result type is the result type of return clause as it should eventually evaluate to a value, which will be transformed by that clause.
-It's effect row is the same as the result row of whole handle expression, this means that any subsequent uses of operations will be handled by this handler.
-With environment extended with $ t_v $ for first parameter - an argument to handler expression and $ t_r \rightarrow row_{out} \, t_{ret} $ for second parameter - the resumption, we check the handler expression $ e $.
+It's effect row is the same as the result row of whole handle expression, which means that any subsequent uses of operations will be handled by this handler.
+With environment extended with $ t_v $ for first parameter -- an argument to handler expression and $ t_r \rightarrow row_{out} \, t_{ret} $ for second parameter -- the resumption, we check the handler expression $ e $.
 We then unify the effects of evaluating $ e $ with all effects of handlers, and result type $ t_{h} $ with return type $ t_{ret} $.
-At last we extend handled row with current operation $ (op (t_v \Rightarrow t_r)) $
-
-
-\section{Dynamic semantics}
-The dynamic semantics is defined in the format of contextual reduction semantics.
-With syntax of execution contexts in \autoref{fig:algeff-syntax} we see that they describe computation in call-by-value order, with expressions in applications (both normal and primitive) being evaluated left to right.
-All rules perform reduction in some context $ E $ leaving it unchanged.
-First rule describes standard $ \beta $ reduction via substitution of argument for variable in function body, while the second $ \beta $ reduction of recursive function, where first we substitute the function for function variable and then substitute the argument.
-Next rule deals with built-in primitive operations, delegating to auxiliary function \textit{prim-apply} which pattern matches on $ prim $ and performs appropriate operation.
-Next two rules perform choice of correct branch in conditional expression depending on value of condition.
-The rule \textit{lift-compat} returns value from lift expression, leaving it unchanged.
-The rule \textit{handle-return} handles the case when inner expression of handle expression evaluates to a value, which means we have to evaluate return clause - by substituting the result value for $ x $, and plugging this expression into evaluation context $ E $.
-The last rule \textit{handle-op} describes the behavior when an expression calls some operation.
-Before we can define it's behavior we must define notion of \textit{free}ness.
-The judgment $ free[ \, op , \, E , \, n] $ asserts that operation $ op $ is $ n $ free in evaluation context $ E $, which means that it will be handled by $ n + 1 $-st handler \emph{outside} the context $ E $ \cite{Biernacki2017}.
-With this definition in mind, we can see that to handle an operation we must find $0$-$free$ inner context $ E_2 $ which is directly surrounded by handle expression which has a case for $ op $.
-Then we substitute value $ v $ for first variable of operation handler and the inner context $ E_2 $ surrounded with the very same handler (the continuation delimited by the handler) closed in a lambda for the second argument.
-This way the operation handler can resume the evaluation of expression which invoked the handled operation.
-
-\begin{figure}
-  \centering
-  \includegraphics{algeff-red.pdf}
-  \caption{Reduction relation} 
-  \label{fig:algeff-red}
-\end{figure} 
-
+Finally we extend handled row with current operation $ (op (t_v \Rightarrow t_r)) $
 
 \section{Abstract machine}
 Abstract machine is based on \emph{CEK}-machine of Hillerström and Lindley\cite{Hillerstrom2016}, with the difference that during the search for operation handler, machine must count handlers and lifts it passes.
@@ -274,42 +288,42 @@ Abstract machine is based on \emph{CEK}-machine of Hillerström and Lindley\cite
 Possible configurations are given in \autoref{fig:algeff-am-syntax}.
 Meta-variable $ C $ ranges over shapes of machine configurations, meta-variable $ V $ ranges over machine values, which are distinct from calculus value, e.g. function values must now keep their environment $ \rho $ which maps variables to machine values.
 Additionally one of possible values is a \emph{meta-stack} which one may think of as a continuation captured during operation invocation.
-Meta-variable $ \sigma $ defines normal (or pure) continuation frames and $ \Sigma $ denotes pure continuation \emph{stack}, while $ \phi $ ranges over effect frames - \emph{handle}, \emph{lift} and \emph{done} token which marks final continuation.
+Meta-variable $ \sigma $ defines normal (or pure) continuation frames and $ \Sigma $ denotes pure continuation \emph{stack}, while $ \phi $ ranges over effect frames -- \emph{handle}, \emph{lift} and \emph{done} token which marks final continuation.
 Meta-variable $ \kappa $ denotes meta-frame which consists of pure stack and one effect frame.
 Finally $ K $ ranges over stacks of meta-frames, which I will call \emph{meta-stack}s.
-Meta-function \emph{initial-conf} in \autoref{fig:algeff-am-initial-conf} transforms an expression into initial configuration - initializing machine with empty stack and meta-stack and '\emph{done}' effect frame.
+Meta-function \emph{initial-conf} in \autoref{fig:algeff-am-initial-conf} transforms an expression into initial configuration -- initializing machine with empty stack and meta-stack and '\emph{done}' effect frame.
 
 \begin{figure}
   \centering
   \includegraphics{algeff-am-initial-conf.pdf}
-  \caption{Abstract machine - initial configuration}
+  \caption{Abstract machine -- initial configuration}
   \label{fig:algeff-am-initial-conf}
 \end{figure}
 
 \begin{figure}[h]
   \centering
   \includegraphics{algeff-am-a.pdf} 
-  \caption{Abstract machine - administrative transitions}
+  \caption{Abstract machine -- administrative transitions}
   \label{fig:algeff-am-a}
 \end{figure}
 
-The first group of transitions depicted in \autoref{fig:algeff-am-a} performs mostly administrative functions - capturing environment for functional values, transforming from value terms to machine values, sequencing binary operations, switching to special configuration for search of handler and a transition for returning final value.
+The first group of transitions depicted in \autoref{fig:algeff-am-a} performs mostly administrative functions -- capturing environment for functional values, transforming from value terms to machine values, sequencing binary operations, switching to special configuration for search of handler and a transition for returning final value.
 
 \begin{figure}[h]
   \centering
   \includegraphics{algeff-am-b.pdf} 
-  \caption{Abstract machine - continuation building}
+  \caption{Abstract machine -- continuation building}
   \label{fig:algeff-am-b}
 \end{figure}
 
 Second group of transitions (\autoref{fig:algeff-am-b}) decomposes current expression and builds continuation by growing either stack or meta-stack.
-First four rules - for function application, operation invocation, primitive operation call and conditional expression - all create a new pure frame and push it onto stack.
-Last two transitions deal with effectful operations - handle and lift; they build meta-stack by bundling previous effect frame with current stack into meta-frame, pushing it onto meta-stack and then installing fresh stack and new effect frame into machine configuration.
+First four rules -- for function application, operation invocation, primitive operation call and conditional expression -- all create a new pure frame and push it onto stack.
+Last two transitions deal with effectful operations -- handle and lift; they build meta-stack by bundling previous effect frame with current stack into meta-frame, pushing it onto meta-stack and then installing fresh stack and new effect frame into machine configuration.
 
 \begin{figure}[h]
   \centering 
   \includegraphics{algeff-am-c.pdf}
-  \caption{Abstract machine - contractions}
+  \caption{Abstract machine -- contractions}
   \label{fig:algeff-am-c}
 \end{figure}
 
@@ -321,22 +335,22 @@ Last rule handling application deals with continuation resumption, by pushing cu
 \begin{figure}[h]
   \centering
   \includegraphics{algeff-am-e.pdf}
-  \caption{Abstract machine - effect handling}
+  \caption{Abstract machine -- effect handling}
   \label{fig:algeff-am-e}
 \end{figure}
 
-Transitions in last group form essence of this machine, performing all tasks related to effect handling.
+Transitions in last group (\autoref{fig:algeff-am-e}) form essence of this machine, performing all tasks related to effect handling.
 First four rules search for appropriate handler for $ op $ by maintaining a counter $ n $ which is incremented by every lift for $ op $ and decremented by every handler for $ op $.
 Fifth rule matches when the counter is $ 0 $ and handler has a case for operation which was invoked. 
 In this situation, the machine must begin evaluation of handling expression, first extending environment with passed argument and captured continuation with current meta-frame appended.
-Two last rules deal with returning values - in case of handler the return clause is installed, and in case of lift it's frame is simply discarded.
+Two last rules deal with returning values -- in case of handler the return clause is installed, and in case of lift it's frame is simply discarded.
 
 \chapter{Implementation}\label{ch:implementation}
 
 \section{\Redex}
 % scaling problems
 
-\section{Unification}
+\section{Unification}\label{sec:unification}
 
 \section{Typing relation}
 

@@ -1,15 +1,24 @@
 Thesis:
   Chapter 1 - Introduction:
-    ☐ motivation (algebraic effects are trendy - experimentation with different features/flavors, experimentation with redex - as a platform for rapid semantics prototyping)
-    ☐ overview of my work
+    ✔ motivation (algebraic effects are trendy - experimentation with different features/flavors, experimentation with redex - as a platform for rapid semantics prototyping) @done(19-01-29 13:27)
+    ✔ overview of my work @done(19-01-29 13:27)
+    ☐ small fixes
+    ☐ better example for alg-eff
+    ☐ some example for type inference and bit more on types
+    ☐ bigger section on motivation
+    ☐ conclusions
     ☐ redex features/introduction
     
   Chapter 2 - Calculus:
+    ✔ fixes and text movement @done(19-01-29 19:19)
+    ☐ udates with lists, empty and unit type
   Chapter 3 - Implementation:
 
 Language:
   ☐ syntax highlighting
 
 Calculus:
-  ☐ recursive functions
-  ☐ booleans and ifs
+  ✔ recursive functions @done(19-01-29 13:28)
+  ✔ booleans and ifs @done(19-01-29 13:28)
+  ☐ lists (as primitive operations)
+  ☐ empty and unit type (with primitive operation for empty type)

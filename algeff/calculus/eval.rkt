@@ -5,7 +5,7 @@
          "lib.rkt"
          "type.rkt")
 
-(provide red reduce)
+(provide red reduce free)
 
 
 (define-judgment-form Infer
