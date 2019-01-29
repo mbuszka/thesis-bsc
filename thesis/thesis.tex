@@ -21,11 +21,11 @@
 \addbibresource{mybib.bib}
 %
 \floatstyle{boxed} 
-\restylefloat{figure}
+\restylefloat{figure} 
 %
-\newcommand{\Redex}{\texttt{PLT Redex} }
-\newcommand{\Racket}{\texttt{Racket} }
-\newcommand{\LC}{\(\lambda\)-calculus }
+\newcommand{\Redex}{\texttt{PLT Redex}}
+\newcommand{\Racket}{\texttt{Racket}}
+\newcommand{\LC}{\(\lambda\)-calculus}
 \mathchardef\mhyphen="2D % Define a "math hyphen"
 %
 \begin{document}
@@ -56,18 +56,18 @@ At run-time handlers can wrap the captured continuation (giving so-called deep h
 % What am I implementing, what is interesting in this thesis, how it differs from other systems/languages (The main goal of the thesis)
 All this variety naturally invites Us to experiment with different features and components of a calculus.
 In this thesis I will build such a calculus, describing and justifying my choices and discussing the trade-offs I faced.
-In order to rapidly iterate on design and test the calculus, I decided to use \Redex library which allows for building language model with executable type system judgments and reduction relation.
-As such the other goal of my thesis was to assess viability of \Redex for development of bigger calculi.
+In order to rapidly iterate on design and test the calculus, I decided to use \Redex{} library which allows for building language model with executable type system judgments and reduction relation.
+As such the other goal of my thesis was to assess viability of \Redex{} for development of bigger calculi.
 To briefly summarize my development, the calculus consists of: 
 \begin{itemize}
   \item Curry style type system with ad-hoc effects in the style of \emph{Links}, effect rows based on \emph{Koka} and \emph{lift} construct first shown in \cite{Biernacki2017}, implemented as unification based type inference algorithm.
   \item Executable reduction semantics most similar to system of \cite{Biernacki2017}.
   \item CEK style abstract machine with stack and \emph{meta}-stack of handlers
-  \item Language front-end which translates human-friendly programs to calculus terms, integrated with \Racket environment, which allows for easy experimentation.
+  \item Language front-end which translates human-friendly programs to calculus terms, integrated with \Racket{} environment, which allows for easy experimentation.
 \end{itemize}
 
 % Outline of the thesis
-The rest of this thesis is structured as follows: in \autoref{ch:calculus} I describe the calculus in greater detail, in \autoref{ch:implementation} I discuss technicalities of implementation, in \autoref{ch:racket} I summarize the process of integration with \Racket environment and \autoref{ch:manual} is user's manual.
+The rest of this thesis is structured as follows: in \autoref{ch:calculus} I describe the calculus in greater detail, in \autoref{ch:implementation} I discuss technicalities of implementation, in \autoref{ch:racket} I summarize the process of integration with \Racket{} environment and \autoref{ch:manual} is user's manual.
 In the reminder of this chapter I introduce main topics of this thesis.
 
 \section{Algebraic effects and handlers}
@@ -107,11 +107,11 @@ The basis of implementation of this system is first order unification algorithm,
 % TODO add reference to canonical definitions for good definition of reduction semantics and abstract machines, especially CEK
 Reduction semantics is a format for specifying dynamic semantics of a calculus in an operational style.
 The basic idea is to first define redexes -- expressions which can be reduced, and contexts in which the reduction can happen.
-Taking \LC with call-by-value reduction order as an example, the only redex is application of a function to value $ (\lambda x . e) v $.
+Taking \LC{} with call-by-value reduction order as an example, the only redex is application of a function to value $ (\lambda x . e) v $.
 The possible contexts are: empty context $ \square $ or evaluation of operator part of application $ E e $ or evaluation of operand $ v E $ when left part has already been evaluated to a value.
 \begin{figure}
   \includegraphics{lc-syntax.pdf}
-  \caption{\LC abstract syntax}
+  \caption{\LC{} abstract syntax}
   \label{fig:lc-syntax}
 \end{figure}
 With these possibilities in mind, we will define binary relation $ \longrightarrow $ which describes single step of reduction.
@@ -130,25 +130,25 @@ where the syntax $ e\{v/x\} $ means term $ e $ with value $ v $ substituted for 
 For both approaches it is important, that any term can be uniquely decomposed into redex and context, because when it is the case, then the relation is deterministic and gives good basis for formulation of abstract machines, interpreters or transformations to some other intermediate representations.
 \begin{figure}
   \includegraphics{lc-red.pdf} 
-  \caption{\LC reduction relation}
+  \caption{\LC{} reduction relation}
   \label{fig:lc-red}
 \end{figure}
 \begin{figure}
-  \LC reduction example
-  \caption{\LC example reduction sequence}
+  \LC{} reduction example
+  \caption{\LC{} example reduction sequence}
   \label{fig:lc-red-example}
 \end{figure}
 
 Abstract machine is a mathematical construction, usually defined as a set of configurations with deterministic transformations, which are computationally simple.
 The goal for formulation of an abstract machine is to mechanize evaluation of terms while retaining semantics given in more abstract format, e.g. reduction semantics, with the correspondence being provable\cite{Felleisen2009}.
-As an example I will show a \emph{CEK}-machine for the \LC defined earlier.
+As an example I will show a \emph{CEK}-machine for the \LC{} defined earlier.
 The name \emph{CEK} comes from \emph{C}ommand, \emph{E}nvironment and \emph{K}ontinuation.
 The machine configuration is a triple $ (e, \rho, \kappa) $ where $ e $ is an expression which is decomposed or reduced, $ \rho $ is an environment mapping variables to values, and the last component $ \kappa $ is a continuation stack, which determines what will happen with value, to which first component eventually reduces.
 Thanks to the environment we no longer have to explicitly perform substitution, leading to more machine friendly and efficient implementation.
 Given an initial state, the machine can then repeatedly apply transformation relation, either looping, arriving at a final value, or getting stuck. 
 \begin{figure}
-  \emph{CEK}-machine for \LC
-  \caption{\LC abstract machine}
+  \emph{CEK}-machine for \LC{}
+  \caption{\LC{} abstract machine}
   \label{fig:lc-cek}
 \end{figure}
 
@@ -156,11 +156,11 @@ Given an initial state, the machine can then repeatedly apply transformation rel
 % TODO: Redex section
 
 \chapter{The calculus}\label{ch:calculus}
-The calculus implemented in this thesis is based on \LC with call-by-value semantics.
+The calculus implemented in this thesis is based on \LC{} with call-by-value semantics.
 It's abstract syntax is presented in \autoref{fig:algeff-syntax}.
 Meta-variable $ x $ ranges over variables used in value binders and their references, while $ op $ ranges over operation names, which are distinct from normal variables.
 Meta-variable $ v $ ranges over values, which may be: Boolean $ b $, numeric $ m $, $ \lambda $-abstraction $ (\lambda \, x \, e) $ or recursive function $ (rec \, x \, x \, e) $.
-Meta-variable $ e $ ranges over expressions, which include values $ v $, forms standard to \LC: variables $ x $, function applications $ (e \, e) $, conditionals $ (if \, e \,e \, e) $ and primitive operations $ (prim \, e \ldots) $.
+Meta-variable $ e $ ranges over expressions, which include values $ v $, forms standard to \LC{}: variables $ x $, function applications $ (e \, e) $, conditionals $ (if \, e \,e \, e) $ and primitive operations $ (prim \, e \ldots) $.
 Expressions also include three constructs specific to effects -- operation invocations $ (op \, e) $, lifts $ (lift \, op \, e) $ and handlers $ (handle \, e \, hs \, ret) $ where $ ret $ is return expression $ (return \, x \, e) $ and $ hs $ is a list of handler clauses.
 
 To achieve call-by-value, left-to-right reduction order I use evaluation contexts $ E $; this choice follows other calculi which allow for computational effects\cite{Biernacki2017, Leijen2014, Hillerstrom2016}.
@@ -186,7 +186,7 @@ Finally, meta-variable $\Gamma$ ranges over typing contexts, $S$ over type subst
 \end{figure}
 
 \section{Dynamic semantics}
-The dynamic semantics for a calculus with algebraic effects defines besides the standard reductions known from \LC , the control structure of operations and handlers.
+The dynamic semantics for a calculus with algebraic effects defines besides the standard reductions known from \LC{}, the control structure of operations and handlers.
 Intuitively, when an operation $op$ is invoked, it will be handled by dynamically closest handler, with a caveat that for each lift passed in search of handler, it must skip one handler.
 Formally, when an operation $ op $ is invoked, it will be handled by lexically enclosing handler $ (handle \, E[op \, e] \, hs \, ret) $ if and only if the intermediate context $ E $ is $0$ free\cite{Biernacki2017}.
 
@@ -359,7 +359,7 @@ Two last rules deal with returning values -- in case of handler the return claus
 \section{Automatic testing}
 
 
-\chapter{The \Racket environment}\label{ch:racket}
+\chapter{The \Racket{} environment}\label{ch:racket}
 
 \section{Front-end}
 

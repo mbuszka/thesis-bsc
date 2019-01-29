@@ -1,2 +1,8 @@
 **/compiled/*
 *~
+figures/*
+thesis/*
+!thesis/thesis.pdf
+!thesis/thesis.tex
+!thesis/mybib.bib
+!thesis/iithesis.cls
