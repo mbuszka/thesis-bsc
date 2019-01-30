@@ -67,51 +67,51 @@ In order to rapidly iterate on design and test the calculus, I decided to use th
 As such the other goal of my thesis was to assess viability of \Redex{} for development of bigger calculi.
 To briefly summarize my development, I implemented: 
 \begin{itemize}
-  \item Curry style type system with ad-hoc effects in the style of \emph{Links}, effect rows based on \emph{Koka} and \emph{lift} construct first shown in \cite{Biernacki2017}, implemented as unification based type inference algorithm.
-  \item Executable reduction semantics most similar to system of \cite{Biernacki2017}.
-  \item CEK style abstract machine with stack and \emph{meta}-stack of handlers
-  \item Language front-end which translates human-friendly programs to calculus terms, integrated with \Racket{} environment, which allows for easy experimentation.
+  \item Curry style type system with ad-hoc effects in the style of \emph{Links}, effect rows based on \emph{Koka} and \emph{lift} construct first shown in \cite{Biernacki2017}, implemented as a unification-based type inference algorithm.
+  \item Executable reduction semantics most similar to the system of \cite{Biernacki2017}.
+  \item CEK style abstract machine with stack and \emph{meta}-stack of handlers, based on \cite{Hillerstrom2016}
 \end{itemize}
+Additionally to ease experimentation I implemented a language front-end which translates human-friendly programs to calculus terms, integrated with \Racket{} environment.
 
 % Outline of the thesis
 The rest of this thesis is structured as follows: in the remainder of this chapter I introduce the main topics of this thesis, in \autoref{ch:calculus} I describe the calculus in greater detail, in \autoref{ch:implementation} I discuss technicalities of implementation, in \autoref{ch:racket} I summarize the process of integration with \Racket{} environment and \autoref{ch:manual} is user's manual.
 
 \section{Algebraic effects and handlers}
 Algebraic effects and handlers are a language level framework which allow for coherent presentation, abstraction, composition and reasoning about computational effects.
-The key idea is to separate invocation of an effectful operation in an expression from the meaning of such operation.
-When one invokes an operation, current continuation (up to nearest handler) is captured and passed along with operation's argument to nearest handler.
+The key idea is to separate invocation of an effectful operation in an expression from the meaning of such an operation.
+When one invokes an operation, current continuation (up to the nearest handler) is captured and passed along with the operation's argument to the nearest handler.
 The handler in turn may execute arbitrary expression, using the continuation once, twice, returning a function which calls the continuation or simply ignoring it.
 This way many control structures can be modeled and generalized by algebraic effects and appropriate handlers.
-For example, the exceptions can be modeled using a single operation \texttt{Throw} and a handler which either returns the result when computation succeeded or returns default value, ignoring passed continuation.
+For example, the exceptions can be modeled using a single operation \texttt{Throw} and a handler which either returns the result when computation succeeded or returns a default value, ignoring the passed continuation.
 \begin{verbatim}
 handle e with
 | Throw () r -> // return default value
 | return x   -> x
 end
 \end{verbatim}
-From the language design standpoint algebraic effects provide single implementation of various phenomena which may happen during execution of a program, for example mutable state, I/O, environment lookup, exceptions etc. in a sense that every effect is treated the same, the typing rules are defined for invocation of any operation, and handling of any operation.
+From the language design standpoint algebraic effects provide single implementation of various phenomena which may happen during execution of a program, for example mutable state, I/O, environment lookup, exceptions, etc., in a sense that every effect is treated the same, the typing rules are defined for invocation of any operation, and handling of any operation.
 Similarly the operational semantics is also quite simple and succinct thanks to uniform treatment of various effects.
-This framework is also extendable. With small additions if can handle built-in effects in addition to user-defined ones.
+This framework is also extendable. With small additions it can handle built-in effects in addition to user-defined ones.
 
 From the language user perspective algebraic effects provide means of abstraction over effects used in a program.
-Thanks to easy creation of new effects, one can define special purpose operations and their handlers to better represent domain specific problems while simultaneously using well known effects, defined in standard library.
-With effects being tracked by the type system, programmers can enforce purity or specific set of used effects at compile-time, or using effect polymorphism they can write reusable functions which abstract over effects which may happen.
-The separation of definition and implementation of effects allows for various interpretations of operations, similar to a technique of \emph{dependency-injection} used for example during testing.
+Thanks to easy creation of new effects, one can define special purpose operations and their handlers to better represent domain specific problems while simultaneously using well known effects, defined in the standard library.
+With effects being tracked by the type system, programmers can enforce purity or specific set of used effects at compile-time, or using effect polymorphism they can write reusable functions that abstract over effects which may happen.
+The separation of definition and implementation of effects allows for various interpretations of operations, for example simulating a database connection or file-system during testing.
 % TODO anonymous vs defined effects, abstract effects, effect polymorphism
 
 \section{Type inference}
 Type inference is a technique of algorithmic reconstruction of types for various constructions used in a language.
-It allows programmers to write programs with no type annotations, which often feel redundant and obfuscate the meaning of a program.
-The most well known type system with inference is a system for \emph{ML} family of languages -- \emph{Haskell}, \emph{OCaml}, \emph{SML} which infers the types with no annotations whatsoever.
-Formal type system defines grammar of types consisting of base types (\texttt{int}, \texttt{bool} etc.), type constructors (arrows, algebraic data types) and type variables.
+It allows programmers to write programs with no type annotations, that often feel redundant and obfuscate the meaning of a program.
+The most well known type system with inference is a system for \emph{ML} family of languages\cite{Pierce2002} -- \emph{Haskell}, \emph{OCaml}, \emph{SML} which infers the types with no annotations whatsoever.
+A formal type system defines grammar of types consisting of base types (\texttt{int}, \texttt{bool} etc.), type constructors (arrows, algebraic data types) and type variables.
 The typing rules require types which should be compatible (e.g. formal parameter and argument types) to unify.
-The key feature of this system is so called let-polymorphism -- generalization of types of let-bound variables.
+The key feature of this system is the so-called let-polymorphism -- generalization of types of let-bound variables.
 This way code reuse can be accomplished without complicating the type system and compromising type safety.
-The basis of implementation of this system is first order unification algorithm, which syntactically decomposes types and builds a substitution from type variables to types.
+The basis of implementation of this system is first order unification algorithm\cite{Pierce2002}, which syntactically decomposes types and builds a substitution from type variables to types.
 
 \section{Reduction semantics and abstract machines}
 % TODO add reference to canonical definitions for good definition of reduction semantics and abstract machines, especially CEK
-Reduction semantics is a format for specifying dynamic semantics of a calculus in an operational style.
+Reduction semantics\cite{Felleisen2009} is a format for specifying dynamic semantics of a calculus in an operational style.
 The basic idea is to first define redexes -- expressions which can be reduced, and contexts in which the reduction can happen.
 Taking \LC{} with call-by-value reduction order as an example, the only redex is application of a function to value $ (\lambda x . e) v $.
 The possible contexts are: empty context $ \square $ or evaluation of operator part of application $ E e $ or evaluation of operand $ v E $ when left part has already been evaluated to a value.
@@ -121,15 +121,17 @@ The possible contexts are: empty context $ \square $ or evaluation of operator p
   \label{fig:lc-syntax}
 \end{figure}
 With these possibilities in mind, we will define binary relation $ \longrightarrow $ which describes single step of reduction.
-Such relation can be thought of as a transition system, rewriting terms into simpler ones step by step.
+Such relation can be thought of as a transition system, rewriting terms into 'simpler' ones step by step.
 There usually are two approaches to definition of such relation:
 \begin{itemize}
-  \item Definition of primitive reduction $ (\lambda x . e) v \longrightarrow_p e\{v/x\} $ which operates only on redexes and giving it a closure via following inference rule:
+  \item Definition of primitive reduction $ (\lambda x . e) v \longrightarrow_p e\{v/x\} $ which operates only on redexes and giving it a closure with the following inference rule:
+  
   \begin{prooftree}
     \Hypo{e \longrightarrow_p e'}
     \Infer1{E[e] \longrightarrow E[e']}
-  \end{prooftree},
-  which says that if we can primitively reduce some expression, than we can do it in any context.
+  \end{prooftree}
+
+  which says that if we can primitively reduce some expression, then we can do it in any context.
   \item Or definition of $ \longrightarrow $ directly, with decomposition of terms on both sides: $ E[(\lambda x . e) v] \longrightarrow E[e\{v/x\}] $
 \end{itemize}
 where the syntax $ e\{v/x\} $ means term $ e $ with value $ v $ substituted for variable $ x $, and $ E[e] $ means some context $ E $ with expression $ e $ inserted into the hole.
@@ -146,8 +148,8 @@ For both approaches it is important, that any term can be uniquely decomposed in
 \end{figure}
 
 Abstract machine is a mathematical construction, usually defined as a set of configurations with deterministic transformations, which are computationally simple.
-The goal for formulation of an abstract machine is to mechanize evaluation of terms while retaining semantics given in more abstract format, e.g. reduction semantics, with the correspondence being provable\cite{Felleisen2009}.
-As an example I will show a \emph{CEK}-machine for the \LC{} defined earlier.
+The goal for formulation of an abstract machine is to mechanize evaluation of terms while retaining semantics given in a more abstract format, e.g. reduction semantics, with the correspondence being provable\cite{Felleisen2009}.
+As an example \autoref{fig:lc-cek } shows a \emph{CEK}-machine for the \LC{} defined earlier.
 The name \emph{CEK} comes from \emph{C}ommand, \emph{E}nvironment and \emph{K}ontinuation.
 The machine configuration is a triple $ (e, \rho, \kappa) $ where $ e $ is an expression which is decomposed or reduced, $ \rho $ is an environment mapping variables to values, and the last component $ \kappa $ is a continuation stack, which determines what will happen with value, to which first component eventually reduces.
 Thanks to the environment we no longer have to explicitly perform substitution, leading to more machine friendly and efficient implementation.
