@@ -149,7 +149,7 @@ For both approaches it is important, that any term can be uniquely decomposed in
 
 Abstract machine is a mathematical construction, usually defined as a set of configurations with deterministic transformations, which are computationally simple.
 The goal for formulation of an abstract machine is to mechanize evaluation of terms while retaining semantics given in a more abstract format, e.g. reduction semantics, with the correspondence being provable\cite{Felleisen2009}.
-As an example \autoref{fig:lc-cek } shows a \emph{CEK}-machine for the \LC{} defined earlier.
+As an example, \autoref{fig:lc-cek} shows a \emph{CEK}-machine for the \LC{} defined earlier.
 The name \emph{CEK} comes from \emph{C}ommand, \emph{E}nvironment and \emph{K}ontinuation.
 The machine configuration is a triple $ (e, \rho, \kappa) $ where $ e $ is an expression which is decomposed or reduced, $ \rho $ is an environment mapping variables to values, and the last component $ \kappa $ is a continuation stack, which determines what will happen with value, to which first component eventually reduces.
 Thanks to the environment we no longer have to explicitly perform substitution, leading to more machine friendly and efficient implementation.
