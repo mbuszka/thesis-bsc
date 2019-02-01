@@ -1,6 +1,6 @@
-#lang racket
+#lang racket/base
 
-(require redex
+(require redex/reduction-semantics
          "lang.rkt"
          "lib.rkt"
          "type.rkt")
@@ -28,16 +28,13 @@
    (side-condition (not-in op (ops hs)))
    (free op E n)]
 
-  [(free op (E e) n)
+  [(free op (app E e) n)
    (free op E n)]
 
-  [(free op (v E) n)
+  [(free op (app v E) n)
    (free op E n)]
 
-  [(free op (prim E e) n)
-   (free op E n)]
-
-  [(free op (prim v E) n)
+  [(free op (prim v ... E e ...) n)
    (free op E n)]
 
   [(free op_1 (op_2 E) n)
@@ -50,16 +47,16 @@
 (define red
   (reduction-relation
    Infer
-   (--> (in-hole E ((λ x e) v))
+   (--> (in-hole E (app (λ x e) v))
         (in-hole E (substitute e x v))
         β-λ)
 
-   (--> (in-hole E ((rec x_f x_a e) v))
+   (--> (in-hole E (app (rec x_f x_a e) v))
         (in-hole E (substitute (substitute e x_f (rec x_f x_a e)) x_a v))
         β-rec)
 
-   (--> (in-hole E (prim v_1 v_2))
-        (in-hole E (prim-apply prim v_1 v_2))
+   (--> (in-hole E (prim v ...))
+        (in-hole E (prim-apply prim v ...))
         prim-op)
 
    (--> (in-hole E (if true e_1 e_2))

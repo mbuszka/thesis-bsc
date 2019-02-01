@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require syntax/strip-context
+         racket/pretty
          "lang/tokenizer.rkt"
          "lang/parser.rkt"
          "calculus/type.rkt"
@@ -21,12 +22,20 @@
   (#%module-begin
    (run (quote tree))))
 
-(define (run t)
+(define (run e)
   (begin
-    (println t)
-    (if (types? t)
-        (list (ev:reduce t) (am:reduce t))
-        '(error does not typecheck))))
+    (printf "desugared expression:\n")
+    (pretty-print e)
+    (define t (infer-type e))
+    (if t
+        (begin
+          (printf "\nhas type:\n")
+          (pretty-print t)
+          (printf "\nreduction result:\n")
+          (pretty-print (ev:reduce e))
+          (printf "\nabstract machine result:\n")
+          (pretty-print (am:reduce e)))
+        (printf "does not type-check\n"))))
 
 (provide (rename-out [-#%module-begin #%module-begin])
          #%app #%datum #%top #%top-interaction)

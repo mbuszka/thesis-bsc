@@ -1,24 +1,24 @@
-#lang racket
+#lang racket/base
 
 (require "lang.rkt"
          "lib.rkt"
-         redex
+         redex/reduction-semantics
          )
 
 (provide abstract-machine am-a am-b am-c am-e reduce initial-conf AM)
 
 (define-extended-language AM Infer
   ; Machine configuration
-  (C ::= (e ρ Σ ϕ K) (V ρ Σ ϕ K) (op V n K K) V)
+  (C ::= (e ρ Σ ϕ K) (val V ρ Σ ϕ K) (op V n K K) V)
 
   ; Machine values
-  (V ::= (λ ρ x e) (rec ρ x x e) (val number) (val true) (val false) K)
+  (V ::= (λ ρ x e) (rec ρ x x e) m b (V ...) K)
 
   ; Value environment
   (ρ ::= ([x V] ...))
 
   ; Pure continuation frames
-  (σ ::= (arg e ρ) (app V) (do op) (prim-l prim e ρ) (prim-r prim V) (if e e ρ))
+  (σ ::= (arg e ρ) (app V) (do op) (prim ρ V ... / e ...) (if e e ρ))
   (Σ ::= (σ ...))
 
   ; Effect continuation frames
@@ -40,28 +40,34 @@
 (define am-a
   (reduction-relation
    AM
-   ; Value conversion
+   ; Value conversion and nullary primop
    (--> ((λ x e) ρ Σ ϕ K)
-        ((λ ρ x e) ρ Σ ϕ K))
+        (val (λ ρ x e) ρ Σ ϕ K))
 
    (--> ((rec x_f x_a e) ρ Σ ϕ K)
-        ((rec ρ x_f x_a e) ρ Σ ϕ K))
+        (val (rec ρ x_f x_a e) ρ Σ ϕ K))
 
-   (--> (number ρ Σ ϕ K)
-        ((val number) ρ Σ ϕ K))
+   (--> (m ρ Σ ϕ K)
+        (val m ρ Σ ϕ K))
 
-   ; Binary operation sequencing
-   (--> (V ρ_1 ([arg e ρ_2] σ ...) ϕ K)
+   (--> (b ρ Σ ϕ K)
+        (val b ρ Σ ϕ K))
+
+   (--> ((prim) ρ Σ ϕ K)
+        (val (prim-apply prim) ρ Σ ϕ K))
+
+   ; Application and primitive operation sequencing
+   (--> (val V ρ_1 ([arg e ρ_2] σ ...) ϕ K)
         (e ρ_2 ([app V] σ ...) ϕ K))
 
-   (--> (V ρ_1 ([prim-l prim e ρ_2] σ ...) ϕ K)
-        (e ρ_2 ([prim-r prim V] σ ...) ϕ K))
+   (--> (val V ρ_1 ([prim ρ_2 V_1 ... / e e_1 ...] σ ...) ϕ K)
+        (e ρ_2 ([prim ρ_2 V_1 ... V / e_1 ...] σ ...) ϕ K))
 
    ; Operation invocation
-   (--> (V ρ ([do op] σ ...) ϕ (κ ...))
+   (--> (val V ρ ([do op] σ ...) ϕ (κ ...))
         (op V 0 ([(σ ...) ϕ] κ ...) ()))
 
-   (--> (V ρ () done ())
+   (--> (val V ρ () done ())
         V)
    ))
 
@@ -69,14 +75,14 @@
   (reduction-relation
    AM
    ; Continuation building normal
-   (--> ((e_1 e_2) ρ (σ ...) ϕ K)
+   (--> ((app e_1 e_2) ρ (σ ...) ϕ K)
         (e_1 ρ ([arg e_2 ρ] σ ...) ϕ K))
 
    (--> ((op e) ρ (σ ...) ϕ K)
         (e ρ ([do op] σ ...) ϕ K))
 
-   (--> ((prim e_1 e_2) ρ (σ ...) ϕ K)
-        (e_1 ρ ([prim-l prim e_2 ρ] σ ...) ϕ K))
+   (--> ((prim e e_1 ...) ρ (σ ...) ϕ K)
+        (e ρ ([prim ρ / e_1 ...] σ ...) ϕ K))
 
    (--> ((if e_cond e_then e_else) ρ (σ ...) ϕ K)
         (e_cond ρ ([if e_then e_else ρ] σ ...) ϕ K))
@@ -94,27 +100,27 @@
    AM
    ; Variable lookup
    (--> (x ρ Σ ϕ K)
-        ((lookup-ρ ρ x) ρ Σ ϕ K))
+        (val (lookup-ρ ρ x) ρ Σ ϕ K))
 
    ; Contraction
-   (--> (V ρ_2 ([app (λ ρ_1 x e)] σ ...) ϕ K)
+   (--> (val V ρ_2 ([app (λ ρ_1 x e)] σ ...) ϕ K)
         (e (extend ρ_1 x V) (σ ...) ϕ K))
 
-   (--> (V ρ_2 ([app (rec ρ_1 x_f x_a e)] σ ...) ϕ K)
+   (--> (val V ρ_2 ([app (rec ρ_1 x_f x_a e)] σ ...) ϕ K)
         (e (extend (extend ρ_1 x_f (rec ρ_1 x_f x_a e)) x_a V) (σ ...) ϕ K))
 
-   (--> (V ρ ([app ([Σ ϕ_1] κ_1 ...)] σ ...) ϕ_2 (κ_2 ...))
-        (V ρ Σ ϕ_1 (κ_1 ... [(σ ...) ϕ_2] κ_2 ...)))
+   (--> (val V ρ ([app ([Σ ϕ_1] κ_1 ...)] σ ...) ϕ_2 (κ_2 ...))
+        (val V ρ Σ ϕ_1 (κ_1 ... [(σ ...) ϕ_2] κ_2 ...)))
 
    ; Primitive operation
-   (--> ((val number_2) ρ ([prim-r prim (val number_1)] σ ...) ϕ K)
-        ((val (prim-apply prim number_1 number_2)) ρ (σ ...) ϕ K))
+   (--> (val V ρ_1 ([prim ρ_2 V_1 ... /] σ ...) ϕ K)
+        (val (prim-apply prim V_1 ... V) ρ_2 (σ ...) ϕ K))
 
    ; If expression
-   (--> ((val true) ρ_1 ([if e any ρ] σ ...) ϕ K)
+   (--> (val true ρ_1 ([if e any ρ] σ ...) ϕ K)
         (e ρ (σ ...) ϕ K))
 
-   (--> ((val false) ρ_1 ([if any e ρ] σ ...) ϕ K)
+   (--> (val false ρ_1 ([if any e ρ] σ ...) ϕ K)
         (e ρ (σ ...) ϕ K))
   ))
 
@@ -143,11 +149,11 @@
         (judgment-holds (get-handler op hs (x_1 x_2 e))))
 
    ; Return
-   (--> (V ρ_1 () (handle hs (return x e) ρ) ([Σ ϕ] κ ...))
+   (--> (val V ρ_1 () (handle hs (return x e) ρ) ([Σ ϕ] κ ...))
         (e (extend ρ x V) Σ ϕ (κ ...)))
 
-   (--> (V ρ () (lift op) ([Σ ϕ] κ ...))
-        (V ρ Σ ϕ (κ ...)))
+   (--> (val V ρ () (lift op) ([Σ ϕ] κ ...))
+        (val V ρ Σ ϕ (κ ...)))
    ))
 
 (define abstract-machine

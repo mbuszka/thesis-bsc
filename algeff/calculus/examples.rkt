@@ -1,6 +1,6 @@
-#lang racket
+#lang racket/base
 
-(require redex)
+(require redex/reduction-semantics)
 
 (provide handle-expr-read
          handle-expr-state

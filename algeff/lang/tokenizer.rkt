@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (require "lexer.rkt" parser-tools/lex)
 (provide make-tokenizer tokenize)

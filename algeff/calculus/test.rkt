@@ -1,6 +1,6 @@
-#lang racket
+#lang racket/base
 
-(require redex
+(require redex/reduction-semantics
          "type.rkt"
          (prefix-in red: "eval.rkt")
          (prefix-in am: "abstract-machine.rkt")

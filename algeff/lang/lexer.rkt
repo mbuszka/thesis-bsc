@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (require parser-tools/lex
          (prefix-in : parser-tools/lex-sre))
@@ -6,16 +6,17 @@
 (provide the-lexer base base* keywords)
 
 (define-empty-tokens keywords
-  (LAMBDA HANDLE WITH END LIFT RETURN LETREC LET IN IF THEN ELSE))
+  (LAMBDA HANDLE WITH END LIFT RETURN LETREC LET IN IF THEN ELSE TRUE FALSE))
 
 (define-tokens base
   (PRIM NUMBER VAR OP))
 
 (define-empty-tokens base*
-  (ARR PIPE SEMICOLON EOF LPAREN RPAREN EQUALS))
+  (ARR PIPE SEMICOLON EOF LPAREN RPAREN EQUALS COMMA))
 
 (define the-lexer
   (lexer-src-pos
+   [(:: "--" (:* (:~ #\newline)) #\newline) (return-without-pos (the-lexer input-port))]
    [(:or "λ"
          "fun")
     (token-LAMBDA)]
@@ -30,15 +31,18 @@
    ["if" (token-IF)]
    ["then" (token-THEN)]
    ["else" (token-ELSE)]
+   ["true" (token-TRUE)]
+   ["false" (token-FALSE)]
    ["|" (token-PIPE)]
    [";" (token-SEMICOLON)]
+   ["," (token-COMMA)]
    ["(" (token-LPAREN)]
    [")" (token-RPAREN)]
    ["=" (token-EQUALS)]
    [(:or "->"
          "→")
     (token-ARR)]
-   [(:or #\+ #\- #\* "==" "<=" ">=")
+   [(:or #\+ #\- #\* "==" "<=" ">=" "cons" "nil" "hd" "tl" "cons?" "nil?")
     (token-PRIM lexeme)]
    [(:+ (:/ #\0 #\9))
     (token-NUMBER (string->number lexeme))]
@@ -46,7 +50,6 @@
     (token-VAR lexeme)]
    [(:: upper-case (:* alphabetic))
     (token-OP lexeme)]
-   [(:: "--" (:* (:~ #\newline)) #\newline) (return-without-pos (the-lexer input-port))]
    [(:or whitespace blank iso-control) (return-without-pos (the-lexer input-port))]
    [(eof) (token-EOF)]))
 

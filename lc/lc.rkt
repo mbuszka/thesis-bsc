@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require redex)
+(require redex/reduction-semantics)
 
 (provide LC red)
 

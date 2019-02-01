@@ -1,6 +1,6 @@
 #! /usr/bin/racket
 #lang racket/base
-(require redex
+(require redex/reduction-semantics
          racket/match
          "calculus/lang.rkt"
          "calculus/type.rkt"

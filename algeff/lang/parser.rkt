@@ -7,7 +7,7 @@
   megaparsack
   megaparsack/parser-tools/lex
   racket/match
-  redex)
+  redex/reduction-semantics)
 
 (provide parse)
 
@@ -66,9 +66,10 @@
 
 (define prim-call/p
   (do (op <- prim/p)
-    (l <- term/p)
-    (r <- term/p)
-    (pure (term (,op ,l ,r)))))
+    (token/p 'LPAREN)
+    (es <- (many/p expr/p #:sep (token/p 'COMMA)))
+    (token/p 'RPAREN)
+    (pure (term (,op ,@es)))))
 
 (define lambda/p
   (do (token/p 'LAMBDA)
@@ -138,7 +139,7 @@
     (body <- expr/p)
     (token/p 'IN)
     (rest <- expr/p)
-    (pure (term ((λ ,x ,rest) ,body)))))
+    (pure (term (app (λ ,x ,rest) ,body)))))
 
 (define letrec/p
   (do (token/p 'LETREC)
@@ -148,7 +149,13 @@
     (body <- expr/p)
     (token/p 'IN)
     (rest <- expr/p)
-    (pure (term ((λ ,f ,rest) (rec ,f ,x ,body))))))
+    (pure (term (app (λ ,f ,rest) (rec ,f ,x ,body))))))
+
+(define bool/p
+  (or/p (do (token/p 'TRUE)
+          (pure 'true))
+        (do (token/p 'FALSE)
+          (pure 'false))))
 
 (define term/p
   (or/p
@@ -159,6 +166,7 @@
    prim-call/p
    lambda/p
    number/p
+   bool/p
    var/p
    (do (token/p 'LPAREN)
      (e <- expr/p)
@@ -169,7 +177,7 @@
   (define (aux acc xs)
     (match xs
       ['() acc]
-      [(list-rest x xs) (aux (list acc x) xs)]))
+      [(list-rest x xs) (aux (list 'app acc x) xs)]))
   (match xs
     [(list x) x]
     [(list-rest x ys) (aux x ys)]))

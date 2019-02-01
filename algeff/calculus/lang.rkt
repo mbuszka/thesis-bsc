@@ -1,6 +1,6 @@
-#lang racket
+#lang racket/base
 
-(require redex
+(require redex/reduction-semantics
          racket/set)
 
 (provide Infer ftv ops subst is-var not-var value?)
@@ -9,13 +9,13 @@
   ; Values
   (b     ::= true false)
   (m     ::= number)
-  (v     ::= m b (λ x e) (rec x x e))
+  (v     ::= m b (λ x e) (rec x x e) (v ...))
   ; TODO add booleans, letrec.
   ; Primitive operations on numbers
-  (prim  ::= + - * == <= >=)
+  (prim  ::= + - * == <= >= cons nil cons? nil? hd tl)
 
   ; Expressions
-  (e     ::= v x (e e) (if e e e) (prim e ...)
+  (e     ::= v x (app e e) (if e e e) (prim e ...)
          (op e) (handle e hs ret) (lift op e))
 
   ; Handlers
@@ -29,7 +29,7 @@
   (h     ::= (op hexpr))
 
   ; Types
-  (t     ::= Int Bool (t -> row t) (t => t) row a)
+  (t     ::= Int Bool (t -> row t) (List t) (t => t) row a)
   (row   ::= (op t row) a ·)
 
   ; Term variables
@@ -45,7 +45,7 @@
   (Γ     ::= (x t Γ) ·)
 
   ; Evaluation contexts
-  (E     ::= hole (E e) (v E) (prim E e) (prim v E) (if E e e)
+  (E     ::= hole (app E e) (app v E) (prim v ... E e ...) (if E e e)
          (op E) (handle E hs ret) (lift op E))
   
   ; Substitution
@@ -59,7 +59,6 @@
   
   #:binding-forms
   (λ x e #:refers-to x)
-  (∀ a ... t #:refers-to (shadow a ...))
   (op x_1 x_2 e #:refers-to (shadow x_2 x_1) h)
   (rec x_f x_a e #:refers-to (shadow x_f x_a))
   (return x e #:refers-to x))
@@ -103,6 +102,7 @@
   [(ftv/s ·) ,(set)]
   [(ftv/s Int) ,(set)]
   [(ftv/s Bool) ,(set)]
+  [(ftv/s (List t)) (ftv/s t)]
   [(ftv/s (t_1 -> row t_2)) ,(set-union (term any_1) (term any_2) (term any_3))
                             (where any_1 (ftv/s t_1))
                             (where any_2 (ftv/s row))

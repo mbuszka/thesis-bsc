@@ -1,5 +1,5 @@
-#lang racket
-(require redex
+#lang racket/base
+(require redex/reduction-semantics
          "lang.rkt")
 
 (provide lookup in not-in dom-S fresh-row fresh-arr fresh-var neq eq trace get-handler prim-apply)
@@ -60,7 +60,7 @@
    (where (a_s ...) (dom-S S))])
 
 (define-metafunction Infer
-  prim-apply : prim v v -> v
+  prim-apply : prim v ... -> v
 
   [(prim-apply + number_1 number_2) ,(+ (term number_1) (term number_2))]
   [(prim-apply - number_1 number_2) ,(- (term number_1) (term number_2))]
@@ -69,6 +69,14 @@
   [(prim-apply == number_1 number_2) ,(if (= (term number_1) (term number_2)) 'true 'false)]
   [(prim-apply <= number_1 number_2) ,(if (<= (term number_1) (term number_2)) 'true 'false)]
   [(prim-apply >= number_1 number_2) ,(if (>= (term number_1) (term number_2)) 'true 'false)]
+  [(prim-apply hd (v any ...)) v]
+  [(prim-apply tl (any v ...)) (v ...)]
+  [(prim-apply nil? ()) true]
+  [(prim-apply nil? (v_1 v_2 ...)) false]
+  [(prim-apply cons? ()) false]
+  [(prim-apply cons? (v_1 v_2 ...)) true]
+  [(prim-apply cons v (v_1 ...)) (v v_1 ...)]
+  [(prim-apply nil) ()]
   )
 
 (define-judgment-form Infer
