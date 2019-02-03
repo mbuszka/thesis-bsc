@@ -1,6 +1,6 @@
 #! /usr/bin/racket
 #lang racket/base
-(require redex/reduction-semantics
+(require redex
          racket/match
          "calculus/lang.rkt"
          "calculus/type.rkt"
@@ -44,6 +44,8 @@
         (render-metafunction initial-conf (mk-path "algeff-am-initial-conf.eps"))
         (render-language lc:LC (mk-path "lc-syntax.eps"))
         (render-reduction-relation lc:red (mk-path "lc-red.eps"))
+        (render-judgment-form unify (mk-path "algeff-unify.eps"))
+        (render-judgment-form unify-row (mk-path "algeff-unify-row.eps"))
         ))))
 
 (render "figures")

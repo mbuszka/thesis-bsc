@@ -96,8 +96,6 @@
 
 \LoadClass[a4paper,11pt,onecolumn,twoside,openright,titlepage]{report}
 
-
-
 \RequirePackage{ifthen}
 
 \newboolean{Long@Abstract}
@@ -184,7 +182,10 @@
 
 
 
-\RequirePackage[OT4]{fontenc}
+\RequirePackage{fontspec}
+% \setmainfont{CMU Serif}
+% \setsansfont{CMU Sans Serif}
+\setmonofont{CMU Typewriter Text}
 
 \RequirePackage{babel,titling,geometry}
 
@@ -404,11 +405,11 @@
 
 
 
-\RequirePackage[pdftex,unicode=true]{hyperref}
+\RequirePackage[xetex,unicode=true]{hyperref}
 
 
-
-\AtBeginDocument{
+\RequirePackage{etoolbox}
+\AfterEndPreamble{
 
   \if@pol{\selectlanguage{polish}\old@title{\bfseries\@polishtitle\mdseries}}
 
