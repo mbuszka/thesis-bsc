@@ -50,10 +50,11 @@ They allow for seamless composition of multiple effects, while retaining (unlike
 Coupled with handlers \cite{Plotkin2013} which give programmers ability to interpret effects, they provide a disciplined and flexible tool for abstracting over a set of operations which a program may perform and for separating this interface from the semantics of those operations, defined as effect handlers.
 
 % What are other approaches to algebraic effects
-As composability and separation of concerns are often sought after, many calculi and languages have been developed in order to get algebraic effects just right; most notable of them being: \emph{Koka}\cite{Leijen2014} (featuring type inference, effect polymorphism with row-types and \emph{JavaScript}-like syntax), \emph{Links}\cite{Hillerstrom2016} (featuring \emph{ML}-like syntax, row-typed effect polymorphism and ad-hoc effects), \emph{Helium}\cite{Biernacki2019} (with abstract and local effects, \emph{ML}-style module system and principled approach to effect polymorphism), \emph{Eff}\cite{Bauer2012} (with implicit effect checking and recent work on direct compilation to \emph{OCaml}\cite{Kiselyov2018}) and \emph{Frank}\cite{Lindley2017} (with bidirectional type and effect system requiring minimal amount of effect variables, and shallow effect handlers). 
+As composability and separation of concerns are often sought after, many calculi and languages have been developed in order to get algebraic effects just right; most notable of them being: \emph{Koka} \cite{Leijen2014} (featuring type inference, effect polymorphism with row-types and \emph{JavaScript}-like syntax), \emph{Links} \cite{Hillerstrom2016} (featuring \emph{ML}-like syntax, row-typed effect polymorphism and ad-hoc effects), \emph{Helium} \cite{Biernacki2019} (with abstract and local effects, \emph{ML}-style module system and principled approach to effect polymorphism), \emph{Eff} \cite{Bauer2012} (with implicit effect checking and recent work on direct compilation to \emph{OCaml} \cite{Kiselyov2018}) and \emph{Frank} \cite{Lindley2017} (with bidirectional type and effect system requiring minimal amount of effect variables, and shallow effect handlers). 
+
 On a more theoretical side, various approaches to semantics of algebraic effects can be spotted in the literature, both with respect to type systems and run-time semantics.
-Although most calculi use some form of row-types (with notable exception of \emph{Frank}\cite{Lindley2017}) to implement tracking of effects there are differences in permitted shapes (at most one effect\cite{Hillerstrom2016} of given type or many effects\cite{Biernacki2017,Leijen2014}, whether effects must be defined before use\cite{Biernacki2017,Lindley2017,Leijen2014,Bauer2012} or not\cite{Hillerstrom2016}) and how effects interact with polymorphism and abstraction.
-At run-time handlers can wrap the captured continuation (giving so-called deep handlers\cite{Biernacki2017,Hillerstrom2016,Leijen2014,Bauer2012}) or not (shallow handlers\cite{Lindley2017}) and the very act of finding the right handler can be implemented in various ways, mainly depending on some constructs which skip handlers\cite{Biernacki2017}.
+Although most calculi use some form of row-types (with notable exception of \emph{Frank} \cite{Lindley2017}) to track effects, there are differences in permitted shapes (at most one effect \cite{Hillerstrom2016} of given type or many effects \cite{Biernacki2017,Leijen2014}, whether effects must be defined before use \cite{Biernacki2017,Lindley2017,Leijen2014,Bauer2012} or not \cite{Hillerstrom2016}) and how effects interact with polymorphism and abstraction.
+At run-time handlers can wrap the captured continuation (giving so-called deep handlers \cite{Biernacki2017,Hillerstrom2016,Leijen2014,Bauer2012}) or not (shallow handlers \cite{Lindley2017}) and the very act of finding the right handler can be implemented in various ways, mainly depending on some constructs which skip handlers \cite{Biernacki2017}.
 
 % What am I implementing, what is interesting in this thesis, how it differs from other systems/languages (The main goal of the thesis)
 % Goals:
@@ -64,16 +65,40 @@ At run-time handlers can wrap the captured continuation (giving so-called deep h
 %  language front-end facilitating ease of experimentation
 %  some lightweight machine checking (automatic tests)
 All this variety naturally invites us to experiment with different features and components of a calculus.
-In this thesis I will build such a calculus, describing and justifying my choices and discussing the trade-offs I faced.
-In order to rapidly iterate on design and test the calculus, I decided to use the \Redex{} library which allows for building language model with executable type system judgments and reduction relation.
-As such the other goal of my thesis was to assess viability of \Redex{} for development of bigger calculi.
-To briefly summarize my development, I implemented: 
+An executable model would be excellent for everyone interested in understanding inner workings of algebraic effects.
+In particular, the ability to perform and visualize reductions would be very helpful for understanding of the dynamic semantics of operations and handlers.
+In this thesis I will build such a calculus, describing my choices and discussing the trade-offs I faced.
+
+The first goal of this thesis is the design of the calculus with effects and handlers, and its dynamic semantics.
+Its implementation should be executable and allow for step-by-step reduction of calculus terms by a computer program.
+
+The second goal is the design and implementation of a sound type system for the calculus, preferably with type inference.
+It must enable easy use of effectful operations and allow for small yet complete examples.
+The implementation should be runnable to facilitate explorability and learning by example.
+It should also allow easy extension with additional language and type constructs.
+
+The third goal is the design and implementation of abstract machine, which preserves the dynamic semantics of the calculus, yet is easier to translate into low-level virtual machine.
+It could also be used as a basis for compilation to native code.
+
+In order to rapidly iterate on the design and test the calculus, I decided to use the \Redex{} library which allows for building language model with executable type system judgments and reduction relation.
+The calculus is designed to be small enough to be easily understood, yet have general language features to allow experimentation with reasonably complex programs.
+The programmer can use $\lambda$-abstractions and recursive functions, numbers with addition, subtraction, multiplication and comparisons, booleans with conditional expressions and lists.
+
+The algebraic effects are implemented with ad-hoc operations which take one parameter and return a value, handlers which can handle multiple (different) operations at once and lifts which allow operations to skip handlers.
+The type system for calculus is presented in Curry style, with the implementation inferring simple types for unannotated terms using unification algorithm.
+Although there is no way to create and bind polymorphic values, the system infers most general (simple) type for an expression which may contain unsolved variables.
+
+The abstract machine is implemented with explicit stack of continuations and value environment.
+It is given deterministic transition system using \Redex{}'s reduction relation and meta-function transforming a calculus expression into initial configuration.
+
+Additionally to ease experimentation I implemented a language front-end which translates human-friendly programs to calculus terms, integrated with \Racket{} environment.
+
+In brief summary, the development consists of:
 \begin{itemize}
-  \item Curry style type system with ad-hoc effects in the style of \emph{Links}, effect rows based on \emph{Koka} and \emph{lift} construct first shown in \cite{Biernacki2017}, implemented as a unification-based type inference algorithm.
   \item Executable reduction semantics most similar to the system of \cite{Biernacki2017}.
+  \item Curry style type system with ad-hoc effects in the style of \emph{Links}, effect rows based on \emph{Koka} and \emph{lift} construct of \cite{Biernacki2017}, implemented as a unification-based type inference algorithm.
   \item CEK style abstract machine with stack and \emph{meta}-stack of handlers, based on \cite{Hillerstrom2016}
 \end{itemize}
-Additionally to ease experimentation I implemented a language front-end which translates human-friendly programs to calculus terms, integrated with \Racket{} environment.
 
 % Outline of the thesis
 The rest of this thesis is structured as follows: in the remainder of this chapter I introduce the main topics of this thesis, in \autoref{ch:calculus} I describe the calculus in greater detail, in \autoref{ch:implementation} I discuss technicalities of implementation and integration with the \Racket{} environment and \autoref{ch:manual} is user's manual.
