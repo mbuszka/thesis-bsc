@@ -22,91 +22,58 @@
   #:contract (infer Γ SN e t row SN)
 
   [(fresh-row N_1 row N_2)
-   ---------------------------------------
+   ------------------------------------- "Bool"
    (infer Γ [S N_1] b Bool row [S N_2])]
 
-  [;(trace ("=== inferring number ===\n~s\n" number))
-   (fresh-row N_1 row N_2)
-   ;(trace ("<<< inferred number <<<\n~s\n~s\n" (apply S Int) (apply S row)))
-   --------------
+  [(fresh-row N_1 row N_2)
+   ------------------------------------ "Num"
    (infer Γ [S N_1] m Int row [S N_2])]
   
-  [;(trace ("=== inferring variable ===\n~s\n" x))
-   (lookup Γ x t) (fresh-row N_1 row N_2)
-   ;(trace ("<<< inferred variable <<<\n~s\n~s\n" (apply S t) (apply S row)))
-   ------------------------------------
+  [(lookup Γ x t) (fresh-row N_1 row N_2)
+   -------------------------------------- "var"
    (infer Γ [S N_1] x t row [S N_2])]
 
-  [;(trace ("=== inferring lambda ===\n~s\n" (λ x e)))
-   (fresh-var N_1 t_1 N_2) (fresh-row N_2 row_2 N_3)
-                           (infer (x t_1 Γ) [S_1 N_3] e t_2 row_1 SN)
-                           ;   (trace ("<<< inferred lambda <<<\n~s\n~s\n"
-                           ;           (apply (subst SN) (t_1 -> row_1 t_2)) (apply (subst SN) row_2)))
-                           ------------------------------------------------
-                           (infer Γ [S_1 N_1] (λ x e) (t_1 -> row_1 t_2) row_2 SN)]
+  [(fresh-var N_1 t_1 N_2) (fresh-row N_2 row_2 N_3)
+   (infer (x t_1 Γ) [S_1 N_3] e t_2 row_1 SN)
+   -------------------------------------------------------- "λ"
+   (infer Γ [S_1 N_1] (λ x e) (t_1 -> row_1 t_2) row_2 SN)]
 
-  [; (trace ("=== inferring rec ===\n~s\n" (rec x_f x_a e)))
-   (fresh-arr N_1 t_1 -> row_1 t_2 N_2) (fresh-row N_2 row_2 N_3)
-                                        (infer (x_f (t_1 -> row_1 t_2) (x_a t_1 Γ)) [S_1 N_3] e t row SN_1)
-                                        (unify SN_1 row_1 row SN_2) (unify SN_2 t_2 t SN_3)
-                                        ;   (trace ("<<< inferred rec <<<\n~s\n~s\n"
-                                        ;           (apply (subst SN_3) (t_1 -> row_1 t_2)) (apply (subst SN_3) row_2)))
-                                        ------------------------------------------------
-                                        (infer Γ [S_1 N_1] (rec x_f x_a e) (t_1 -> row_1 t_2) row_2 SN_3)]
+  [(fresh-arr N_1 t_1 -> row_1 t_2 N_2) (fresh-row N_2 row_2 N_3)
+   (infer (x_f (t_1 -> row_1 t_2) (x_a t_1 Γ)) [S_1 N_3] e t row SN_1)
+   (unify SN_1 row_1 row SN_2) (unify SN_2 t_2 t SN_3)
+   ------------------------------------------------------------------- "rec"
+   (infer Γ [S_1 N_1] (rec x_f x_a e) (t_1 -> row_1 t_2) row_2 SN_3)]
 
-  [; (trace ("=== inferring application ===\n~s\n" (e_1 e_2)))
-   (infer Γ SN_1 e_1 t_a row_a SN_2) (unify-arr SN_2 t_a t_1 -> row_1 t_2 SN_3)
-                                     (infer Γ SN_3 e_2 t_3 row_2 SN_4)
-                                     ;   (trace ("=== unify arg with expected ===\nexpected ~s\narg: ~s\n"
-                                     ;           (apply (subst SN_4) t_1) (apply (subst SN_4) t_3))) 
-                                     (unify SN_4 t_1 t_3 SN_5) (unify SN_5 row_1 row_2 SN_6) (unify SN_6 row_1 row_a SN_7)
-                                     ;   (trace ("=== unify arrow row with arg row ===\narrow:~s\narg: ~s\n"
-                                     ;           (apply (subst SN_5) row_1) (apply (subst SN_5) row_2))) 
-                                     ;   (trace ("=== unify arrow row with arr env row ===\narrow:~s\narg: ~s\n"
-                                     ;           (apply (subst SN_6) row_1) (apply (subst SN_6) row_a)))
-                                     ;   (trace ("<<< inferred application <<<\n~s\n~s\n"
-                                     ;           (apply (subst SN_7) t_2) (apply (subst SN_7) row_2)))
-                                     ---------------------------------
-                                     (infer Γ SN_1 (app e_1 e_2) t_2 row_2 SN_7)]
+  [(infer Γ SN_1 e_1 t_a row_a SN_2) (unify-arr SN_2 t_a t_1 -> row_1 t_2 SN_3)
+   (infer Γ SN_3 e_2 t_3 row_2 SN_4)
+   (unify SN_4 t_1 t_3 SN_5) (unify SN_5 row_1 row_2 SN_6) (unify SN_6 row_1 row_a SN_7)
+   ------------------------------------------------------------------------------------- "app"
+   (infer Γ SN_1 (app e_1 e_2) t_2 row_2 SN_7)]
 
-  [; (trace ("=== inferring primitive op ===\n~s\n" (prim e ...)))
-   (check-prim Γ SN_1 prim (e ...) t row SN_2)
-   ; (trace ("<<< inferred primitive op <<<\n~s\n" (apply (subst SN_2) t)))
-   --------------------------------------------
+  [(check-prim Γ SN_1 prim (e ...) t row SN_2)
+   ------------------------------------------- "prim"
    (infer Γ SN_1 (prim e ...) t row SN_2)]
 
   [(infer Γ SN_1 e_cond t_cond row_cond SN_2) (unify SN_2 t_cond Bool SN_3)
-                                              (infer Γ SN_3 e_then t_then row_then SN_4) (infer Γ SN_4 e_else t_else row_else SN_5)
-                                              (unify SN_5 t_then t_else SN_6) (unify SN_6 row_cond row_then SN_7) (unify SN_7 row_then row_else SN_8)
-                                              -------------------------------------------------------------
-                                              (infer Γ SN_1 (if e_cond e_then e_else) t_then row_then SN_8)]
+   (infer Γ SN_3 e_then t_then row_then SN_4) (infer Γ SN_4 e_else t_else row_else SN_5)
+   (unify SN_5 t_then t_else SN_6) (unify SN_6 row_cond row_then SN_7) (unify SN_7 row_then row_else SN_8)
+   -------------------------------------------------------------- "if"
+   (infer Γ SN_1 (if e_cond e_then e_else) t_then row_then SN_8)]
 
-  [; (trace ("=== inferring operation ===\n~s\n" (op e)))
-   (infer Γ SN_1 e t_1 row_1 [S_1 N_1]) (fresh-row N_1 row_2 N_2) (fresh-var N_2 t_2 N_3)
-                                        (unify [S_1 N_3] (op (t_1 => t_2) row_2) row_1 SN_2)
-                                        ;   (trace ("<<< inferred operation <<<\n~s\n~s\n"
-                                        ;           (apply (subst SN_2) t_2) (apply (subst SN_2) row_1)))
-                                        ------------------------------------------------------------------
-                                        (infer Γ SN_1 (op e) t_2 row_1 SN_2)]
+  [(infer Γ SN_1 e t_1 row_1 [S_1 N_1]) (fresh-row N_1 row_2 N_2) (fresh-var N_2 t_2 N_3)
+   (unify [S_1 N_3] (op (t_1 => t_2) row_2) row_1 SN_2)
+   -------------------------------------------------------------------------------------- "op"
+   (infer Γ SN_1 (op e) t_2 row_1 SN_2)]
 
-  [; (trace ("=== inferring lift ===\n~s\n" (lift op e)))
-   (infer Γ SN_1 e t row [S_1 N_1]) (fresh-var N_1 a N_2)
-   ; (trace ("<<< inferred lift <<<\n~s\n~s\n" (apply S_1 t) (apply S_1 (op a row))))
-   ---------------------------------------
+  [(infer Γ SN_1 e t row [S_1 N_1]) (fresh-var N_1 a N_2)
+   ------------------------------------------------------ "lift"
    (infer Γ SN_1 (lift op e) t (op a row) [S_1 N_2])]
 
-  [; (trace ("=== inferring handle ===\n~s\n" (handle e hs (return x e_ret))))
-   (infer Γ SN_1 e t_1 row_1 SN_2) (infer (x t_1 Γ) SN_2 e_ret t_ret row_ret SN_3)
-                                   ;   (trace ("=== inferring return ===\n~s\n" (return x e_ret))) 
-                                   ;   (trace ("<<< inferred return <<<\n~s\n~s\n"
-                                   ;           (apply (subst SN_3) t_ret) (apply (subst SN_3) row_ret)))
-                                   ;   (trace ("about to call\n~s" (Γ SN_3 t_ret hs)))
-                                   (infer-handlers Γ SN_3 t_ret hs row_out row_handled SN_4) (unify SN_4 row_out row_ret SN_5)
-                                   (unify SN_5 row_1 row_handled SN_6)
-                                   ;   (trace ("<<< inferred handle <<<\n~s\n~s\n"
-                                   ;           (apply (subst SN_6) t_ret) (apply (subst SN_6) row_out)))
-                                   -----------------------------------
-                                   (infer Γ SN_1 (handle e hs (return x e_ret)) t_ret row_out SN_6)])
+  [(infer Γ SN_1 e t_1 row_1 SN_2) (infer (x t_1 Γ) SN_2 e_ret t_ret row_ret SN_3)
+   (infer-handlers Γ SN_3 t_ret hs row_out row_handled SN_4) (unify SN_4 row_out row_ret SN_5)
+   (unify SN_5 row_1 row_handled SN_6)
+   ------------------------------------------------------------------------------------------- "handle"
+   (infer Γ SN_1 (handle e hs (return x e_ret)) t_ret row_out SN_6)])
 
 ; Infers result effects and handled effects for a list of handlers.
 ; Takes:
@@ -123,19 +90,14 @@
   #:contract (infer-handlers Γ SN t hs row row SN)
 
   [(fresh-row N_1 a_handled N_3)
-   --------------------------------------------------
+   ------------------------------------------------------------ "tail"
    (infer-handlers Γ [S N_1] t () a_handled a_handled [S N_3])]
 
-  [; (trace ("=== inferring handlers ===\n~s\n" ((op (x_v x_r e)) h ...)))
-   (infer-handlers Γ SN_1 t_ret (h ...) row_out row_handled [S N_1])
-   (fresh-var N_1 t_v N_2)
-   (fresh-var N_2 t_r N_3)
+  [(infer-handlers Γ SN_1 t_ret (h ...) row_out row_handled [S N_1])
+   (fresh-var N_1 t_v N_2) (fresh-var N_2 t_r N_3)
    (infer (x_v t_v (x_r (t_r -> row_out t_ret) Γ)) [S N_3] e t_h row_h SN_2)
-   (unify SN_2 row_out row_h SN_3)
-   (unify SN_3 t_ret t_h SN_4)
-   ;   (trace ("<<< inferred handlers <<<\n~s\n~s\n"
-   ;           (apply (subst SN_4) t_ret) (apply (subst SN_4) row_out)))
-   -------------------------------------------------------------------------
+   (unify SN_2 row_out row_h SN_3) (unify SN_3 t_ret t_h SN_4)
+    -------------------------------------------------------------------------------------------------- "head"
    (infer-handlers Γ SN_1 t_ret ((op (x_v x_r e)) h ...) row_out (op (t_v => t_r) row_handled) SN_4)])
 
 (define-judgment-form Infer
@@ -250,13 +212,10 @@
    ---------------------------------------- "List"
    (unify SN_1 (List t_1) (List t_2) SN_2)]
 
-  [(side-condition (not-var row_2))
-   (unify-row [S_1 N_1] row_2 op t_2 row_r [S_2 N_2])
-   (where a (last (apply S_1 row_1)))
-   (side-condition (not-in a (dom-S S_2)))
-   (unify [S_2 N_2] t_1 t_2 SN_3)
-   (unify SN_3 row_1 row_r SN_4)
-   -------------------------------------------- "row"
+  [(side-condition (not-var row_2)) (unify-row [S_1 N_1] row_2 op t_2 row_r [S_2 N_2])
+   (where a (last (apply S_1 row_1))) (side-condition (not-in a (dom-S S_2)))
+   (unify [S_2 N_2] t_1 t_2 SN_3) (unify SN_3 row_1 row_r SN_4)
+   ----------------------------------------------------------------------------------- "row"
    (unify [S_1 N_1] (op t_1 row_1) row_2 SN_4)]
   )
 
@@ -268,15 +227,12 @@
   [-------------------------------------- "row-head"
    (unify-row SN (op t row) op t row SN)]
 
-  [(not-in a (dom-S S))
-   (fresh-row N_1 row N_2)
-   (fresh-var N_2 t N_3)
-   ---------------------------------------------------------- "row-var"
+  [(not-in a (dom-S S)) (fresh-row N_1 row N_2) (fresh-var N_2 t N_3)
+   ------------------------------------------------------------------ "row-var"
    (unify-row [S N_1] a op t row [(ext a (op t row) S) N_3])]
 
-  [(in a (dom-S S))
-   (unify-row [S N] (apply S a) op t row SN)
-   ----------------------------------------- "row-lookup"
+  [(in a (dom-S S)) (unify-row [S N] (apply S a) op t row SN)
+   ---------------------------------------------------------- "row-lookup"
    (unify-row [S N] a op t row SN)]
 
   [(unify-row SN_1 row_1 o t_2 row_2 SN_2)
