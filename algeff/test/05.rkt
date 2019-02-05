@@ -7,7 +7,7 @@ letrec fromTo x =
 let map = λ f
   letrec loop xs = 
     if nil?(xs) then nil()
-    else cons(f hd(xs), aux tl(xs))
+    else cons(f hd(xs), loop tl(xs))
     end in 
   loop in
 let exists = λ p λ xs

@@ -1,42 +1,31 @@
 #lang racket/base
 
-(require "lang.rkt"
-         "lib.rkt"
-         redex/reduction-semantics
-         )
+(require redex/reduction-semantics
+         "lang.rkt"
+         "lib.rkt")
 
-(provide abstract-machine am-a am-b am-c am-e reduce initial-conf AM)
+(provide abstract-machine am-a am-b am-c am-e am-reduce initial-conf AM)
 
 (define-extended-language AM Infer
   ; Machine configuration
   (C ::= (e ρ Σ ϕ K) (val V ρ Σ ϕ K) (op V n K K) V)
-
   ; Machine values
   (V ::= (λ ρ x e) (rec ρ x x e) m b (V ...) K)
-
   ; Value environment
   (ρ ::= ([x V] ...))
-
   ; Pure continuation frames
   (σ ::= (arg e ρ) (app V) (do op) (prim ρ V ... / e ...) (if e e ρ))
   (Σ ::= (σ ...))
-
   ; Effect continuation frames
   (ϕ ::= (handle hs ret ρ) (lift op) done)
-
   ; Continuation frame
   (κ ::= (Σ ϕ))
-
   ; Continuation
   (K ::= (κ ...)))
 
 (define Value? (redex-match? AM V))
 
-(define-metafunction AM
-  initial-conf : e -> C
-
-  [(initial-conf e) (e () () done ())])
-
+; Administrative transitions
 (define am-a
   (reduction-relation
    AM
@@ -71,6 +60,7 @@
         V)
    ))
 
+; Continuation building transitions
 (define am-b
   (reduction-relation
    AM
@@ -95,6 +85,7 @@
         (e ρ () (lift op) ([Σ ϕ] κ ...)))
    ))
 
+; Reduction transitions
 (define am-c
   (reduction-relation
    AM
@@ -124,6 +115,7 @@
         (e ρ (σ ...) ϕ K))
   ))
 
+; Effect transitions
 (define am-e
   (reduction-relation
    AM
@@ -156,31 +148,31 @@
         (val V ρ Σ ϕ (κ ...)))
    ))
 
+; Abstract machine is the union of all transitions
 (define abstract-machine
   (union-reduction-relations am-a am-b am-c am-e))
 
+; Initial configuration for an expression e
 (define-metafunction AM
-  push-normal : σ K -> K
+  initial-conf : e -> C
 
-  [(push-normal σ [([σ_1 ...] ϕ) κ ...]) ([(σ σ_1 ...) ϕ] κ ...)])
+  [(initial-conf e) (e () () done ())])
 
-(define-metafunction AM
-  push-effect : ϕ K -> K
-
-  [(push-effect ϕ (κ ...)) ([() ϕ] κ ...)])
-
+; Extend the environment ρ at x with V
 (define-metafunction AM
   extend : ρ x V -> ρ
 
   [(extend ([x_1 V_1] ... [x V_2] [x_3 V_3] ...) x V) ([x_1 V_1] ... [x V] [x_3 V_3] ...)]
   [(extend ([x_1 V_1] ...) x V) ([x V] [x_1 V_1] ...)])
 
+; Lookup a value for variable in environment
 (define-metafunction AM
   lookup-ρ : ρ x -> V
 
   [(lookup-ρ ([x_1 V_1] ... [x V] [x_2 V_2] ...) x) V])
 
-(define (reduce e)
+; Fully reduce an expression using abstract machine
+(define (am-reduce e)
   (let ([xs (apply-reduction-relation* abstract-machine (term (initial-conf ,e)))])
     (if (and (= (length xs) 1)
              (Value? (car xs)))

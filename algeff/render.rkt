@@ -1,13 +1,12 @@
 #! /usr/bin/racket
 #lang racket/base
-(require redex
-         racket/match
+(require racket/match
+         redex
+         "calculus/abstract-machine.rkt"
+         "calculus/eval.rkt"
          "calculus/lang.rkt"
          "calculus/type.rkt"
-         "calculus/abstract-machine.rkt"
-         (only-in "calculus/eval.rkt" red free)
-         (only-in "calculus/abstract-machine.rkt"
-                  am-a am-b am-c am-e initial-conf)
+         "calculus/unify.rkt"
          (prefix-in lc: "../lc/lc.rkt"))
 
 (define (render path)

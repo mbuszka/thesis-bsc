@@ -3,9 +3,9 @@ Thesis:
     ✔ motivation (algebraic effects are trendy - experimentation with different features/flavors, experimentation with redex - as a platform for rapid semantics prototyping) @done(19-01-29 13:27)
     ✔ overview of my work @done(19-01-29 13:27)
     ✔ small fixes @done(19-02-01 15:28)
-    ☐ better example for alg-eff
-    ☐ some example for type inference and bit more on types
-    ☐ bigger section on motivation
+    ✔ better example for alg-eff @done(19-02-05 19:25)
+    ✔ some example for type inference and bit more on types @done(19-02-05 19:25)
+    ✔ bigger section on motivation @done(19-02-05 19:25)
     ☐ conclusions
     ✔ redex features/introduction @done(19-02-03 20:06)
     ☐ general cleanup
@@ -14,9 +14,9 @@ Thesis:
     
   Chapter 2 - Calculus:
     ✔ fixes and text movement @done(19-01-29 19:19)
-    ☐ udates with lists
+    ✔ udates with lists @done(19-02-05 19:25)
     ☐ empty and unit type
-    ☐ fixes
+    ✔ fixes @done(19-02-05 19:25)
   Chapter 3 - Implementation:
     ✔ section on unification @done(19-02-03 20:07)
     ☐ introduction, code overview

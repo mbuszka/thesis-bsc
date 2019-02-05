@@ -14,35 +14,41 @@
 
   [(free op hole 0)]
 
-  [(free op (lift op E) ,(+ (term n) 1))
-   (free op E n)]
+  [(free op E n)
+   --------------------------------------
+   (free op (lift op E) ,(+ (term n) 1))]
 
-  [(free (name op op_!_1) (lift op_!_1 E) n)
-   (free op E n)]
+  [(free op E n)
+   ------------------------------------------
+   (free (name op op_!_1) (lift op_!_1 E) n)]
 
-  [(free op (handle E hs ret) ,(- (term n) 1))
-   (side-condition (in op (ops hs)))
-   (free op E n)]
+  [(side-condition (in op (ops hs))) (free op E n)
+   -----------------------------------------------
+   (free op (handle E hs ret) ,(- (term n) 1))]
 
-  [(free op (handle E hs ret) n)
-   (side-condition (not-in op (ops hs)))
-   (free op E n)]
+  [(side-condition (not-in op (ops hs))) (free op E n)
+   ---------------------------------------------------
+   (free op (handle E hs ret) n)]
 
-  [(free op (app E e) n)
-   (free op E n)]
+  [(free op E n)
+   ----------------------
+   (free op (app E e) n)]
 
-  [(free op (app v E) n)
-   (free op E n)]
+  [(free op E n)
+   ----------------------
+   (free op (app v E) n)]
 
-  [(free op (prim v ... E e ...) n)
-   (free op E n)]
+  [(free op E n)
+   ---------------------------------
+   (free op (prim v ... E e ...) n)]
 
-  [(free op_1 (op_2 E) n)
-   (free op_1 E n)]
+  [(free op_1 E n)
+   -----------------------
+   (free op_1 (op_2 E) n)]
 
-  [(free op (if E e_1 e_2) n)
-   (free op E n)])
-  
+  [(free op E n)
+   ---------------------------
+   (free op (if E e_1 e_2) n)])
 
 (define red
   (reduction-relation
@@ -66,7 +72,6 @@
    (--> (in-hole E (if false e_1 e_2))
         (in-hole E e_2)
         if-false)
-
 
    (--> (in-hole E (lift op v))
         (in-hole E v)

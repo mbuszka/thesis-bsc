@@ -2,31 +2,17 @@
 (require redex/reduction-semantics
          "lang.rkt")
 
-(provide lookup in not-in dom-S fresh-row fresh-arr fresh-var neq eq trace get-handler prim-apply)
-
-; Switch enabling tracing
-(define trace-enabled? #t)
-
-; Helper judgment which allows for printing arbitrary messages during
-; evalution of judgment forms
-(define-judgment-form Infer
-  #:mode (trace I)
-
-  [(trace (any_s any_vals ...))
-   (where #t ,(begin
-                (when trace-enabled?
-                  (apply printf (term (any_s any_vals ...))))
-                #t))])
+(provide lookup in not-in dom-S fresh-row fresh-arr fresh-var neq eq get-handler prim-apply)
 
 (define-judgment-form Infer
   #:mode (eq I I)
-
-  [(eq any_1 any_1)])
+  [------------------
+   (eq any_1 any_1)])
 
 (define-judgment-form Infer
   #:mode (neq I I)
-
-  [(neq any_!_1 any_!_1)])
+  [-----------------------
+   (neq any_!_1 any_!_1)])
 
 ; checks whether variable is not in a list
 (define-judgment-form Infer
@@ -41,15 +27,18 @@
 
 (define-judgment-form Infer
   #:mode (in I I)
-  
-  [(in any (any_1 ... any any_2 ...))])
+  [------------------------------------
+   (in any (any_1 ... any any_2 ...))])
 
 (define-judgment-form Infer
   #:mode (lookup I I O)
-  [(lookup (x t Γ) x t)]
+
+  [---------------------
+   (lookup (x t Γ) x t)]
   
-  [(lookup (x_!_1 _ Γ) (name x x_!_1) t)
-   (lookup Γ x t)])
+  [(lookup Γ x t)
+   --------------------------------------
+   (lookup (x_!_1 _ Γ) (name x x_!_1) t)])
 
 (define-metafunction Infer
   dom-S : S -> (a ...)
@@ -83,8 +72,9 @@
   #:mode (get-handler I I O)
 
   [(get-handler op [(op (x_1 x_2 e)) h ...] (x_1 x_2 e))]
-  [(get-handler (name op op_!_1) [(op_!_1 _) h ...] any_r)
-   (get-handler op [h ...] any_r)])
+  [(get-handler op [h ...] any_r)
+   --------------------------------------------------------
+   (get-handler (name op op_!_1) [(op_!_1 _) h ...] any_r)])
 
 (define-judgment-form Infer
   #:mode (fresh-row I O O)
@@ -96,7 +86,6 @@
 
 (define-judgment-form Infer
   #:mode (fresh-arr I O I O O O)
-  [(fresh-arr N_1 a_1 -> a_r a_2 N_4)
-   (fresh-var N_1 a_1 N_2)
-   (fresh-row N_2 a_r N_3)
-   (fresh-var N_3 a_2 N_4)])
+  [(fresh-var N_1 a_1 N_2) (fresh-row N_2 a_r N_3) (fresh-var N_3 a_2 N_4)
+   -----------------------------------------------------------------------
+   (fresh-arr N_1 a_1 -> a_r a_2 N_4)])
