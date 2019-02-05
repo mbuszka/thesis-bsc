@@ -67,30 +67,28 @@ At run-time handlers can wrap the captured continuation (giving so-called deep h
 All this variety naturally invites us to experiment with different features and components of a calculus.
 An executable model would be excellent for everyone interested in understanding inner workings of algebraic effects.
 In particular, the ability to perform and visualize reductions would be very helpful for understanding of the dynamic semantics of operations and handlers.
+Such model should also contain a type system complementing the dynamic semantics and guiding the programmer with usage of effects.
 In this thesis I will build such a calculus, describing my choices and discussing the trade-offs I faced.
 
 The first goal of this thesis is the design of the calculus with effects and handlers, and its dynamic semantics.
 Its implementation should be executable and allow for step-by-step reduction of calculus terms by a computer program.
 
 The second goal is the design and implementation of a sound type system for the calculus, preferably with type inference.
-It must enable easy use of effectful operations and allow for small yet complete examples.
-The implementation should be runnable to facilitate explorability and learning by example.
-It should also allow easy extension with additional language and type constructs.
+The implementation should be able to type-check examples with minimal additional context and boilerplate.
 
 The third goal is the design and implementation of abstract machine, which preserves the dynamic semantics of the calculus, yet is easier to translate into low-level virtual machine.
 It could also be used as a basis for compilation to native code.
 
 In order to rapidly iterate on the design and test the calculus, I decided to use the \Redex{} library which allows for building language model with executable type system judgments and reduction relation.
+It also provides facilities for visualizing rewriting of terms and typesetting all components of the development.
+
 The calculus is designed to be small enough to be easily understood, yet have general language features to allow experimentation with reasonably complex programs.
 The programmer can use $\lambda$-abstractions and recursive functions, numbers with addition, subtraction, multiplication and comparisons, booleans with conditional expressions and lists.
-
 The algebraic effects are implemented with ad-hoc operations which take one parameter and return a value, handlers which can handle multiple (different) operations at once and lifts which allow operations to skip handlers.
 The type system for calculus is presented in Curry style, with the implementation inferring simple types for unannotated terms using unification algorithm.
 Although there is no way to create and bind polymorphic values, the system infers most general (simple) type for an expression which may contain unsolved variables.
-
 The abstract machine is implemented with explicit stack of continuations and value environment.
 It is given deterministic transition system using \Redex{}'s reduction relation and meta-function transforming a calculus expression into initial configuration.
-
 Additionally to ease experimentation I implemented a language front-end which translates human-friendly programs to calculus terms, integrated with \Racket{} environment.
 
 In brief summary, the development consists of:
@@ -109,13 +107,16 @@ The key idea is to separate invocation of an effectful operation in an expressio
 When one invokes an operation, current continuation (up to the nearest handler) is captured and passed along with the operation's argument to the nearest handler.
 The handler in turn may execute arbitrary expression, using the continuation once, twice, returning a function which calls the continuation or simply ignoring it.
 This way many control structures can be modeled and generalized by algebraic effects and appropriate handlers.
-For example, the exceptions can be modeled using a single operation \texttt{Throw} and a handler which either returns the result when computation succeeded or returns a default value, ignoring the passed continuation.
-\begin{verbatim}
-handle e with
-| Throw () r -> // return default value
-| return x   -> x
-end
-\end{verbatim}
+For example, in the following listing, function \texttt{exists} returns \texttt{true} when the list contains an element that satisfies predicate \texttt{p}.
+\begin{listing}[H]
+  \VerbatimInput[firstline=13,lastline=19]{../algeff/test/05.rkt}
+  \caption{Exception-like usage of algebraic effects}
+\end{listing}
+It is implemented in terms of map and a helper function \texttt{f} which \texttt{Break}s normal control flow when the predicate returns true.
+This map is then invoked inside the handler that returns \texttt{true} on \texttt{Break} and \texttt{false} otherwise.
+This usage of operation and its handler is similar to exceptions, as the resumption is discarded.
+Another example, with a handler for the state-like operations is presented in \autoref{lst:stateful-computation} in the next section.
+
 From the language design standpoint algebraic effects provide single implementation of various phenomena which may happen during execution of a program, for example mutable state, I/O, environment lookup, exceptions, etc., in a sense that every effect is treated the same, the typing rules are defined for invocation of any operation, and handling of any operation.
 Similarly the operational semantics is also quite simple and succinct thanks to uniform treatment of various effects.
 This framework is also extendable.
@@ -128,18 +129,33 @@ The separation of definition and implementation of effects allows for various in
 % TODO anonymous vs defined effects, abstract effects, effect polymorphism
 
 \section{Types and type inference}
-% The most common approach to giving an effectful computation a type uses a type-level data-structure known as a row.
-% Initially developed in order to structurally type records, rows come in two flavors: Remy-style\cite{Remy1994} where they are treated as (finite) sets of label-type pairs, and Leijen-style\cite{Leijen2005} where rows are treated as (finite) lists of label-type pairs that are equivalent up to permutation of different labels.
-% When polymorphism is present a row may have concrete prefix (possibly empty) and polymorphic tail denoted by a type variable.
-% In effectful setting, the type system usually keeps a row of effects which an expression may perform, and suspended computations e.g. functions must have types decorated with a row of effects that may be performed when they are evaluated.
-% In following listing, the function \texttt{sumPrintAndInc} would get a type $ Int \rightarrow (Get \, : \, Unit \Rightarrow Int , Set \, : \, Int \Rightarrow Unit , Print \, : \, Int \Rightarrow Unit) $ which notes all effects it may perform.
-% The higher-order function \texttt{map} of type $ (a \rightarrow e \, b) \rightarrow List \, a $ would then 
-% \begin{minted}{koka}
-% let add = λ x Set +(Get (), x) in
-% handle add 5 with
-% | Set x r -> 
-%   map sumPrintAndInc [1, 2, 3, 4]
-% \end{minted}
+The most common approach to giving an effectful computation a type uses a type-level data-structure known as a row.
+Initially developed in order to structurally type records, rows come in two flavors: Remy-style\cite{Remy1994} where they are treated as (finite) sets of label-type pairs, and Leijen-style\cite{Leijen2005} where rows are treated as (finite) lists of label-type pairs that are equivalent up to permutation of different labels.
+When polymorphism is present a row may have concrete prefix (possibly empty) and polymorphic tail denoted by a type variable.
+In effectful setting, the type system usually keeps a row of effects which an expression may perform, and suspended computations e.g. functions must have types decorated with a row of operations that may be invoked when their body is evaluated.
+In the following listing, the function \texttt{add} loads a number, sums it with the argument \texttt{x} and sets this sum, returning unit value.
+\begin{listing}[H]
+  \begin{verbatim}
+let add = λ x Set +(Get (), x) in
+let comp = 
+  handle add 5 with
+  | Set x r -> λ _ r () x
+  | Get _ r -> λ s r s s
+  | return _ -> λ s s
+  end in
+comp 37
+  \end{verbatim}
+  \caption{Stateful computation}
+  \label{lst:stateful-computation}
+\end{listing}
+It contains two effectful sub-expressions: $Get \, : \, Unit \Rightarrow Num$ and $Set \, Num \Rightarrow Unit$.
+As this function uses both operations, their effects must be combined, giving add following type: $Num \rightarrow (Get \, : \, Unit \Rightarrow Num , Set \, : \, Num \Rightarrow Unit) \, Unit$ where $Num$ is the type of input, $Unit$ is the type of output and $(Get \, \ldots)$ is the effect row.
+The handler which interprets the operations is implemented to return a state transforming function.
+When the \texttt{Set} operation is invoked, the handler returns a function which will ignore its argument and first resume the computation with unit value, that will return a state transformation and then pass it the new state \texttt{x}.
+The \texttt{Get} operation handler returns a function which awaits for a state $s$ with which it resumes the continuation and then applies returned function to $s$.
+The return clause returns identity state transformation.
+The type system requires all handler bodies to be of the same type: $Num \rightarrow () \, Num$ which guides implementation and ensures that operations do not escape the handler.
+
 Type inference is a technique of algorithmic reconstruction of types for various constructions used in a language.
 It allows programmers to write programs with no type annotations, that often feel redundant and obfuscate the meaning of a program.
 The most well known type system with inference is a system for \emph{ML} family of languages\cite{Pierce2002} -- \emph{Haskell}, \emph{OCaml}, \emph{SML} which infers the types with no annotations whatsoever.
