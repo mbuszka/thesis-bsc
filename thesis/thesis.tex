@@ -475,22 +475,11 @@ In this situation, the machine must begin evaluation of the handling expression 
 Two last rules deal with returning values -- in case of a handler the return clause is installed, and in case of a lift its frame is simply discarded.
 
 \chapter{Implementation}\label{ch:implementation}
-The directory \texttt{lc} contains the minimal \LC{} used in the introduction.
-The development -- both calculus and \Racket{} front-end is contained in the directory \texttt{algeff}.
-Its sub-directory \texttt{calculus} contains source files for everything calculus-related:
-\begin{itemize}
-  \item The file \texttt{abstract-machine.rkt} contains the definition of abstract machine and its transitions.
-  \item The file \texttt{eval.rkt} contains the reduction semantics and the \emph{free} judgment.
-  \item The file \texttt{lang.rkt} contains the calculus abstract syntax definition and \emph{ftv} meta-function.
-  \item The file \texttt{lib.rkt} contains various helper judgments and meta-functions.
-  \item The file \texttt{type.rkt} contains the type system along with helper judgments.
-  \item The file \texttt{unify.rkt} contains the implementation of the unification algorithm.
-\end{itemize}
-The sub-directory \texttt{lang} contains lexer and parser for the front-end.
-The file \texttt{main.rkt} is evaluated by \Racket{} environment whenever a file designates \emph{algeff} as its \texttt{\#lang}.
-The files \texttt{parse-only.rkt} and \texttt{tokenize-only.rkt} define sub-languages used for testing and debuginng of parser.
-The sub-directory \texttt{test} contains example programs which, when run, are type-checked and reduced both using the reduction semantics and the abstract machine.
-Finally, the file \texttt{render.rkt} renders the figures used throughout this thesis.
+This chapter discusses the implementation of the calculus and its surface language \emph{algeff}.
+All the judgments and relations presented earlier were rendered by the \Redex{} library from the source files and they are the executable implementation of the calculus.
+The unification algorithm used by the type inference judgment of \autoref{fig:algeff-infer} is presented in the \autoref{sec:unification}.
+The \autoref{sec:file-structure} describes the file structure of the development, the \autoref{sec:front-end} discusses the language front-end and the \autoref{sec:racket-env} shows how to tie a language into the \Racket{} environment.
+The surface syntax of \emph{algeff} and instructions of use are presented in \autoref{ch:manual}.
 
 \section{Unification}\label{sec:unification}
 The unification algorithm is loosely based on \cite{Pierce2002}, but instead of keeping a set of constraints to be solved, it solves sub-problems recursively.
@@ -542,19 +531,106 @@ The type is returned and the tail is extended with original head.
   \label{fig:algeff-unify-row}
 \end{figure}
 
-\section{Automatic testing}
+\section{File structure}\label{sec:file-structure}
+The directory \texttt{lc} contains the minimal \LC{} used in the introduction.
+The development -- both calculus and \Racket{} front-end is contained in the directory \texttt{algeff}.
+Its sub-directory \texttt{calculus} contains source files for everything calculus-related:
+\begin{itemize}
+  \item The file \texttt{abstract-machine.rkt} contains the definition of abstract machine and its transitions.
+  \item The file \texttt{eval.rkt} contains the reduction semantics and the \emph{free} judgment.
+  \item The file \texttt{lang.rkt} contains the calculus abstract syntax definition and \emph{ftv} meta-function.
+  \item The file \texttt{lib.rkt} contains various helper judgments and meta-functions.
+  \item The file \texttt{type.rkt} contains the type system along with helper judgments.
+  \item The file \texttt{unify.rkt} contains the implementation of the unification algorithm.
+\end{itemize}
+The sub-directory \texttt{lang} contains lexer and parser for the front-end.
+The file \texttt{main.rkt} is evaluated by \Racket{} environment whenever a file designates \emph{algeff} as its \texttt{\#lang}.
+The files \texttt{parse-only.rkt} and \texttt{tokenize-only.rkt} define sub-languages used for testing and debugging of the parser.
+The sub-directory \texttt{test} contains example programs which, when run, are type-checked and reduced both using the reduction semantics and the abstract machine.
+Finally, the file \texttt{render.rkt} renders the figures used throughout this thesis.
 
-\section{The \Racket{} environment}
-The \Racket{} environment provides easy integration with sub-languages using its sophisticated macro system and language specifiers.
+\section{Language front-end}\label{sec:front-end}
+The language front-end consists of a tokenizer and a parser.
+The tokenizer is implemented using \texttt{parser-tools} package, which provides a \texttt{lex} style lexer generator.
+It defines a set of tokens and then repeatedly partitions the input stream by matching it with regular expressions.
+The parser is implemented using \texttt{megaparsack} -- a library providing various parser combinators which allow for composing simple parsers together to build complex ones in monadic style.
+The parser desugars some surface expressions into simpler calculus terms.
+\begin{itemize}
+  \item Multiple applications, which are permitted by the \emph{algeff} language are rewritten into nested single applications -- \texttt{f e$_1$ e$_2$ ... e$_n$} becomes \texttt{(app (... (app (app f e$_1$) e$_2$) ...) e$_n$)}
+  \item Let-expressions \texttt{let x = exp in body} are transformed into an application: \texttt{(app (λ x body) exp)}.
+  \item Letrec bindigs \texttt{letrec f x = exp in body} are similarly transformed: \texttt{(app (λ x body) (rec f x exp))}.
+\end{itemize}
+It also differentiates and marks variables and operation names.
+
+\section{The \Racket{} environment}\label{sec:racket-env}
+The \Racket{} environment \cite{PLT1} provides easy integration with sub-languages using its sophisticated syntax-transformer system and language specifiers.
+It allows programmers to choose which language should be used to interpret the source file using the \texttt{\#lang} command at the beginning of the file.
+The file must eventually be transformed into module recognized by base \Racket{}.
+This way programs may be composed with modules written using various domain-specific languages.
+In order to allow \Racket{} to use a new language, its developer must provide:
+\begin{itemize}
+  \item The reader -- a function that accepts input stream and produces abstract syntax tree of a module.
+  \item The expander -- a syntax transformer that accepts the tree produced by the reader and creates a \Racket{} module, which can be interpreted by \Racket{} language.
+\end{itemize}
+
+I followed the `master recipe' described in \cite{BeautifulRacket} that specifies which components and where must be defined.
+The file \texttt{main.rkt} provides an inner module \texttt{reader} and a syntax transformer \texttt{\#\%module-begin} -- the expander.
+The inner module provides a function \texttt{read-syntax} which transforms the program text provided on an input port, using the parser and tokenizer described earlier, into a single calculus term represented as \Racket{} \emph{syntax object}.
+It is shown in \autoref{lst:the-reader}.
+\begin{listing}[H]
+  \inputminted[firstline=12, lastline=19]{Racket}{../algeff/main.rkt}
+  \caption{The reader}
+  \label{lst:the-reader}
+\end{listing}
+The expander depicted in \autoref{lst:the-expander} creates a simple \Racket{} module which calls the helper function \texttt{run} passing it the syntax object.
+This function first infers the type of an expression, and if it succeeds reduces the term using both reduction relation and abstract machine.
+\begin{listing}[H]
+  \inputminted[firstline=22, lastline=24]{Racket}{../algeff/main.rkt}
+  \caption{The expander}
+  \label{lst:the-expander}
+\end{listing}
+
 
 
 % TODO implementation architecture
 \chapter{User's manual}\label{ch:manual}
+\section{Requirements and installation}
+The development requires a recent version of the \Racket{} environment (e.g. \texttt{7.0}), the \Redex{} library which is part of the \Racket{} distribution, and \texttt{parser-tools} and \texttt{megaparsack} libraries which can be installed using the \texttt{raco} package manager.
+To install the \emph{algeff} language, enter the \texttt{algeff} directory and use \texttt{raco pkg install} command.
+The \emph{algeff} should now be recognized by \Racket{} when using \texttt{\#lang} specifier.
+
+\section{Usage and example programs}
+To use the \emph{algeff} language, create a file with \texttt{.rkt} extension and set \emph{algeff} as the \texttt{\#lang}.
+Upon execution of the file, the program should output:
+\begin{itemize}
+  \item The desugared calculus term
+  \item Its type
+  \item Results of evaluation using the reduction semantics and the abstract machine.
+\end{itemize}
+An example program, calculating factorial of a number is presented in \autoref{lst:algeff-program}.
+\begin{listing}[H]
+  \VerbatimInput{../algeff/test/01.rkt}
+  \caption{An \emph{algeff} program}
+  \label{lst:algeff-program}
+\end{listing}
+The output produced by evaluation of the program:
+\begin{verbatim}
+desugared expression:
+'(app
+  (λ v:f (app v:f 5))
+  (rec v:f v:x (if (== v:x 0) 1 (* v:x (app v:f (- v:x 1))))))
+
+has type:
+'Int
+
+reduction result:
+120
+
+abstract machine result:
+120
+\end{verbatim}
+
 
 \printbibliography
-
-%\begin{thebibliography}{1}
-%\bibitem{example} \ldots
-%\end{thebibliography}
 
 \end{document}
