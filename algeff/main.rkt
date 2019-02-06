@@ -1,7 +1,6 @@
 #lang racket/base
 
-(require racket/pretty
-         syntax/strip-context
+(require syntax/strip-context
          "calculus/abstract-machine.rkt"
          "calculus/eval.rkt"
          (for-syntax "calculus/type.rkt")
@@ -19,34 +18,43 @@
          #,tree)))
   (provide read-syntax))
 
-; Expands the calculus expression into call to run function
-;(define-macro (-#%module-begin STX)
-;  #`(#%module-begin
-;   (define #,(datum->syntax caller-stx 'foo) 1)
-;   5))
+; If a calculus expression type checks convert it into module:
+; Module defines and exports:
+; - expression - the calculus expression
+; - type - its type
+; - (trace) - a procedure displaying trace of the reduction
+; - (trace-machine) - a procedure displaying trace of abstract machine
+; - (reduce) - a procedure reducing the expression
+; - (reduce-machine) - a procedure reducing the expression with the abstract machine
 (define-syntax (-#%module-begin stx)
   (syntax-case stx ()
     [(_ tree)
      (let* ([e (syntax->datum #'tree)]
             [t (infer-type e)])
        (with-syntax
-           ([expression (datum->syntax stx 'expression)]
-            [type (datum->syntax stx 'type)]
-            [traces-reduction (datum->syntax stx 'traces-reduction)]
-            [traces-machine (datum->syntax stx 'traces-machine)])
+           ([i-expr (datum->syntax stx 'expression)]
+            [i-type (datum->syntax stx 'type)]
+            [i-trace (datum->syntax stx 'trace)]
+            [i-trace-machine (datum->syntax stx 'trace-machine)]
+            [i-reduce (datum->syntax stx 'reduce)]
+            [i-reduce-machine (datum->syntax stx 'reduce-machine)])
          (if t
              #`(#%module-begin
                 (require redex)
-                (define expression (quote tree))
-                (define type (quote #,t))
-                (define (traces-reduction)
-                  (traces red expression))
-                (define (traces-machine)
+                (define i-expr (quote tree))
+                (define i-type (quote #,t))
+                (define (i-trace)
+                  (traces red i-expr))
+                (define (i-trace-machine)
                   (traces abstract-machine (term (initial-conf tree))))
-                (provide expression type))
-             (raise "does-not-typecheck"))))]
+                (define (i-reduce)
+                  (reduce i-expr))
+                (define (i-reduce-machine)
+                  (am-reduce i-expr))
+                (i-reduce)
+                (provide (all-defined-out)))
+             (raise 'does-not-typecheck))))]
     ))
 
 (provide (rename-out [-#%module-begin #%module-begin])
-         #%top #%app #%datum #%top-interaction
-         )
+         #%top #%app #%datum #%top-interaction)
