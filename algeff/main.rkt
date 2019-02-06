@@ -9,7 +9,7 @@
          "lang/tokenizer.rkt")
 
 (module+ reader
-  ; Converts program text into a simple module which contains a calculus expression
+  ; Converts program text into a module containing an expression
   (define (read-syntax path port)
     (define tokens (tokenize path port))
     (define tree (parse tokens path))

@@ -210,11 +210,6 @@ For both approaches it is important, that any term can be uniquely decomposed in
   \caption{\LC{} reduction relation}
   \label{fig:lc-red}
 \end{figure}
-\begin{figure}
-  \LC{} reduction example
-  \caption{\LC{} example reduction sequence}
-  \label{fig:lc-red-example}
-\end{figure}
 
 Abstract machine is a mathematical construction, usually defined as a set of configurations with deterministic transformations, which are computationally simple.
 The goal for formulation of an abstract machine is to mechanize evaluation of terms while retaining semantics given in a more abstract format, e.g. reduction semantics, with the correspondence being provable\cite{Felleisen2009}.
@@ -488,11 +483,18 @@ This judgment must also pass around the name supply token -- a natural number wh
 Variables in types are substituted lazily -- whenever algorithm encounters variable which is in domain of the substitution, it looks it up and continues unification.
 The \autoref{fig:algeff-unify} shows the unification algorithm.
 
-\begin{figure}[h]
+\begin{figure}
   \centering
   \includegraphics{algeff-unify.pdf}
   \caption{Unification algorithm}
   \label{fig:algeff-unify}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics{algeff-unify-row.pdf}
+  \caption{Row unification algorithm}
+  \label{fig:algeff-unify-row}
 \end{figure}
 
 Terminal rules \emph{refl-var} and \emph{refl-const} handle unification of equal variables and constants respectively.
@@ -524,13 +526,6 @@ The last rule \emph{row-swap} matches rows that have a label $o1$ different to d
 In this case, the rest of the row must rewritten recursively yielding type $t_2$ for $o$ and new tail.
 The type is returned and the tail is extended with original head.
 
-\begin{figure}
-  \centering
-  \includegraphics{algeff-unify-row.pdf}
-  \caption{Row unification algorithm}
-  \label{fig:algeff-unify-row}
-\end{figure}
-
 \section{File structure}\label{sec:file-structure}
 The directory \texttt{lc} contains the minimal \LC{} used in the introduction.
 The development -- both calculus and \Racket{} front-end is contained in the directory \texttt{algeff}.
@@ -546,7 +541,7 @@ Its sub-directory \texttt{calculus} contains source files for everything calculu
 The sub-directory \texttt{lang} contains lexer and parser for the front-end.
 The file \texttt{main.rkt} is evaluated by \Racket{} environment whenever a file designates \emph{algeff} as its \texttt{\#lang}.
 The files \texttt{parse-only.rkt} and \texttt{tokenize-only.rkt} define sub-languages used for testing and debugging of the parser.
-The sub-directory \texttt{test} contains example programs which, when run, are type-checked and reduced both using the reduction semantics and the abstract machine.
+The sub-directory \texttt{test} contains example programs.
 Finally, the file \texttt{render.rkt} renders the figures used throughout this thesis.
 
 \section{Language front-end}\label{sec:front-end}
@@ -578,21 +573,19 @@ The file \texttt{main.rkt} provides an inner module \texttt{reader} and a syntax
 The inner module provides a function \texttt{read-syntax} which transforms the program text provided on an input port, using the parser and tokenizer described earlier, into a single calculus term represented as \Racket{} \emph{syntax object}.
 It is shown in \autoref{lst:the-reader}.
 \begin{listing}[H]
-  \inputminted[firstline=12, lastline=19]{Racket}{../algeff/main.rkt}
+  \inputminted[firstline=11, lastline=19]{Racket}{../algeff/main.rkt}
   \caption{The reader}
   \label{lst:the-reader}
 \end{listing}
-The expander depicted in \autoref{lst:the-expander} creates a simple \Racket{} module which calls the helper function \texttt{run} passing it the syntax object.
-This function first infers the type of an expression, and if it succeeds reduces the term using both reduction relation and abstract machine.
+The expander is depicted in \autoref{lst:the-expander}.
+It first type checks the expression which was created by the reader, and if it succeeds, it then creates a \Racket{} module that binds several names and returns the value of reduced expression.
+To create bindings, one must transform regular racket symbols into syntax objects with proper scope, which is done using \texttt{(datum->syntax ctx sym)} function which takes any syntax object and creates new one from \texttt{sym}, inheriting the scope from \texttt{ctx}.
 \begin{listing}[H]
-  \inputminted[firstline=22, lastline=24]{Racket}{../algeff/main.rkt}
+  \inputminted[firstline=29, lastline=57]{Racket}{../algeff/main.rkt}
   \caption{The expander}
   \label{lst:the-expander}
 \end{listing}
 
-
-
-% TODO implementation architecture
 \chapter{User's manual}\label{ch:manual}
 \section{Requirements and installation}
 The development requires a recent version of the \Racket{} environment (e.g. \texttt{7.0}), the \Redex{} library which is part of the \Racket{} distribution, and \texttt{parser-tools} and \texttt{megaparsack} libraries which can be installed using the \texttt{raco} package manager.
@@ -601,6 +594,12 @@ The \emph{algeff} should now be recognized by \Racket{} when using \texttt{\#lan
 
 \section{Usage and example programs}
 To use the \emph{algeff} language, create a file with \texttt{.rkt} extension and set \emph{algeff} as the \texttt{\#lang}.
+% \begin{itemize}
+%   \item \texttt{expression} -- the source expression.
+%   \item \texttt{type} -- the inferred type.
+%   \item \texttt{reduce} -- a procedure which reduces the source expression using the reduction semantics.
+%   \item \texttt{}
+% \end{itemize}
 Upon execution of the file, the program should output:
 \begin{itemize}
   \item The desugared calculus term
