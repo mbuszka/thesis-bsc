@@ -5,7 +5,16 @@
 \polishtitle    {Implementacja statycznej i dynamicznej semantyki rachunku z efektami algebraicznymi i ich obsługą z pomocą biblioteki \Redex}
 \englishtitle   {Implementation of static and~dynamic semantics for a calculus with algebraic effects and~handlers using \Redex} 
 \polishabstract {Abstrakt w języku polskim}
-\englishabstract{English abstract}
+\englishabstract{%
+Algebraic effects are an increasingly popular technique of structuring computational effects.
+They allow for separation of an interface of a computation -- a set of operations it may perform, and their implementation -- handlers which respond to operation invocations.
+There are many calculi and languages that tackle the concept of algebraic effects \cites{Bauer2012,Leijen2014,Hillerstrom2016,Lindley2017, Biernacki2019}, but they usually are either specialized and developed using heavy-weight formalization, or they strive to become full-fledged programming languages with their meta-theory and implementation becoming increasingly complex.
+In this thesis I set out to build a small calculus, that has just enough general purpose constructs to allow for exploration and experimentation with algebraic effects and handlers, without overburdening the user.
+The meta-development consists of the Curry style type system, the reduction semantics and the abstract-machine.
+The calculus is built using the \Redex{} library and allows the programmer to use operations and handlers, recursive functions, numbers, booleans and conditional expressions.
+The implementation of the type system provides type inference for the calculus terms, while both the reduction relation and the abstract machine can be used to either fully evaluate the expressions or visualize the reductions step-by-step.
+Additionally I present the process of integrating this development with the \Racket{} environment, that allows for usage of the calculus as a lightweight programming language.
+}
 %
 \author         {Maciej Buszka}
 %
@@ -466,6 +475,23 @@ In this situation, the machine must begin evaluation of the handling expression 
 Two last rules deal with returning values -- in case of a handler the return clause is installed, and in case of a lift its frame is simply discarded.
 
 \chapter{Implementation}\label{ch:implementation}
+The directory \texttt{lc} contains the minimal \LC{} used in the introduction.
+The development -- both calculus and \Racket{} front-end is contained in the directory \texttt{algeff}.
+Its sub-directory \texttt{calculus} contains source files for everything calculus-related:
+\begin{itemize}
+  \item The file \texttt{abstract-machine.rkt} contains the definition of abstract machine and its transitions.
+  \item The file \texttt{eval.rkt} contains the reduction semantics and the \emph{free} judgment.
+  \item The file \texttt{lang.rkt} contains the calculus abstract syntax definition and \emph{ftv} meta-function.
+  \item The file \texttt{lib.rkt} contains various helper judgments and meta-functions.
+  \item The file \texttt{type.rkt} contains the type system along with helper judgments.
+  \item The file \texttt{unify.rkt} contains the implementation of the unification algorithm.
+\end{itemize}
+The sub-directory \texttt{lang} contains lexer and parser for the front-end.
+The file \texttt{main.rkt} is evaluated by \Racket{} environment whenever a file designates \emph{algeff} as its \texttt{\#lang}.
+The files \texttt{parse-only.rkt} and \texttt{tokenize-only.rkt} define sub-languages used for testing and debuginng of parser.
+The sub-directory \texttt{test} contains example programs which, when run, are type-checked and reduced both using the reduction semantics and the abstract machine.
+Finally, the file \texttt{render.rkt} renders the figures used throughout this thesis.
+
 \section{Unification}\label{sec:unification}
 The unification algorithm is loosely based on \cite{Pierce2002}, but instead of keeping a set of constraints to be solved, it solves sub-problems recursively.
 It is implemented as a \Redex{} judgment, which takes two types, the initial substitution and returns the substitution extended with their unifier.
@@ -519,6 +545,8 @@ The type is returned and the tail is extended with original head.
 \section{Automatic testing}
 
 \section{The \Racket{} environment}
+The \Racket{} environment provides easy integration with sub-languages using its sophisticated macro system and language specifiers.
+
 
 % TODO implementation architecture
 \chapter{User's manual}\label{ch:manual}
