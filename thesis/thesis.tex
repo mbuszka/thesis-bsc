@@ -11,7 +11,7 @@ They allow for separation of an interface of a computation -- a set of operation
 There are many calculi and languages that tackle the concept of algebraic effects \cites{Bauer2012,Leijen2014,Hillerstrom2016,Lindley2017, Biernacki2019}, but they usually are either specialized and developed using heavy-weight formalization, or they strive to become full-fledged programming languages with their meta-theory and implementation becoming increasingly complex.
 In this thesis I set out to build a small calculus, that has just enough general purpose constructs to allow for exploration and experimentation with algebraic effects and handlers, without overburdening the user.
 The meta-development consists of the Curry style type system, the reduction semantics and the abstract-machine.
-The calculus is built using the \Redex{} library and allows the programmer to use operations and handlers, recursive functions, numbers, booleans and conditional expressions.
+The calculus is built using the \Redex{} library and allows the programmer to use operations and handlers, recursive functions, numbers, booleans, lists and conditional expressions.
 The implementation of the type system provides type inference for the calculus terms, while both the reduction relation and the abstract machine can be used to either fully evaluate the expressions or visualize the reductions step-by-step.
 Additionally I present the process of integrating this development with the \Racket{} environment, that allows for usage of the calculus as a lightweight programming language.
 }
