@@ -46,9 +46,9 @@
     (token-PRIM lexeme)]
    [(:+ (:/ #\0 #\9))
     (token-NUMBER (string->number lexeme))]
-   [(:: lower-case (:* alphabetic))
+   [(:: lower-case (:* (:or alphabetic (:/ #\0 #\9) #\_)))
     (token-VAR lexeme)]
-   [(:: upper-case (:* alphabetic))
+   [(:: upper-case (:* (:or alphabetic (:/ #\0 #\9) #\_)))
     (token-OP lexeme)]
    [(:or whitespace blank iso-control) (return-without-pos (the-lexer input-port))]
    [(eof) (token-EOF)]))
