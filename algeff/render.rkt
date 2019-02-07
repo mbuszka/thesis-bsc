@@ -43,6 +43,8 @@
         (render-metafunction initial-conf (mk-path "algeff-am-initial-conf.eps"))
         (render-language lc:LC (mk-path "lc-syntax.eps"))
         (render-reduction-relation lc:red (mk-path "lc-red.eps"))
+        (render-language lc:LC-am (mk-path "lc-am-syntax.eps"))
+        (render-reduction-relation lc:abstract-machine (mk-path "lc-am.eps"))
         (render-judgment-form unify (mk-path "algeff-unify.eps"))
         (render-judgment-form unify-row (mk-path "algeff-unify-row.eps"))
         ))))

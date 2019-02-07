@@ -8,7 +8,7 @@
 
 (define-extended-language AM Infer
   ; Machine configuration
-  (C ::= (e ρ Σ ϕ K) (val V ρ Σ ϕ K) (op V n K K) V)
+  (C ::= (e ρ Σ ϕ K) (val V Σ ϕ K) (op V n K K) V)
   ; Machine values
   (V ::= (λ ρ x e) (rec ρ x x e) m b (V ...) K)
   ; Value environment
@@ -31,32 +31,32 @@
    AM
    ; Value conversion and nullary primop
    (--> ((λ x e) ρ Σ ϕ K)
-        (val (λ ρ x e) ρ Σ ϕ K))
+        (val (λ ρ x e) Σ ϕ K))
 
    (--> ((rec x_f x_a e) ρ Σ ϕ K)
-        (val (rec ρ x_f x_a e) ρ Σ ϕ K))
+        (val (rec ρ x_f x_a e) Σ ϕ K))
 
    (--> (m ρ Σ ϕ K)
-        (val m ρ Σ ϕ K))
+        (val m Σ ϕ K))
 
    (--> (b ρ Σ ϕ K)
-        (val b ρ Σ ϕ K))
+        (val b Σ ϕ K))
 
    (--> ((prim) ρ Σ ϕ K)
-        (val (prim-apply prim) ρ Σ ϕ K))
+        (val (prim-apply prim) Σ ϕ K))
 
    ; Application and primitive operation sequencing
-   (--> (val V ρ_1 ([arg e ρ_2] σ ...) ϕ K)
-        (e ρ_2 ([app V] σ ...) ϕ K))
+   (--> (val V ([arg e ρ] σ ...) ϕ K)
+        (e ρ ([app V] σ ...) ϕ K))
 
-   (--> (val V ρ_1 ([prim ρ_2 V_1 ... / e e_1 ...] σ ...) ϕ K)
-        (e ρ_2 ([prim ρ_2 V_1 ... V / e_1 ...] σ ...) ϕ K))
+   (--> (val V ([prim ρ V_1 ... / e e_1 ...] σ ...) ϕ K)
+        (e ρ ([prim ρ V_1 ... V / e_1 ...] σ ...) ϕ K))
 
    ; Operation invocation
-   (--> (val V ρ ([do op] σ ...) ϕ (κ ...))
+   (--> (val V ([do op] σ ...) ϕ (κ ...))
         (op V 0 ([(σ ...) ϕ] κ ...) ()))
 
-   (--> (val V ρ () done ())
+   (--> (val V () done ())
         V)
    ))
 
@@ -91,27 +91,27 @@
    AM
    ; Variable lookup
    (--> (x ρ Σ ϕ K)
-        (val (lookup-ρ ρ x) ρ Σ ϕ K))
+        (val (lookup-ρ ρ x) Σ ϕ K))
 
    ; Contraction
-   (--> (val V ρ_2 ([app (λ ρ_1 x e)] σ ...) ϕ K)
-        (e (extend ρ_1 x V) (σ ...) ϕ K))
+   (--> (val V ([app (λ ρ x e)] σ ...) ϕ K)
+        (e (extend ρ x V) (σ ...) ϕ K))
 
-   (--> (val V ρ_2 ([app (rec ρ_1 x_f x_a e)] σ ...) ϕ K)
-        (e (extend (extend ρ_1 x_f (rec ρ_1 x_f x_a e)) x_a V) (σ ...) ϕ K))
+   (--> (val V ([app (rec ρ x_f x_a e)] σ ...) ϕ K)
+        (e (extend (extend ρ x_f (rec ρ x_f x_a e)) x_a V) (σ ...) ϕ K))
 
-   (--> (val V ρ ([app ([Σ ϕ_1] κ_1 ...)] σ ...) ϕ_2 (κ_2 ...))
-        (val V ρ Σ ϕ_1 (κ_1 ... [(σ ...) ϕ_2] κ_2 ...)))
+   (--> (val V ([app ([Σ ϕ_1] κ_1 ...)] σ ...) ϕ_2 (κ_2 ...))
+        (val V Σ ϕ_1 (κ_1 ... [(σ ...) ϕ_2] κ_2 ...)))
 
    ; Primitive operation
-   (--> (val V ρ_1 ([prim ρ_2 V_1 ... /] σ ...) ϕ K)
-        (val (prim-apply prim V_1 ... V) ρ_2 (σ ...) ϕ K))
+   (--> (val V ([prim ρ V_1 ... /] σ ...) ϕ K)
+        (val (prim-apply prim V_1 ... V) (σ ...) ϕ K))
 
    ; If expression
-   (--> (val true ρ_1 ([if e any ρ] σ ...) ϕ K)
+   (--> (val true ([if e any ρ] σ ...) ϕ K)
         (e ρ (σ ...) ϕ K))
 
-   (--> (val false ρ_1 ([if any e ρ] σ ...) ϕ K)
+   (--> (val false ([if any e ρ] σ ...) ϕ K)
         (e ρ (σ ...) ϕ K))
   ))
 
@@ -141,11 +141,11 @@
         (judgment-holds (get-handler op hs (x_1 x_2 e))))
 
    ; Return
-   (--> (val V ρ_1 () (handle hs (return x e) ρ) ([Σ ϕ] κ ...))
+   (--> (val V () (handle hs (return x e) ρ) ([Σ ϕ] κ ...))
         (e (extend ρ x V) Σ ϕ (κ ...)))
 
-   (--> (val V ρ () (lift op) ([Σ ϕ] κ ...))
-        (val V ρ Σ ϕ (κ ...)))
+   (--> (val V () (lift op) ([Σ ϕ] κ ...))
+        (val V Σ ϕ (κ ...)))
    ))
 
 ; Abstract machine is the union of all transitions

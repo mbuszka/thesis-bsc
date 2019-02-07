@@ -25,7 +25,7 @@ Additionally I present the process of integrating this development with the \Rac
 \advisorgen     {dr. hab. Dariusza Biernackiego}
 \let\lll\undefined
 \usepackage{csquotes, amsmath, amssymb, biblatex, float, ebproof}
-\usepackage{minted}
+\usepackage{minted, subcaption}
 %
 \usepackage[xetex]{graphicx}
 \addbibresource{mybib.bib}
@@ -215,11 +215,25 @@ Abstract machine is a mathematical construction, usually defined as a set of con
 The goal for formulation of an abstract machine is to mechanize evaluation of terms while retaining semantics given in a more abstract format, e.g. reduction semantics, with the correspondence being provable\cite{Felleisen2009}.
 As an example, \autoref{fig:lc-cek} shows a \emph{CEK}-machine for the \LC{} defined earlier.
 The name \emph{CEK} comes from \emph{C}ommand, \emph{E}nvironment and \emph{K}ontinuation.
-The machine configuration is a triple $ (e, \rho, \kappa) $ where $ e $ is an expression which is decomposed or reduced, $ \rho $ is an environment mapping variables to values, and the last component $ \kappa $ is a continuation stack, which determines what will happen with value, to which first component eventually reduces.
+The machine has two configurations.
+The first is a triple $ (e, \rho, \kappa) $ where $ e $ is an expression which is decomposed, $ \rho $ is an environment mapping variables to values, and the last component $ \kappa $ is a continuation stack.
+It determines what will happen once the machine enters the second configuration -- a pair with a tag $val$ specifying that machine has computed a value and will have to pop a continuation frame.
+There are two possible frames: an argument expression with the environment awaiting reduction and the function value awaiting for the argument.
+The transition rules \textit{val-x}, \textit{val-n} and \textit{val-$\lambda$} switch to the second configuration upon encountering a value.
+The rule \textit{push-e} sequences the application, by first evaluating the function expression, pushing the argument computation onto the stack.
+The rule \textit{push-$\lambda$} finishes the sequencing by popping the argument with its environment and pushing the function value.
+The rule \textit{$\beta$} performs the reduction by popping the function from the stack and extending the environment for the evaluation of the body.
+Finally, the rule \textit{done} returns the value when there is no more computation to be done.
 Thanks to the environment we no longer have to explicitly perform substitution, leading to more machine friendly and efficient implementation.
 Given an initial state, the machine can then repeatedly apply transformation relation, either looping, arriving at a final value, or getting stuck. 
 \begin{figure}
-  \emph{CEK}-machine for \LC{}
+  \centering
+  \begin{subfigure}{0.3\textwidth}
+    \includegraphics{lc-am-syntax.pdf}
+  \end{subfigure}
+  \begin{subfigure}{0.69\textwidth}
+    \includegraphics{lc-am.pdf}
+  \end{subfigure}
   \caption{\LC{} abstract machine}
   \label{fig:lc-cek}
 \end{figure}
@@ -431,7 +445,7 @@ Meta-function \textit{initial-conf} in \autoref{fig:algeff-am-initial-conf} tran
   \label{fig:algeff-am-a}
 \end{figure}
 
-The first group of transitions depicted in \autoref{fig:algeff-am-a} performs mostly administrative functions -- capturing environment for functional values, transforming from value terms to machine values, sequencing binary operations, switching to special configuration for search of handler and a transition for returning final value.
+The first group of transitions depicted in \autoref{fig:algeff-am-a} performs mostly administrative functions -- capturing environment for functional values, transforming from value terms to machine values, sequencing primitive operations, switching to special configuration for search of a handler and a transition for returning the final value.
 
 \begin{figure}[h]
   \centering
@@ -455,6 +469,7 @@ The third group of transitions (\autoref{fig:algeff-am-c}) perform various reduc
 The first rule looks up value of a variable in current environment, the second rule performs contraction of a normal function, by extending the environment with mapping from the function's formal parameter $ x $ to the calculated value $ V $.
 The third rule reduces recursive function, extending the environment with the argument value $ V $ and the function value, allowing for recursive calls.
 The last rule handling application deals with continuation resumption, by pushing the current stack and the effect frame ($ [(\sigma \ldots) \, \phi_1] $) onto the meta-stack, installing the top ($ [\Sigma \, \phi_2] $) of captured meta-stack and prepending its tail ($ (\kappa_1 \ldots) $) to the meta-stack.
+The first of remaining rules applies the primitive operation to the arguments and the following rules perform the choice of the correct branch in a conditional expression.
 
 \begin{figure}[h]
   \centering
@@ -579,7 +594,8 @@ It is shown in \autoref{lst:the-reader}.
 \end{listing}
 The expander is depicted in \autoref{lst:the-expander}.
 It first type checks the expression which was created by the reader, and if it succeeds, it then creates a \Racket{} module that binds several names and returns the value of reduced expression.
-To create bindings, one must transform regular racket symbols into syntax objects with proper scope, which is done using \texttt{(datum->syntax ctx sym)} function which takes any syntax object and creates new one from \texttt{sym}, inheriting the scope from \texttt{ctx}.
+To create bindings that will be visible when the generated module is opened in the \texttt{REPL}, one must transform regular racket symbols into syntax objects with proper scope.
+It can be done using the \texttt{(datum->syntax ctx sym)} function which takes any syntax object and creates a new one from the \texttt{sym}, inheriting the scope from the \texttt{ctx}.
 \begin{listing}[H]
   \inputminted[firstline=29, lastline=57]{Racket}{../algeff/main.rkt}
   \caption{The expander}
