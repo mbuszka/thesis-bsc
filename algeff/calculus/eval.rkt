@@ -16,15 +16,15 @@
 
   [(free op E n)
    --------------------------------------
-   (free op (lift op E) ,(+ (term n) 1))]
+   (free op (lift op E) (incr n))]
 
-  [(free op E n)
+  [(free op_1 E n) (neq op_1 op_2)
    ------------------------------------------
-   (free (name op op_!_1) (lift op_!_1 E) n)]
+   (free op_1 (lift op_2 E) n)]
 
-  [(side-condition (in op (ops hs))) (free op E n)
+  [(free op E n) (side-condition (in op (ops hs))) (gt n 0)
    -----------------------------------------------
-   (free op (handle E hs ret) ,(- (term n) 1))]
+   (free op (handle E hs ret) (decr n))]
 
   [(side-condition (not-in op (ops hs))) (free op E n)
    ---------------------------------------------------
@@ -54,11 +54,11 @@
   (reduction-relation
    Infer
    (--> (in-hole E (app (λ x e) v))
-        (in-hole E (substitute e x v))
+        (in-hole E (subst e v x))
         β-λ)
 
    (--> (in-hole E (app (rec x_f x_a e) v))
-        (in-hole E (substitute (substitute e x_f (rec x_f x_a e)) x_a v))
+        (in-hole E (subst e (rec x_f x_a e) x_f v x_a))
         β-rec)
 
    (--> (in-hole E (prim v ...))
@@ -78,15 +78,15 @@
         lift-compat)
 
    (--> (in-hole E (handle v hs (return x e)))
-        (in-hole E (substitute e x v))
+        (in-hole E (subst e v x))
         handle-return)
    
    (--> (in-hole E_1 (handle (in-hole E_2 (op v)) hs ret))
-        (in-hole E_1 (substitute (substitute e x_1 v)
-                                 x_2 (λ v:z (handle (in-hole E_2 v:z) hs ret))))
+        (in-hole E_1 (subst e v x_1 v_r x_2))
         (judgment-holds (free op E_2 0))
-        (judgment-holds (get-handler op hs (x_1 x_2 e)))
         (fresh v:z)
+        (where v_r (λ v:z (handle (in-hole E_2 v:z) hs ret)))
+        (judgment-holds (get-handler op hs (x_1 x_2 e)))
         handle-op)
    ))
 

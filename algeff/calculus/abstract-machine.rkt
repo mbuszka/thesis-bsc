@@ -95,10 +95,10 @@
 
    ; Contraction
    (--> (val V ([app (λ ρ x e)] σ ...) ϕ K)
-        (e (extend ρ x V) (σ ...) ϕ K))
+        (e (ext ρ x V) (σ ...) ϕ K))
 
    (--> (val V ([app (rec ρ x_f x_a e)] σ ...) ϕ K)
-        (e (extend (extend ρ x_f (rec ρ x_f x_a e)) x_a V) (σ ...) ϕ K))
+        (e (ext ρ x_f (rec ρ x_f x_a e) x_a V) (σ ...) ϕ K))
 
    (--> (val V ([app ([Σ ϕ_1] κ_1 ...)] σ ...) ϕ_2 (κ_2 ...))
         (val V Σ ϕ_1 (κ_1 ... [(σ ...) ϕ_2] κ_2 ...)))
@@ -121,28 +121,29 @@
    AM
    ; Lift
    (--> (op V n ([Σ (lift op)] κ_1 ...) (κ_2 ...))
-        (op V ,(+ (term n) 1) (κ_1 ...) (κ_2 ... [Σ (lift op)])))
+        (op V (incr n) (κ_1 ...) (κ_2 ... [Σ (lift op)])))
 
-   (--> ((name op_1 op_!_1) V n ([Σ (lift (name op_2 op_!_1))] κ_1 ...) (κ_2 ...))
-        (op V ,(+ (term n) 1) (κ_1 ...) (κ_2 ... [Σ (lift op)])))
+   (--> (op_1 V n ([Σ (lift op_2)] κ_1 ...) (κ_2 ...))
+        (op_1 V n (κ_1 ...) (κ_2 ... [Σ (lift op_2)]))
+        (judgment-holds (neq op_1 op_2)))
 
    ; Handle
    (--> (op V n ([Σ (handle hs ret ρ)] κ_1 ...) (κ_2 ...))
-        (op V ,(- (term n) 1) (κ_1 ...) (κ_2 ... [Σ (handle hs ret ρ)]))
+        (op V (decr n) (κ_1 ...) (κ_2 ... [Σ (handle hs ret ρ)]))
         (judgment-holds (in op (ops hs)))
-        (side-condition (> (term n) 0)))
+        (judgment-holds (gt n 0)))
 
    (--> (op V n ([Σ (handle hs ret ρ)] κ_1 ...) (κ_2 ...))
         (op V n (κ_1 ...) (κ_2 ... [Σ (handle hs ret ρ)]))
         (judgment-holds (not-in op (ops hs))))
 
    (--> (op V 0 ([Σ (handle hs ret ρ)] [Σ_2 ϕ] κ_1 ...) (κ_2 ...))
-        (e (extend (extend ρ x_1 V) x_2 (κ_2 ... [Σ (handle hs ret ρ)])) Σ_2 ϕ (κ_1 ...))
+        (e (ext ρ x_1 V x_2 (κ_2 ... [Σ (handle hs ret ρ)])) Σ_2 ϕ (κ_1 ...))
         (judgment-holds (get-handler op hs (x_1 x_2 e))))
 
    ; Return
    (--> (val V () (handle hs (return x e) ρ) ([Σ ϕ] κ ...))
-        (e (extend ρ x V) Σ ϕ (κ ...)))
+        (e (ext ρ x V) Σ ϕ (κ ...)))
 
    (--> (val V () (lift op) ([Σ ϕ] κ ...))
         (val V Σ ϕ (κ ...)))
@@ -164,6 +165,12 @@
 
   [(extend ([x_1 V_1] ... [x V_2] [x_3 V_3] ...) x V) ([x_1 V_1] ... [x V] [x_3 V_3] ...)]
   [(extend ([x_1 V_1] ...) x V) ([x V] [x_1 V_1] ...)])
+
+(define-metafunction AM
+  ext : ρ any ... -> ρ
+
+  [(ext ρ) ρ]
+  [(ext ρ x V any ...) (extend (ext ρ any ...) x V)])
 
 ; Lookup a value for variable in environment
 (define-metafunction AM

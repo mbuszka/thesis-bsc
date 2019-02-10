@@ -2,7 +2,8 @@
 (require redex/reduction-semantics
          "lang.rkt")
 
-(provide lookup in not-in dom-S fresh-row fresh-arr fresh-var neq eq get-handler prim-apply)
+(provide lookup in not-in dom-S fresh-row fresh-arr fresh-var neq eq get-handler prim-apply incr decr
+         subst gt)
 
 (define-judgment-form Infer
   #:mode (eq I I)
@@ -89,3 +90,21 @@
   [(fresh-var N_1 a_1 N_2) (fresh-row N_2 a_r N_3) (fresh-var N_3 a_2 N_4)
    -----------------------------------------------------------------------
    (fresh-arr N_1 a_1 -> a_r a_2 N_4)])
+
+(define-metafunction Infer
+  incr : n -> n
+  [(incr n) ,(+ 1 (term n))])
+
+(define-metafunction Infer
+  decr : n -> n
+  [(decr n) ,(- (term n) 1)])
+
+(define-relation Infer
+  gt ⊂ n × n
+  [(gt n_1 n_2) (side-condition (> (term n_1) (term n_2)))])
+
+(define-metafunction Infer
+  subst : e any ... -> e
+
+  [(subst e) e]
+  [(subst e v x any ...) (subst (substitute e x v) any ...)])

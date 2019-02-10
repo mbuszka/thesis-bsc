@@ -1,16 +1,25 @@
-\documentclass[inz, english, shortabstract]{iithesis}
+\documentclass[inz, english, longabstract]{iithesis}
 %
 % \usepackage[utf8]{inputenc} 
 %
 \polishtitle    {Implementacja statycznej i dynamicznej semantyki rachunku z efektami algebraicznymi i ich obsługą z pomocą biblioteki \Redex}
-\englishtitle   {Implementation of static and~dynamic semantics for a calculus with algebraic effects and~handlers using \Redex} 
-\polishabstract {Abstrakt w języku polskim}
+\englishtitle   {Implementation of static and~dynamic semantics for a calculus with algebraic effects and~handlers using \Redex}
+\polishabstract {%
+Efekty algebraiczne są coraz popularniejszą techniką strukturyzowania efektów obliczeniowych.
+Pozwalają one na rozdzielenie interfejsu pewnego obliczenia w postaci zbioru dozwolonych operacji, od jego implementacji w postaci wyrażeń obsługujących wywołania tych operacji.
+W literaturze przedstawionych jest wiele rachunków oraz języków które mierzą się z efektami algebraicznymi, jednak są one na ogół albo mocno wyspecjalizowane i opisane ciężkim formalizmem, lub rozwijane w kierunku pełnego języka programowania, co wiąże się z komplikacją ich meta-teorii oraz implementacji.
+W niniejszej pracy zdecydowałem się zbudować rachunek który jest na tyle mały by nie przytłaczać użytkownika, lecz wciąż posiada wystarczający zasób konstrukcji ogólnego użytku do zbudowania kompletnych programów pozwalających na eksperymentalne poznawanie efektów algebraicznych.
+Na poziomie teoretycznym stworzyłem system typów w stylu Curry'ego, relację redukcji dla termów rachunku oraz maszynę abstrakcyjną.
+Rachunek został zaimplementowany z pomocą biblioteki \Redex{} i udostępnia programiście operacje i wyrażenia je obsługujące, funkcje rekurencyjne, wyrażenia liczbowe, logiczne, listy oraz wyrażenia warunkowe.
+System typów został zbudowany tak, aby algorytmicznie odtwarzał typ wyrażenia, a relacja redukcji oraz maszyna abstrakcyjna mogą być użyte zarówno do pełnej ewaluacji termów jak i do obserwacji postępu krok po kroku.
+Dodatkowo w mojej pracy opisuję proces integracji ze środowiskiem programistycznym języka \Racket{}, które pozwala na użycie implementacji rachunku jako podstawy minimalnego języka programowania.
+}%
 \englishabstract{%
 Algebraic effects are an increasingly popular technique of structuring computational effects.
 They allow for separation of an interface of a computation -- a set of operations it may perform, and their implementation -- handlers which respond to operation invocations.
-There are many calculi and languages that tackle the concept of algebraic effects \cites{Bauer2012,Leijen2014,Hillerstrom2016,Lindley2017, Biernacki2019}, but they usually are either specialized and developed using heavy-weight formalization, or they strive to become full-fledged programming languages with their meta-theory and implementation becoming increasingly complex.
+There are many calculi and languages that tackle the concept of algebraic effects, but they usually are either specialized and developed using heavy-weight formalization, or they strive to become full-fledged programming languages with their meta-theory and implementation becoming increasingly complex.
 In this thesis I set out to build a small calculus, that has just enough general purpose constructs to allow for exploration and experimentation with algebraic effects and handlers, without overburdening the user.
-The meta-development consists of the Curry style type system, the reduction semantics and the abstract-machine.
+The meta-development consists of the Curry-style type system, the reduction semantics and the abstract-machine.
 The calculus is built using the \Redex{} library and allows the programmer to use operations and handlers, recursive functions, numbers, booleans, lists and conditional expressions.
 The implementation of the type system provides type inference for the calculus terms, while both the reduction relation and the abstract machine can be used to either fully evaluate the expressions or visualize the reductions step-by-step.
 Additionally I present the process of integrating this development with the \Racket{} environment, that allows for usage of the calculus as a lightweight programming language.
@@ -24,21 +33,28 @@ Additionally I present the process of integrating this development with the \Rac
 %\transcriptnum {}                     % Numer indeksu
 \advisorgen     {dr. hab. Dariusza Biernackiego}
 \let\lll\undefined
-\usepackage{csquotes, amsmath, amssymb, biblatex, float, ebproof}
+\usepackage[style=english]{csquotes}
+\usepackage{amsmath, amssymb, float, ebproof}
 \usepackage{minted, subcaption}
 \usepackage{syntax}
 %
 \usepackage[xetex]{graphicx}
+\usepackage[backend=biber,style=numeric,sorting=nty,language=english]{biblatex}
 \addbibresource{mybib.bib}
+% \DeclareFieldFormat[article,inproceedings]{title}{#1}
 %
 \floatstyle{boxed} 
-\restylefloat{figure} 
+\restylefloat{figure}
+\restylefloat{listing}
 %
 \newcommand{\Redex}{\texttt{PLT Redex}}
 \newcommand{\Racket}{\texttt{Racket}}
 \newcommand{\LC}{\(\lambda\)-calculus}
 \mathchardef\mhyphen="2D % Define a "math hyphen"
-\def\listingautorefname{Listing}
+\def\listingautorefname{Listing}\addto\extrasenglish{%
+  \renewcommand{\chapterautorefname}{Chapter}%
+  \renewcommand{\sectionautorefname}{Section}%
+}
 %
 \begin{document}
 %
@@ -55,16 +71,16 @@ Additionally I present the process of integrating this development with the \Rac
 %
 %
 % What algebraic effects are, why are they interesting, why is it worth to experiment with different approaches/flavors
-Algebraic effects \cite{Plotkin2003} are an increasingly popular technique of structuring computational effects.
+Algebraic effects~\cite{Plotkin2003} are an increasingly popular technique of structuring computational effects.
 They allow for seamless composition of multiple effects, while retaining (unlike monads) applicative style of programs.
-Coupled with handlers \cite{Plotkin2013} which give programmers ability to interpret effects, they provide a disciplined and flexible tool for abstracting over a set of operations which a program may perform and for separating this interface from the semantics of those operations, defined as effect handlers.
+Coupled with handlers~\cite{Plotkin2013} which give programmers ability to interpret effects, they provide a disciplined and flexible tool for abstracting over a set of operations which a program may perform and for separating this interface from the semantics of those operations, defined as effect handlers.
 
 % What are other approaches to algebraic effects
-As composability and separation of concerns are often sought after, many calculi and languages have been developed in order to get algebraic effects just right; most notable of them being: \emph{Koka} \cite{Leijen2014} (featuring type inference, effect polymorphism with row-types and \emph{JavaScript}-like syntax), \emph{Links} \cite{Hillerstrom2016} (featuring \emph{ML}-like syntax, row-typed effect polymorphism and ad-hoc effects), \emph{Helium} \cite{Biernacki2019} (with abstract and local effects, \emph{ML}-style module system and principled approach to effect polymorphism), \emph{Eff} \cite{Bauer2012} (with implicit effect checking and recent work on direct compilation to \emph{OCaml} \cite{Kiselyov2018}) and \emph{Frank} \cite{Lindley2017} (with bidirectional type and effect system requiring minimal amount of effect variables, and shallow effect handlers). 
+As composability and separation of concerns are often sought after, many calculi and languages have been developed in order to get algebraic effects just right; most notable of them being: \emph{Koka}~\cite{Leijen2014} (featuring type inference, effect polymorphism with row-types and \emph{JavaScript}-like syntax), \emph{Links}~\cite{Hillerstrom2016} (featuring \emph{ML}-like syntax, row-typed effect polymorphism and ad-hoc effects), \emph{Helium}~\cite{Biernacki2019} (with abstract and local effects, \emph{ML}-style module system and principled approach to effect polymorphism), \emph{Eff}~\cite{Bauer2012} (with implicit effect checking and recent work on direct compilation to \emph{OCaml}~\cite{Kiselyov2018}) and \emph{Frank}~\cite{Lindley2017} (with bidirectional type and effect system requiring minimal amount of effect variables, and shallow effect handlers). 
 
 On a more theoretical side, various approaches to semantics of algebraic effects can be spotted in the literature, both with respect to type systems and run-time semantics.
-Although most calculi use some form of row-types (with notable exception of \emph{Frank} \cite{Lindley2017}) to track effects, there are differences in permitted shapes (at most one effect \cite{Hillerstrom2016} of given type or many effects \cite{Biernacki2017,Leijen2014}, whether effects must be defined before use \cite{Biernacki2017,Lindley2017,Leijen2014,Bauer2012} or not \cite{Hillerstrom2016}) and how effects interact with polymorphism and abstraction.
-At run-time handlers can wrap the captured continuation (giving so-called deep handlers \cite{Biernacki2017,Hillerstrom2016,Leijen2014,Bauer2012}) or not (shallow handlers \cite{Lindley2017}) and the very act of finding the right handler can be implemented in various ways, mainly depending on some constructs which skip handlers \cite{Biernacki2017}.
+Although most calculi use some form of row-types (with notable exception of \emph{Frank}~\cite{Lindley2017}) to track effects, there are differences in permitted shapes (at most one effect~\cite{Hillerstrom2016} of given type or many effects~\cite{Biernacki2017,Leijen2014}, whether effects must be defined before use~\cite{Biernacki2017,Lindley2017,Leijen2014,Bauer2012} or not~\cite{Hillerstrom2016}) and how effects interact with polymorphism and abstraction.
+At run-time handlers can wrap the captured continuation (giving so-called deep handlers~\cite{Biernacki2017,Hillerstrom2016,Leijen2014,Bauer2012}) or not (shallow handlers~\cite{Lindley2017}) and the very act of finding the right handler can be implemented in various ways, mainly depending on some constructs which skip handlers~\cite{Biernacki2017}. 
 
 % What am I implementing, what is interesting in this thesis, how it differs from other systems/languages (The main goal of the thesis)
 % Goals:
@@ -75,27 +91,25 @@ At run-time handlers can wrap the captured continuation (giving so-called deep h
 %  language front-end facilitating ease of experimentation
 %  some lightweight machine checking (automatic tests)
 All this variety naturally invites us to experiment with different features and components of a calculus.
-An executable model would be excellent for everyone interested in understanding inner workings of algebraic effects.
-In particular, the ability to perform and visualize reductions would be very helpful for understanding of the dynamic semantics of operations and handlers.
-Such model should also contain a type system complementing the dynamic semantics and guiding the programmer with usage of effects.
-In this thesis I will build such a calculus, describing my choices and discussing the trade-offs I faced.
+An executable model would be excellent for everyone interested in understanding the inner workings of algebraic effects.
+In particular, the ability to perform and visualize reductions would be very helpful in grasping the dynamic semantics of operations and handlers.
+Such model should also contain a type system complementing the dynamic semantics and guiding the programmer with the usage of effects.
+In this thesis I build such a calculus, describing my choices and discussing the trade-offs I faced.
 
 The first goal of this thesis is the design of the calculus with effects and handlers, and its dynamic semantics.
 Its implementation should be executable and allow for step-by-step reduction of calculus terms by a computer program.
-
 The second goal is the design and implementation of a sound type system for the calculus, preferably with type inference.
 The implementation should be able to type-check examples with minimal additional context and boilerplate.
-
-The third goal is the design and implementation of abstract machine, which preserves the dynamic semantics of the calculus, yet is easier to translate into low-level virtual machine.
+The third goal is the design and implementation of an abstract machine, which preserves the dynamic semantics of the calculus, yet is easier to translate into low-level virtual machine.
 It could also be used as a basis for compilation to native code.
 
 In order to rapidly iterate on the design and test the calculus, I decided to use the \Redex{} library which allows for building language model with executable type system judgments and reduction relation.
 It also provides facilities for visualizing rewriting of terms and typesetting all components of the development.
 
 The calculus is designed to be small enough to be easily understood, yet have general language features to allow experimentation with reasonably complex programs.
-The programmer can use $\lambda$-abstractions and recursive functions, numbers with addition, subtraction, multiplication and comparisons, booleans with conditional expressions and lists.
-The algebraic effects are implemented with ad-hoc operations which take one parameter and return a value, handlers which can handle multiple (different) operations at once and lifts which allow operations to skip handlers.
-The handler wraps captured continuation, giving the deep handling semantics.
+The programmer can use $\lambda$-abstractions and recursive functions, numbers with addition, subtraction, multiplication and comparisons, booleans with conditional expressions, and lists.
+The algebraic effects are implemented with ad-hoc operations (that need not be defined earlier) which take one parameter and return a value, handlers which can handle multiple (different) operations at once and lifts which allow operations to skip handlers.
+The handler wraps captured continuation, giving the deep handling semantics~\cite{Leijen2014}.
 The type system for calculus is presented in Curry style, with the implementation inferring simple types for unannotated terms using unification algorithm.
 Although there is no way to create and bind polymorphic values, the system infers most general (simple) type for an expression which may contain unsolved variables.
 The abstract machine is implemented with explicit stack of continuations and value environment.
@@ -104,27 +118,28 @@ Additionally to ease experimentation I implemented a language front-end which tr
 
 In brief summary, the development consists of:
 \begin{itemize}
-  \item Executable reduction semantics most similar to the system of \cite{Biernacki2017}.
-  \item Curry style type system with ad-hoc effects in the style of \emph{Links}, effect rows based on \emph{Koka} and \emph{lift} construct of \cite{Biernacki2017}, implemented as a unification-based type inference algorithm.
-  \item CEK style abstract machine with stack and \emph{meta}-stack of handlers, based on \cite{Hillerstrom2016}
+  \item Executable reduction semantics most similar to the system of~\cite{Biernacki2017}.
+  \item Curry style type system with ad-hoc effects in the style of \emph{Links}, effect rows based on \emph{Koka} and \emph{lift} construct of~\cite{Biernacki2017}, implemented as a unification-based type inference algorithm.
+  \item CEK style abstract machine with stack and \emph{meta}-stack of handlers, based on~\cite{Hillerstrom2016}
 \end{itemize}
 
 % Outline of the thesis
 The rest of this thesis is structured as follows: in the remainder of this chapter I introduce the main topics of this thesis, in \autoref{ch:calculus} I describe the calculus in greater detail, in \autoref{ch:implementation} I discuss technicalities of implementation and integration with the \Racket{} environment and \autoref{ch:manual} is user's manual.
 
 \section{Algebraic effects and handlers}
-Algebraic effects and handlers are a language level framework which allow for coherent presentation, abstraction, composition and reasoning about computational effects.
-The key idea is to separate invocation of an effectful operation in an expression from the meaning of such an operation.
-When one invokes an operation, current continuation (up to the nearest handler) is captured and passed along with the operation's argument to the nearest handler.
-The handler in turn may execute arbitrary expression, using the continuation once, twice, returning a function which calls the continuation or simply ignoring it.
-This way many control structures can be modeled and generalized by algebraic effects and appropriate handlers.
-For example, in the following \autoref{lst:exception-like}, function \texttt{exists} returns \texttt{true} when the list contains an element that satisfies predicate \texttt{p}.
-\begin{listing}[H]
+\begin{listing}[t]
   \VerbatimInput[firstline=13,lastline=19]{../algeff/test/05.rkt}
   \caption{Exception-like usage of algebraic effects}
   \label{lst:exception-like}
 \end{listing}
-It is implemented in terms of map and a helper function \texttt{f} which \texttt{Break}s normal control flow when the predicate returns true.
+Algebraic effects and handlers are a language-level framework which allows for coherent presentation, abstraction, composition and reasoning about computational effects.
+The key idea is to separate invocation of an effectful operation in an expression from the meaning of such an operation.
+When one invokes an operation, the current continuation (up to the nearest handler) is captured and passed along with the operation's argument to the nearest handler.
+The handler in turn may execute arbitrary expression, using the continuation once, twice, returning a function which calls the continuation or simply ignoring it.
+This way many control structures can be modeled and generalized by algebraic effects and appropriate handlers.
+
+For example, in \autoref{lst:exception-like}, function \texttt{exists} returns \texttt{true} when the list contains an element that satisfies predicate \texttt{p}.
+It is implemented in terms of \texttt{map} and a helper function \texttt{f} which \texttt{Break}s normal control flow when the predicate returns true.
 This map is then invoked inside the handler that returns \texttt{true} on \texttt{Break} and \texttt{false} otherwise.
 This usage of operation and its handler is similar to exceptions, as the resumption is discarded.
 Another example, with a handler for the state-like operations is presented in \autoref{lst:stateful-computation} in the next section.
@@ -140,13 +155,8 @@ With effects being tracked by the type system, programmers can enforce purity or
 The separation of definition and implementation of effects allows for various interpretations of operations, for example simulating a database connection or file-system during testing.
 % TODO anonymous vs defined effects, abstract effects, effect polymorphism
 
-\section{Types and type inference}
-The most common approach to giving an effectful computation a type uses a type-level data-structure known as a row.
-Initially developed in order to structurally type records, rows come in two flavors: Remy-style\cite{Remy1994} where they are treated as (finite) sets of label-type pairs, and Leijen-style\cite{Leijen2005} where rows are treated as (finite) lists of label-type pairs that are equivalent up to permutation of different labels.
-When polymorphism is present a row may have concrete prefix (possibly empty) and polymorphic tail denoted by a type variable.
-In effectful setting, the type system usually keeps a row of effects which an expression may perform, and suspended computations e.g. functions must have types decorated with a row of operations that may be invoked when their body is evaluated.
-In the following listing, the function \texttt{add} loads a number, sums it with the argument \texttt{x} and sets this sum, returning unit value.
-\begin{listing}[H]
+\section{Types and type inference}\label{sec:types}
+\begin{listing}[t]
   \begin{verbatim}
 let add = λ x Set +(Get (), x) in
 let comp = 
@@ -160,39 +170,47 @@ comp 37
   \caption{Stateful computation}
   \label{lst:stateful-computation}
 \end{listing}
-It contains two effectful sub-expressions: $Get \, : \, Unit \Rightarrow Num$ and $Set \, Num \Rightarrow Unit$.
-As this function uses both operations, their effects must be combined, giving add following type: $Num \rightarrow (Get \, : \, Unit \Rightarrow Num , Set \, : \, Num \Rightarrow Unit) \, Unit$ where $Num$ is the type of input, $Unit$ is the type of output and $(Get \, \ldots)$ is the effect row.
-The handler which interprets the operations is implemented to return a state transforming function.
-When the \texttt{Set} operation is invoked, the handler returns a function which will ignore its argument and first resume the computation with unit value, that will return a state transformation and then pass it the new state \texttt{x}.
-The \texttt{Get} operation handler returns a function which awaits for a state $s$ with which it resumes the continuation and then applies returned function to $s$.
-The return clause returns identity state transformation.
-The type system requires all handler bodies to be of the same type: $Num \rightarrow () \, Num$ which guides implementation and ensures that operations do not escape the handler.
+The most common approach to giving an effectful computation a type uses a type-level data-structure known as a row.
+Initially developed in order to structurally type records, rows come in two flavors: Remy-style~\cite{Remy1994} where they are treated as (finite) sets of label-type pairs, and Leijen-style~\cite{Leijen2005} where rows are treated as (finite) lists of label-type pairs that are equivalent up to permutation of different labels.
+When polymorphism is present a row may have a concrete prefix (possibly empty) and a polymorphic tail denoted by a type variable.
+In effectful setting, the type system usually keeps a row of effects which an expression may perform, and suspended computations, e.g., functions must have types decorated with a row of operations that may be invoked when their body is evaluated.
+
+In \autoref{lst:stateful-computation}, the function \texttt{add} loads a number, sums it with the argument \texttt{x} and sets this sum, returning unit value.
+It contains two effectful sub-expressions: $Get \, : \, Unit \Rightarrow Num$ and $Set \, : \, Num \Rightarrow Unit$.
+The operation type $Get \, : \, Unit \Rightarrow Num$ means that the operation $Get$ expects an argument of type $Unit$, and when it is handled, the resumption will be given a value of type $Num$.
+As the \texttt{add} function uses both operations, their effects must be combined, giving it the following type: $Num \rightarrow (Get \, : \, Unit \Rightarrow Num , Set \, : \, Num \Rightarrow Unit) \, Unit$ where $Num$ is the type of input, $Unit$ is the type of output and $(Get \, \ldots)$ is the effect row.
+The handler interpreting the operations is implemented as a state transforming function.
+The type system requires all handler bodies to be of the same type: $Num \rightarrow () \, Num$ which guides the implementation and ensures that operations do not escape the handler.
+When the \texttt{Set} operation is invoked, the handler returns a function.
+This function will ignore the argument and resume the computation with unit value.
+When this resumption returns a new state transformation -- representing the rest of the stateful computation, the function will call it with the new state \texttt{x} that was passed to the handler.
+Similarly, the \texttt{Get} operation handler returns a function which awaits for a state $s$ with which it resumes the continuation and also passes it to the returned function.
+The return clause returns the identity state transformation.
+The soundness of this solution crucially depends on the deep handling semantics to ensure that the result of resumption will indeed have the same type as every clause.
 
 Type inference is a technique of algorithmic reconstruction of types for various constructions used in a language.
 It allows programmers to write programs with no type annotations, that often feel redundant and obfuscate the meaning of a program.
-The most well known type system with inference is a system for \emph{ML} family of languages\cite{Pierce2002} -- \emph{Haskell}, \emph{OCaml}, \emph{SML} which infers the types with no annotations whatsoever.
+The most well known type system with inference is a system for \emph{ML} family of languages~\cite{Pierce2002} -- \emph{Haskell}, \emph{OCaml}, \emph{SML} which infers the types with no annotations whatsoever.
 A formal type system defines grammar of types consisting of base types (\texttt{int}, \texttt{bool} etc.), type constructors (arrows, algebraic data types) and type variables.
 The typing rules require types which should be compatible (e.g. formal parameter and argument types) to unify.
 The key feature of this system is the so-called let-polymorphism -- generalization of types of let-bound variables.
 This way code reuse can be accomplished without complicating the type system and compromising type safety.
-The basis of implementation of this system is first order unification algorithm\cite{Pierce2002}, which syntactically decomposes types and builds a substitution from type variables to types.
-
-
+The basis of implementation of this system is the first-order unification algorithm~\cite{Pierce2002}, which syntactically decomposes types and builds a substitution from type variables to types.
 
 \section{Reduction semantics and abstract machines}
 % TODO add reference to canonical definitions for good definition of reduction semantics and abstract machines, especially CEK
-Reduction semantics\cite{Felleisen2009} is a format for specifying dynamic semantics of a calculus in an operational style.
+Reduction semantics~\cite{Felleisen2009} is a format for specifying dynamic semantics of a calculus in an operational style.
 The basic idea is to first define redexes -- expressions which can be reduced, and contexts in which the reduction can happen.
-Taking \LC{} extended with numbers (\autoref{fig:lc-syntax}) and with call-by-value reduction order as an example, the only redex is application of a function to value $ (\lambda x . e) v $ as shown in \autoref{fig:lc-red}.
-The possible contexts are: empty context $ \square $ or evaluation of operator part of application $ K e $ or evaluation of operand $ v K $ when left part has already been evaluated to a value.
-\begin{figure}
+Taking \LC{} extended with numbers (\autoref{fig:lc-syntax}) and with call-by-value reduction order as an example, the only redex is an application of a function to value $ (\lambda x . e) v $ as shown in \autoref{fig:lc-red}.
+The possible contexts are: empty context $[]$ or evaluation of the operator part of an application $ K e $ or evaluation of the operand $ v K $ when the left part has already been reduced to a value.
+\begin{figure}[t]
   \includegraphics{lc-syntax.pdf}
   \caption{\LC{} abstract syntax}
   \label{fig:lc-syntax}
 \end{figure}
-With these possibilities in mind, we will define binary relation $ \longrightarrow $ which describes single step of reduction.
+With these possibilities in mind, we will define binary relation $ \longrightarrow $ which describes a single step of reduction.
 Such relation can be thought of as a transition system, rewriting terms into 'simpler' ones step by step.
-There usually are two approaches to definition of such relation:
+There usually are two approaches to a definition of such a relation:
 \begin{itemize}
   \item Definition of primitive reduction $ (\lambda x . e) v \longrightarrow_p e\{v/x\} $ which operates only on redexes and giving it a closure with the following inference rule:
   
@@ -213,7 +231,7 @@ For both approaches it is important, that any term can be uniquely decomposed in
 \end{figure}
 
 Abstract machine is a mathematical construction, usually defined as a set of configurations with deterministic transformations, which are computationally simple.
-The goal for formulation of an abstract machine is to mechanize evaluation of terms while retaining semantics given in a more abstract format, e.g. reduction semantics, with the correspondence being provable\cite{Felleisen2009}.
+The goal for formulation of an abstract machine is to mechanize evaluation of terms while retaining semantics given in a more abstract format, e.g., reduction semantics, with the correspondence being provable~\cite{Felleisen2009}.
 As an example, \autoref{fig:lc-cek} shows a \emph{CEK}-machine for the \LC{} defined earlier.
 The name \emph{CEK} comes from \emph{C}ommand, \emph{E}nvironment and \emph{K}ontinuation.
 The machine has two configurations.
@@ -226,7 +244,7 @@ The rule \textit{push-$\lambda$} finishes the sequencing by popping the argument
 The rule \textit{$\beta$} performs the reduction by popping the function from the stack and extending the environment for the evaluation of the body.
 Finally, the rule \textit{done} returns the value when there is no more computation to be done.
 Thanks to the environment we no longer have to explicitly perform substitution, leading to more machine friendly and efficient implementation.
-Given an initial state, the machine can then repeatedly apply transformation relation, either looping, arriving at a final value, or getting stuck. 
+Given an initial state, the machine can then repeatedly apply transition relation, either looping, arriving at a final value, or getting stuck. 
 \begin{figure}
   \centering
   \begin{subfigure}{0.3\textwidth}
@@ -240,42 +258,40 @@ Given an initial state, the machine can then repeatedly apply transformation rel
 \end{figure}
 
 \section{\Redex}
-The \Redex{}\cite{Felleisen2009} library provides a comprehensive set of tools for the development of various calculi and language-like artifacts.
+The \Redex{}~\cite{Felleisen2009} library provides a comprehensive set of tools for the development of various calculi and language-like artifacts.
 The work begins with the definition of a language using a familiar BNF-like syntax.
 The library provides many options for defining patterns which describe the abstract syntax of the language, among them: meta-variables, symbols -- playing the role of markers, numbers, object language variables, repetitions of patterns using ellipsis and nonlinear patterns which can for example enforce that all variables in a binding are different.
 Besides the syntax, the language definition allows for specifying the variable binding structure of the object language, which will be used by built-in meta-functions for substitution.
-The following \autoref{lst:lc-typed-syntax-code} shows code extending \LC{} defined earlier in \autoref{fig:lc-syntax} with typed terms $ E $, along with types $ t $ and typing contexts $ \Gamma $.
-\begin{listing}[H]
+\autoref{lst:lc-typed-syntax-code} shows code extending the \LC{} defined earlier in \autoref{fig:lc-syntax} with typed terms $ E $, along with types $ t $ and typing contexts $ \Gamma $.
+\begin{listing}[t]
   \inputminted[firstline=26, lastline=32]{Racket}{../lc/lc.rkt}
   \caption{Typed \LC{} with numbers in \Redex{}}
   \label{lst:lc-typed-syntax-code}
 \end{listing}
-Second feature of the \Redex{} library are meta-functions which can pattern match on terms and return other terms.
-They may use full power of complex and non-linear patterns which the library exposes, additional side conditions and even escape to \Racket{} -- the host language in which the \Redex{} is defined.
+Another feature of the \Redex{} library are meta-functions which can pattern match on terms and return other terms.
+They may use the full power of complex and non-linear patterns which the library exposes, additional side conditions and even escape to \Racket{} -- the host language in which the \Redex{} is defined.
 
-\begin{listing}[H]
+\begin{listing}[t]
   \inputminted[firstline=34,lastline=51]{Racket}{../lc/lc.rkt}
   \caption{Type system for \LC{} in \Redex{}}
   \label{lst:lc-typed-type-code}
 \end{listing}
 
-The third aspect of this library are judgment forms which encode inductively defined judgments (e.g. type systems) with a syntax similar to pen-and-paper rules. \autoref{lst:lc-typed-type-code} shows example code, defining a simple type system for annotated \LC{} with numbers.
+The third aspect of this library are judgment forms which encode inductively defined judgments (e.g., type systems) with a syntax similar to pen-and-paper rules. \autoref{lst:lc-typed-type-code} shows example code, defining a simple type system for annotated \LC{} with numbers.
 These rules can use patterns, meta-functions, other judgments and also escape to \Racket{}.
-When defining a judgment, the programmer must specify which parameters are to be treated as inputs and which as outputs using \mintinline{Racket}{#:mode} keyword.
+When defining a judgment, the programmer must specify which parameters are to be treated as inputs and which as outputs using the \mintinline{Racket}{#:mode} keyword.
 The library enforces an invariant that inputs \texttt{I} of a judgment form must be concrete terms and outputs \texttt{O} may be variables.
 Under the hood the \Redex{} library will resolve the rules in depth-first order backtracking on failures and multiple pattern matches.
 
-The last component of language modeled using \Redex{} are reduction relations, usually used for specifying semantics.
-They are defined as a set of clauses, which should rewrite an input term into other term of same syntactic category.
-In order to find redex, the programmer can define evaluation contexts, and then the library will decompose the terms using \mintinline{Racket}{(in-hole K e)} pattern, as in \autoref{lst:lc-red-code}.
-
-\begin{listing}[H]
+The last component of a language that can be modeled using \Redex{} are reduction relations, usually used for specifying semantics.
+They are defined as a set of clauses, which should rewrite an input term into other term of the same syntactic category.
+In order to find a redex, the programmer can define evaluation contexts, and then the library will decompose the terms using \mintinline{Racket}{(in-hole K e)} pattern, as in \autoref{lst:lc-red-code}.
+\begin{listing}[t]
   \inputminted[firstline=19,lastline=23]{Racket}{../lc/lc.rkt}
   \caption{Reduction relation for \LC{} in \Redex{}}
   \label{lst:lc-red-code}
 \end{listing}
-
-Finally \Redex{} provides features for automatic testing via term generation facilities and has ability to typeset every component of calculus development.
+Finally \Redex{} provides features for automatic testing via term generation facilities and has ability to typeset every component of the calculus development.
 Every figure in this thesis, which shows language grammar, reduction relation, meta-function or judgment has been generated using \Redex{}.
 
 \chapter{The calculus}\label{ch:calculus}
@@ -284,12 +300,13 @@ Its abstract syntax is presented in \autoref{fig:algeff-syntax}.
 Meta-variable $ x $ ranges over variables used in value binders and their references, while $ op $ ranges over operation names, which are distinct from normal variables.
 Meta-variable $ v $ ranges over values, which are one of: boolean $ b $, number $ m $, $ \lambda $-abstraction $(\lambda \, x \, e)$, recursive function $(rec \, x_f \, x_v \, e)$ or a list of values $(v \ldots)$.
 Meta-variable $ e $ ranges over expressions, which include values $ v $, forms standard to \LC{} -- variables $ x $, function applications $ (e \, e) $, conditionals $ (if \, e \,e \, e) $ and primitive operations $ (prim \, e \ldots) $; they also include three constructs specific to effects -- operation invocations $ (op \, e) $, lifts $ (lift \, op \, e) $ and handlers $ (handle \, e \, hs \, ret) $ where $ ret $ is return expression $ (return \, x \, e) $ and $ hs $ is a list of handler clauses.
+Each operation may occur at most once in the list and the clause $(x_{!\_1} \, x_{!\_1} \, e)$ for the operation requires bound variables to be distinct.
 
-To achieve call-by-value, left-to-right reduction order I use evaluation contexts $ E $; this choice follows other calculi which allow for computational effects\cite{Biernacki2017, Leijen2014, Hillerstrom2016}.
-One interesting aspect of these contexts is notion of \emph{free}ness \cite{Biernacki2017}, defined in \autoref{fig:algeff-free}.
+To achieve call-by-value, left-to-right reduction order I use evaluation contexts $ E $; this choice follows other calculi which allow for computational effects~\cite{Biernacki2017, Leijen2014, Hillerstrom2016}.
+One interesting aspect of these contexts is notion of \emph{free}ness~\cite{Biernacki2017}, defined in \autoref{fig:algeff-free}.
 The judgment $ free[ \, op , \, E , \, n] $ asserts that operation $ op $ is $ n $-free in evaluation context $ E $, meaning that it will be handled by $(n + 1)$st handler for $ op $ \emph{outside} the context $ E $.
 
-The syntax of types, ranged over by meta-variable $ t $, comprises base types ($Int$, $Bool$), lists $List \, t$, arrow types $(t \rightarrow row \, t)$, operation types $(t \Rightarrow t)$, row types $row$ and type variables $ a $.
+The syntax of types, ranged over by meta-variable $ t $, comprises base types ($Num$, $Bool$), lists $List \, t$, arrow types $(t \rightarrow row \, t)$, operation types $(t \Rightarrow t)$, row types $row$ and type variables $ a $.
 Rows are defined inductively as either an empty row $\cdot$, a variable $ a $ or an extension $(op \,\, t \,\, row)$ of a row $row$ with a type $t$ assigned to an operation label $op$, and are ranged over by meta-variable $row$.
 Finally, meta-variable $\Gamma$ ranges over typing contexts, $S$ over type substitutions and $SN$ denotes a pair of substitution and name supply $N$ -- a natural number used to generate fresh type variables.
 
@@ -310,7 +327,7 @@ Finally, meta-variable $\Gamma$ ranges over typing contexts, $S$ over type subst
 \section{Dynamic semantics}
 The dynamic semantics for a calculus with algebraic effects defines, besides the standard reductions known from \LC{}, the control structure of operations and handlers.
 Intuitively, when an operation $op$ is invoked, it will be handled by dynamically closest handler, with a caveat that for each lift passed in search of handler, it must skip one handler.
-Formally, when an operation $ op $ is invoked, it will be handled by lexically enclosing handler $ (handle \, E[op \, e] \, hs \, ret) $ if and only if the intermediate context $ E $ is $0$-free \cite{Biernacki2017}.
+Formally, when an operation $ op $ is invoked, it will be handled by lexically enclosing handler $ (handle \, E[op \, e] \, hs \, ret) $ if and only if the intermediate context $ E $ is $0$-free~\cite{Biernacki2017}.
 
 The dynamic semantics is defined in the format of contextual reduction semantics in \autoref{fig:algeff-red}.
 All rules perform reduction in a context $ E $ leaving it unchanged.
@@ -336,7 +353,7 @@ The operation handler can resume the evaluation of the expression which invoked 
 \end{figure} 
 
 \section{Static semantics}
-The type system is based on \emph{Koka} \cite{Leijen2014} (Leijen's style of row types \cite{Leijen2005}), \emph{Links} \cite{Hillerstrom2016} (ad-hoc operations) and Biernacki et al's. \cite{Biernacki2017} (lift construct) systems.
+The type system is based on \emph{Koka}~\cite{Leijen2014} (Leijen's style of row types~\cite{Leijen2005}), \emph{Links}~\cite{Hillerstrom2016} (ad-hoc operations) and Biernacki et al's.~\cite{Biernacki2017} (lift construct) systems.
 Initially I implemented a variant of System F extended with row-types but it proved to be a bit of a mouthful to write in it even the simplest programs.
 Additionally the \Redex{}'s facilities for generation of terms were not able to generate sufficiently many well typed ones.
 As I intended on using the automated counterexample search to test assertions about the calculus, my goal was to minimize the amount of programs rejected by the type system.
@@ -344,12 +361,12 @@ In order to accomplish this goal, type inference proved to be very helpful as it
 
 To limit the amount of work and keep the calculus reasonably simple, I decided to present the calculus in the Curry style, with the typing relation inferring the type for unannotated terms, instead of implementing a separate type system and an inference algorithm.
 
-Building on well known foundations\cite{Pierce2002}, types are inferred via first-order unification.
+Building on well known foundations~\cite{Pierce2002}, types are inferred via first-order unification.
 While the actual algorithm is presented in \autoref{sec:unification}, the notion of unification is used extensively in the remainder of this chapter and as such I will present an intuitive definition here.
 Two types $t_1$ and $t_2$ \emph{unify} (written $t_1 \sim t_2$) if they are structurally the same, where variables can be substituted with any type.
 Two rows unify, if they are the same list of operation-type pairs, up to permutation of different operations.
 
-The system does not feature polymorphism in a first-class fashion, as no polymorphic functions can be bound, mainly because there is no rule where types are generalized, but I believe it to be a straightforward addition, following the \emph{Koka} \cite{Leijen2014} calculus.
+The system does not feature polymorphism in a first-class fashion, as no polymorphic functions can be bound, mainly because there is no rule where types are generalized, but I believe it to be a straightforward addition, following the \emph{Koka}~\cite{Leijen2014} calculus.
 Still, after inferring the type of an expression, we can see which unification variables are left abstract and could be generalized.
 There are two main features differentiating this system from \emph{Koka}'s; firstly effects need not be defined before use, their signature is inferred the same way as any other construction; secondly the system is algorithmic, with rules explicitly encoding a recursive function which can infer the type of an expression.
 
@@ -383,19 +400,19 @@ The rule \emph{if} for conditional expression requires the condition to be of ty
 As usual all effect rows must also unify.
 
 Operation invocation, checked by the rule \emph{op}, requires the effect row to contain operation $ op $ with type $ (t_1 \Rightarrow t_2) $ where input type $ t_1 $ is the inferred type for $ e $ and output type $ t_2 $ is fresh.
-The rule \emph{lift}, checking operation lifting, prepends fresh $ op $ to the effect row of subexpression $e$.
+The rule \emph{lift}, checking operation lifting, prepends fresh $ op $ to the effect row of sub-expression $e$.
 
 Finally, to check handle expression with the rule \emph{handle}, we infer the type $t_1$ of the enclosed expression $e$.
 Then in an environment extended with the type $t_1$ we infer the type $t_{ret}$ of the return expression.
 Helper judgment \textit{infer-handlers} returns the result effect row of handlers $row_{out}$ and row marking handled effects $ row_{handled} $ with the same tail as $row_{out}$.
 By unifying result row with return row and handled row with $row_1$ we ensure that effects which may occur during handling of operations, evaluation of return clause and leftovers from the inner expression are all accounted for.
 
-\subsection{Inference for effect handlers}
+\subsection{Type inference for effect handlers}
 
 \begin{figure}
   \centering
   \includegraphics{algeff-infer-handlers.pdf}
-  \caption{Handlers type inference} 
+  \caption{Type inference for effect handlers} 
   \label{fig:algeff-infer-handlers} 
 \end{figure} 
 
@@ -414,10 +431,10 @@ We then unify the effects of evaluating $ e $ with all effects of handlers, and 
 Finally we extend the handled row with the current operation $(op (t_v \Rightarrow t_r))$.
 
 \section{Abstract machine}
-The abstract machine is based on the \emph{CEK}-machine of Hillerström and Lindley\cite{Hillerstrom2016}, with the difference that during the search for operation handler, the machine must count handlers and lifts it passes.
-It is similar to the abstract machine presented in extended version of Biernacki et al's \cite{Biernacki2017} as both calculi have the \emph{lift} construct.
+The abstract machine is based on the \emph{CEK}-machine of Hillerström and Lindley~\cite{Hillerstrom2016}, with the difference that during the search for operation handler, the machine must count handlers and lifts it passes.
+It is similar to the abstract machine presented in extended version of Biernacki et al's~\cite{Biernacki2017} as both calculi have the \emph{lift} construct.
 
-\begin{figure}
+\begin{figure}[t]
   \centering
   \includegraphics{algeff-am-syntax.pdf}
   \caption{Abstract machine configurations}
@@ -432,14 +449,14 @@ Meta-variable $ \kappa $ denotes meta-frame which consists of a pure stack and o
 Finally $ K $ ranges over stacks of meta-frames, which I will call \emph{meta-stack}s.
 Meta-function \textit{initial-conf} in \autoref{fig:algeff-am-initial-conf} transforms an expression into initial configuration -- initializing machine with empty stack, \texttt{done} effect frame and empty meta-stack.
 
-\begin{figure}
+\begin{figure}[t]
   \centering
   \includegraphics{algeff-am-initial-conf.pdf}
   \caption{Abstract machine -- initial configuration}
   \label{fig:algeff-am-initial-conf}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[t]
   \centering
   \includegraphics{algeff-am-a.pdf} 
   \caption{Abstract machine -- administrative transitions}
@@ -448,7 +465,7 @@ Meta-function \textit{initial-conf} in \autoref{fig:algeff-am-initial-conf} tran
 
 The first group of transitions depicted in \autoref{fig:algeff-am-a} performs mostly administrative functions -- capturing environment for functional values, transforming from value terms to machine values, sequencing primitive operations, switching to special configuration for search of a handler and a transition for returning the final value.
 
-\begin{figure}[h]
+\begin{figure}[t]
   \centering
   \includegraphics{algeff-am-b.pdf} 
   \caption{Abstract machine -- continuation building}
@@ -459,7 +476,7 @@ The second group of transitions (\autoref{fig:algeff-am-b}) decomposes current e
 First four rules -- for function application, operation invocation, primitive operation call and conditional expression -- all create a new pure frame and push it onto stack.
 Last two transitions deal with effectful operations -- handle and lift; they build meta-stack by bundling previous effect frame with current stack into meta-frame, pushing it onto meta-stack and then installing a fresh stack and a new effect frame into the machine configuration.
 
-\begin{figure}[h]
+\begin{figure}[t]
   \centering 
   \includegraphics{algeff-am-c.pdf}
   \caption{Abstract machine -- contractions}
@@ -472,7 +489,7 @@ The third rule reduces recursive function, extending the environment with the ar
 The last rule handling application deals with continuation resumption, by pushing the current stack and the effect frame ($ [(\sigma \ldots) \, \phi_1] $) onto the meta-stack, installing the top ($ [\Sigma \, \phi_2] $) of captured meta-stack and prepending its tail ($ (\kappa_1 \ldots) $) to the meta-stack.
 The first of remaining rules applies the primitive operation to the arguments and the following rules perform the choice of the correct branch in a conditional expression.
 
-\begin{figure}[h]
+\begin{figure}[t]
   \centering
   \includegraphics{algeff-am-e.pdf}
   \caption{Abstract machine -- effect handling}
@@ -483,21 +500,21 @@ Transitions in the last group (\autoref{fig:algeff-am-e}) form the essence of th
 First four rules search for the appropriate handler for $ op $ by maintaining a counter $ n $ which is incremented by every lift for $ op $ and decremented by every handler for $ op $.
 The fifth rule matches when the counter is $ 0 $ and the handler has a case for the operation which was invoked. 
 In this situation, the machine must begin evaluation of the handling expression in the environment extended both with the passed argument, and the captured continuation with current meta-frame appended.
-Two last rules deal with returning values -- in case of a handler the return clause is installed, and in case of a lift its frame is simply discarded.
+The last two rules deal with returning values -- in case of a handler the return clause is installed, and in case of a lift its frame is simply discarded.
 
 \chapter{Implementation}\label{ch:implementation}
 This chapter discusses the implementation of the calculus and its surface language \emph{algeff}.
 All the judgments and relations presented earlier were rendered by the \Redex{} library from the source files and they are the executable implementation of the calculus.
-The unification algorithm used by the type inference judgment of \autoref{fig:algeff-infer} is presented in the \autoref{sec:unification}.
-The \autoref{sec:file-structure} describes the file structure of the development, the \autoref{sec:front-end} discusses the language front-end and the \autoref{sec:racket-env} shows how to tie a language into the \Racket{} environment.
-The surface syntax of \emph{algeff} and instructions of use are presented in \autoref{ch:manual}.
+The unification algorithm used by the type inference judgment of \autoref{fig:algeff-infer} is presented in \autoref{sec:unification}.
+\autoref{sec:file-structure} describes the file structure of the development, \autoref{sec:front-end} discusses the language front-end and \autoref{sec:racket-env} shows how to tie a language into the \Racket{} environment.
+The surface syntax of \emph{algeff} and the instructions of use are presented in \autoref{ch:manual}.
 
 \section{Unification}\label{sec:unification}
-The unification algorithm is loosely based on \cite{Pierce2002}, but instead of keeping a set of constraints to be solved, it solves sub-problems recursively.
+The unification algorithm is loosely based on~\cite{Pierce2002}, but instead of keeping a set of constraints to be solved, it solves sub-problems recursively.
 It is implemented as a \Redex{} judgment, which takes two types, the initial substitution and returns the substitution extended with their unifier.
 This judgment must also pass around the name supply token -- a natural number which is incremented every time a new type variable is created.
 Variables in types are substituted lazily -- whenever algorithm encounters variable which is in domain of the substitution, it looks it up and continues unification.
-The \autoref{fig:algeff-unify} shows the unification algorithm.
+\autoref{fig:algeff-unify} shows the unification algorithm.
 
 \begin{figure}
   \centering
@@ -514,40 +531,40 @@ The \autoref{fig:algeff-unify} shows the unification algorithm.
 \end{figure}
 
 Terminal rules \emph{refl-var} and \emph{refl-const} handle unification of equal variables and constants respectively.
-In a special case \emph{refl-var-lookup}, when both types are variables, the left variable $a_1$ is not in the domain of substitution and the right variable $a_2$ is mapped to $a_3$ which is equal to $a_1$, then they are in fact the same variable and should unify.
+In a special case \emph{refl-var-lookup}, when both types are variables, the left variable $a_1$ is not in the domain of the substitution and the right variable $a_2$ is mapped to $a_3$ which is equal to $a_1$, then they are in fact the same variable and should unify.
 This corner-case arises due to lazy application of substitution to types.
 
 The rule \emph{ext} extends substitution, when the left-hand-side type is a variable which is not in the domain of substitution.
-It is important to note, that the type which is inserted into substitution is fully substituted.
-This way we can maintain an invariant, that every type in the substitution has only type variables which are not in the domain of the substitution.
-The last side condition, that $a$ is not a free type variable in $t$ is the occurs-check, which ensures that algorithm doesn't try to unify cyclic types, which would loop.
+It is important to note that the type which is inserted into substitution is fully substituted.
+This way we can maintain an invariant that every type in the substitution has only type variables which are not in the domain of the substitution.
+The last side condition, that $a$ is not a free type variable in $t$ is the occurs-check, which ensures that algorithm does not try to unify cyclic types, which would loop.
 
 When the left type is a variable, in the domain of substitution, rule \emph{lookup} looks it up, and continues unification.
 When the left type is not a variable, and right type is, rule \emph{flip} flips them around and continues unification.
 This rule is needed because the judgment performs extension and lookup only on left variable.
-The next three rules \emph{->}, \emph{=>} and \emph{List} decompose the type constructor and unify all respective sub-types.
+The next three rules \texttt{->}, \texttt{=>} and \emph{List} decompose the type constructor and unify all respective sub-types.
 
 The last rule \emph{row} unifies two rows.
 It requires the left row to be non empty, and the right row not to be a variable (to ensure determinism with respect to the rule \emph{flip}).
 Then it uses helper judgment \emph{unify-row} which rewrites $row_2$ such that its head is $op \, \, t_2$ and rest is bound $row_r$.
-The side condition, requiring the variable at the end of (substituted) $row_1$ not to be in domain of substitution which was build by the rewriting ensures that algorithm does not try to unify rows with different labels, but same type variable in the tail (similar to occurs-check in rule \emph{ext}).
+The side condition, requiring the variable at the end of (substituted) $row_1$ not to be in domain of substitution which was build by the rewriting ensures that algorithm does not try to unify rows with different labels, but the same type variable in the tail (similar to occurs-check in rule \emph{ext}).
 
 The helper judgment \emph{unify-row}, shown in \autoref{fig:algeff-unify-row} rewrites the row such that it begins with desired label $op$.
-It is based on similar judgment in \cite{Leijen2005}.
+It is based on similar judgment in~\cite{Leijen2005}.
 There are two base cases: either the row already begins with $op$ (rule \emph{row-head}) and is decomposed and returned or the row is already a variable which is not bound by substitution (rule \emph{row-var}).
 In this case the substitution is extended with a row $(op \, t \, row)$ where both $t$ and $row$ are fresh variables.
 
 The third rule \emph{row-lookup} handles variables which are bound by the substitution, looking up the appropriate row and continuing row rewriting.
-The last rule \emph{row-swap} matches rows that have a label $o1$ different to desired label $o$.
-In this case, the rest of the row must rewritten recursively yielding type $t_2$ for $o$ and new tail.
-The type is returned and the tail is extended with original head.
+The last rule \emph{row-swap} matches rows that have a label $op_1$ different from the desired label $op_2$.
+In this case, the rest of the row must be rewritten recursively yielding type $t_2$ for $op_2$ and a new tail.
+The type is returned and the tail is extended with the original head.
 
 \section{File structure}\label{sec:file-structure}
 The directory \texttt{lc} contains the minimal \LC{} used in the introduction.
 The development -- both calculus and \Racket{} front-end is contained in the directory \texttt{algeff}.
 Its sub-directory \texttt{calculus} contains source files for everything calculus-related:
 \begin{itemize}
-  \item The file \texttt{abstract-machine.rkt} contains the definition of abstract machine and its transitions.
+  \item The file \texttt{abstract-machine.rkt} contains the definition of the abstract machine and its transitions.
   \item The file \texttt{eval.rkt} contains the reduction semantics and the \emph{free} judgment.
   \item The file \texttt{lang.rkt} contains the calculus abstract syntax definition and \emph{ftv} meta-function.
   \item The file \texttt{lib.rkt} contains various helper judgments and meta-functions.
@@ -574,34 +591,34 @@ The parser desugars some surface expressions into simpler calculus terms.
 It also differentiates and marks variables and operation names.
 
 \section{The \Racket{} environment}\label{sec:racket-env}
-The \Racket{} environment \cite{PLT1} provides easy integration with sub-languages using its sophisticated syntax-transformer system and language specifiers.
+The \Racket{} environment~\cite{PLT1} provides easy integration with sub-languages using its sophisticated syntax-transformer system and language specifiers.
 It allows programmers to choose which language should be used to interpret the source file using the \texttt{\#lang} command at the beginning of the file.
 The file must eventually be transformed into module recognized by base \Racket{}.
 This way programs may be composed with modules written using various domain-specific languages.
 In order to allow \Racket{} to use a new language, its developer must provide:
 \begin{itemize}
   \item The reader -- a function that accepts input stream and produces abstract syntax tree of a module.
-  \item The expander -- a syntax transformer that accepts the tree produced by the reader and creates a \Racket{} module, which can be interpreted by \Racket{} language.
+  \item The expander -- a syntax transformer that accepts the tree produced by the reader and creates a \Racket{} module, which can be interpreted by the \Racket{} language.
 \end{itemize}
 
-I followed the `master recipe' described in \cite{BeautifulRacket} that specifies which components and where must be defined.
+I followed the `master recipe' described in~\cite{BeautifulRacket} that specifies which components and where must be defined.
 The file \texttt{main.rkt} provides an inner module \texttt{reader} and a syntax transformer \texttt{\#\%module-begin} -- the expander.
 The inner module provides a function \texttt{read-syntax} which transforms the program text provided on an input port, using the parser and tokenizer described earlier, into a single calculus term represented as \Racket{} \emph{syntax object}.
 It is shown in \autoref{lst:the-reader}.
-\begin{listing}[H]
+\begin{listing}[t]
   \inputminted[firstline=11, lastline=19]{Racket}{../algeff/main.rkt}
   \caption{The reader}
   \label{lst:the-reader}
 \end{listing}
 The expander is depicted in \autoref{lst:the-expander}.
-It first type checks the expression which was created by the reader (lines 4 and 5), and if it succeeds, it creates a \Racket{} module that binds several names and returns the value of reduced expression.
+It first type checks the expression which was created by the reader (lines 4 and 5), and if it succeeds, it will create a \Racket{} module that binds several names and return the value of the reduced expression.
 To create bindings that will be visible when the generated module is opened in the \texttt{REPL}, one must transform regular racket symbols into syntax objects with proper scope (lines 7-12).
-It can be done using the \texttt{(datum->syntax ctx sym)} function which takes any syntax object and creates a new one from the \texttt{sym}, inheriting the scope from the \texttt{ctx}.
+It can be done using the \texttt{(datum->syntax ctx sym)} function which takes any syntax object and creates a new one from \texttt{sym}, inheriting the scope from \texttt{ctx}.
 The created module \texttt{require}s the \texttt{redex} package.
 This package contains the \texttt{traces} function and \texttt{term} syntax form, that are used in the module body.
-The module defines variables containing the exression and its type, functions which can trace the reduction of the expression and functions that calculate the final value.
-If the term did not typecheck, the expander raises an exception.
-\begin{listing}[H]
+The module defines variables containing the expression and its type, functions that can trace the reduction of the expression and functions that calculate the final value.
+If the term does not typecheck, the expander will raise an exception.
+\begin{listing}[t]
   \inputminted[firstline=29,linenos=true,firstnumber=1,lastline=57]{Racket}{../algeff/main.rkt}
   \caption{The expander}
   \label{lst:the-expander}
@@ -633,7 +650,7 @@ The file will be interpreted by the \emph{algeff} front-end inferring the type o
 \end{itemize}
 
 An example program, calculating factorial of a number is presented in \autoref{lst:algeff-program}.
-\begin{listing}[H]
+\begin{listing}[t]
   \VerbatimInput{../algeff/test/01.rkt}
   \caption{An \emph{algeff} program}
   \label{lst:algeff-program}
@@ -652,13 +669,13 @@ An example further interaction:
   (λ v:f (app v:f 5))
   (rec v:f v:x (if (== v:x 0) 1 (* v:x (app v:f (- v:x 1))))))
 > type
-'Int
+'Num
 > (reduce)
 120
 > (reduce-machine)
 120
 >
-\end{verbatim}
+\end{verbatim} 
 It is also possible to show step-by-step reductions:
 \begin{verbatim}
 > (trace)
@@ -666,6 +683,17 @@ It is also possible to show step-by-step reductions:
 > (trace-machine)
 ; opens a new window with interactive abstract machine transitions
 \end{verbatim}
+
+\begin{listing}[t]
+  \VerbatimInput{../algeff/test/02.rkt}
+  \caption{An \emph{algeff} program with effects}
+  \label{lst:algeff-algeff-program}
+\end{listing}
+
+An example program with algebraic effects is shown in \autoref{lst:algeff-algeff-program}.
+It defines the handler for state in the same style as described in \autoref{sec:types} with the difference that $0$ is used instead of the unit type, and uses it to handle a stateful computation.
+Evaluating this program should yield the result $24$ and the \texttt{type} field should contain the value \texttt{'Num}.
+
 More example programs are provided in the \texttt{algeff/test} directory.
 
 \section{The \emph{algeff} syntax}
@@ -699,6 +727,6 @@ More example programs are provided in the \texttt{algeff/test} directory.
 \end{grammar}
 
 
-\printbibliography
+\printbibliography[heading=bibintoc]
 
 \end{document}

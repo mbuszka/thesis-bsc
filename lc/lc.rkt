@@ -19,7 +19,7 @@
   (reduction-relation
    LC
    (--> (in-hole K ((λ x e) v))
-        (in-hole K (substitute e x v))
+        (in-hole K (subst e v x))
         β))
   )
 
@@ -34,7 +34,7 @@
 (define-judgment-form LC-typed
   #:mode (types I I O)
 
-  [(in x Γ t)
+  [(lookup Γ x t)
    -------------
    (types Γ x t)]
 
@@ -63,14 +63,14 @@
   [(erase (λ [x t] E)) (λ x (erase E))])
 
 (define-judgment-form LC-typed
-  #:mode (in I I O)
+  #:mode (lookup I I O)
 
   [----------------
-   (in x (x any_v any_r) any_v)]
+   (lookup (x any_v any_r) x any_v)]
 
-  [(neq x y) (in x any_r any_v)
+  [(neq x y) (lookup any_r x any_v)
    --------------------
-   (in x (y any any_r) any_v)])
+   (lookup (y any any_r) x any_v)])
 
 (define-extended-language LC-am LC
   (V ::= (λ ρ x e) n)
@@ -83,7 +83,7 @@
   (reduction-relation LC-am
     (--> (x ρ κ)
          (val V κ)
-         (judgment-holds (in x ρ V))
+         (judgment-holds (lookup ρ x V))
          val-x)
     (--> (n ρ κ)
          (val n κ)
@@ -107,6 +107,12 @@
 (define-metafunction LC-am
   initial-conf : e -> C
   [(initial-conf e) (e · ())])
+
+(define-metafunction LC
+  subst : e any ... -> e
+
+  [(subst e) e]
+  [(subst e v x any ...) (subst (substitute e x v) any ...)])
 
 (module+ test
   (define-term example ((λ x x) ((λ y y) 42)))

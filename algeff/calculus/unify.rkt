@@ -32,7 +32,7 @@
   [------------------ "refl-var"
    (unify SN a a SN)]
 
-  [(in t (Int Bool ·))
+  [(in t (Num Bool ·))
    ---------------------- "refl-const"
    (unify SN t t SN)]
 
@@ -87,9 +87,9 @@
    ---------------------------------------------------------- "row-lookup"
    (unify-row [S N] a op t row SN)]
 
-  [(unify-row SN_1 row_1 o t_2 row_2 SN_2)
+  [(unify-row SN_1 row_1 op_2 t_2 row_2 SN_2) (neq op_1 op_2)
    -------------------------------------------------------------------------------------- "row-swap"
-   (unify-row SN_1 ((name o1 op_!_1) t_1 row_1) (name o op_!_1) t_2 (o1 t_1 row_2) SN_2)]
+   (unify-row SN_1 (op_1 t_1 row_1) op_2 t_2 (op_1 t_1 row_2) SN_2)]
   )
 
 ; Extend the substitution, with fully substituted type

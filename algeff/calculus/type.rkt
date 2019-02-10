@@ -27,7 +27,7 @@
 
   [(fresh-row N_1 row N_2)
    ------------------------------------ "Num"
-   (infer Γ [S N_1] m Int row [S N_2])]
+   (infer Γ [S N_1] m Num row [S N_2])]
   
   [(lookup Γ x t) (fresh-row N_1 row N_2)
    -------------------------------------- "var"
@@ -107,18 +107,18 @@
 
   [(in prim (+ - *))
    (infer Γ SN_1 e_1 t_1 row_1 SN_2)
-   (unify SN_2 t_1 Int SN_3)
+   (unify SN_2 t_1 Num SN_3)
    (infer Γ SN_3 e_2 t_2 row_2 SN_4)
-   (unify SN_4 t_2 Int SN_5)
+   (unify SN_4 t_2 Num SN_5)
    (unify SN_5 row_1 row_2 SN_6)
    ------------------------------------------------
-   (check-prim Γ SN_1 prim (e_1 e_2) Int row_2 SN_6)]
+   (check-prim Γ SN_1 prim (e_1 e_2) Num row_2 SN_6)]
 
   [(in prim (== <= >=))
    (infer Γ SN_1 e_1 t_1 row_1 SN_2)
-   (unify SN_2 t_1 Int SN_3)
+   (unify SN_2 t_1 Num SN_3)
    (infer Γ SN_3 e_2 t_2 row_2 SN_4)
-   (unify SN_4 t_2 Int SN_5)
+   (unify SN_4 t_2 Num SN_5)
    (unify SN_5 row_1 row_2 SN_6)
    ------------------------------------------------
    (check-prim Γ SN_1 prim (e_1 e_2) Bool row_2 SN_6)]

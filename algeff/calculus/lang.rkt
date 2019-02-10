@@ -3,7 +3,7 @@
 (require redex/reduction-semantics
          racket/set)
 
-(provide Infer ftv ops subst is-var not-var value?)
+(provide Infer ftv ops is-var not-var value?)
 
 (define-language Infer
   ; Values
@@ -29,7 +29,7 @@
   (h     ::= (op hexpr))
 
   ; Types
-  (t     ::= Int Bool (t -> row t) (List t) (t => t) row a)
+  (t     ::= Num Bool (t -> row t) (List t) (t => t) row a)
   (row   ::= (op t row) a ·)
 
   ; Term variables
@@ -77,12 +77,6 @@
 
 (define value? (redex-match? Infer v))
 
-; Project substitution from pair
-(define-metafunction Infer
-  subst : [S N] -> S
-
-  [(subst [S N]) S])
-
 (define-metafunction Infer
   ops : hs -> (op ...)
 
@@ -100,7 +94,7 @@
 
   [(ftv/s a) ,(set (term a))]
   [(ftv/s ·) ,(set)]
-  [(ftv/s Int) ,(set)]
+  [(ftv/s Num) ,(set)]
   [(ftv/s Bool) ,(set)]
   [(ftv/s (List t)) (ftv/s t)]
   [(ftv/s (t_1 -> row t_2)) ,(set-union (term any_1) (term any_2) (term any_3))

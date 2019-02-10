@@ -26,7 +26,54 @@
          ['unify (lambda (lws)
                    (match lws
                      [(list _ _ sn-in lhs rhs sn-out _ ...)
-                      (list "" sn-in lhs " ~ " rhs sn-out "")]))])
+                      (list "" sn-in lhs " ~ " rhs sn-out "")]))]
+         ['> (lambda (lws)
+               (match lws
+                 [(list _ _ lhs rhs _ ...)
+                  (list "" lhs " > " rhs "")]))]
+         ['subst (lambda (lws)
+                   (define (aux args)
+                     (match args
+                       [(list v x) (list v " / " x "}")]
+                       [(list-rest v x rest) (append (list v " / " x ", ") (aux rest))]))
+                   (match lws
+                     [(list _ _ e args ... _) (append (list "" e "{") (aux args))]))]
+         ['ext (lambda (lws)
+                   (define (aux args)
+                     (match args
+                       [(list x v) (list x " ↦ " v "]")]
+                       [(list-rest x v rest) (append (list x " ↦ " v ", ") (aux rest))]))
+                   (match lws
+                     [(list _ _ e args ... _) (append (list "" e "[") (aux args))]))]
+         ['lookup (lambda (lws)
+                    (match lws
+                      [(list _ _ f x v _)
+                       (list "" f "(" x ") = " v "")]))]
+         ['in (lambda (lws)
+                (match lws
+                  [(list _ _ x s _)
+                   (list "" x " ∈ " s "")]))]
+         ['not-in (lambda (lws)
+                    (match lws
+                      [(list _ _ x s _)
+                       (list "" x " ∉ " s "")]))]
+         ['eq (lambda (lws)
+                (match lws
+                  [(list _ _ x y _)
+                   (list "" x " = " y "")]))]
+         ['neq (lambda (lws)
+                (match lws
+                  [(list _ _ x y _)
+                   (list "" x " ≠ " y "")]))]
+         ['incr (lambda (lws)
+                  (match lws
+                    [(list _ _ n _)
+                     (list "" n " + 1")]))]
+         ['decr (lambda (lws)
+                  (match lws
+                    [(list _ _ n _)
+                     (list "" n " - 1")]))]
+         )
       (begin
         (render-language Infer (mk-path "algeff-syntax.eps"))
         (render-judgment-form infer (mk-path "algeff-infer.eps"))
