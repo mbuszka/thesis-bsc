@@ -8,7 +8,7 @@
 Efekty algebraiczne są coraz popularniejszą techniką strukturyzowania efektów obliczeniowych.
 Pozwalają one na rozdzielenie interfejsu pewnego obliczenia w postaci zbioru dozwolonych operacji, od jego implementacji w postaci wyrażeń obsługujących wywołania tych operacji.
 W literaturze przedstawionych jest wiele rachunków oraz języków które mierzą się z efektami algebraicznymi, jednak są one na ogół albo mocno wyspecjalizowane i opisane ciężkim formalizmem, lub rozwijane w kierunku pełnego języka programowania, co wiąże się z komplikacją ich meta-teorii oraz implementacji.
-W niniejszej pracy zdecydowałem się zbudować rachunek który jest na tyle mały by nie przytłaczać użytkownika, lecz wciąż posiada wystarczający zasób konstrukcji ogólnego użytku do zbudowania kompletnych programów pozwalających na eksperymentalne poznawanie efektów algebraicznych.
+W niniejszej pracy zdecydowałem się zbudować rachunek, który jest na tyle mały by nie przytłaczać użytkownika, lecz wciąż posiada wystarczający zasób konstrukcji ogólnego użytku do zbudowania kompletnych programów pozwalających na eksperymentalne poznawanie efektów algebraicznych.
 Na poziomie teoretycznym stworzyłem system typów w stylu Curry'ego, relację redukcji dla termów rachunku oraz maszynę abstrakcyjną.
 Rachunek został zaimplementowany z pomocą biblioteki \Redex{} i udostępnia programiście operacje i wyrażenia je obsługujące, funkcje rekurencyjne, wyrażenia liczbowe, logiczne, listy oraz wyrażenia warunkowe.
 System typów został zbudowany tak, aby algorytmicznie odtwarzał typ wyrażenia, a relacja redukcji oraz maszyna abstrakcyjna mogą być użyte zarówno do pełnej ewaluacji termów jak i do obserwacji postępu krok po kroku.
@@ -17,12 +17,12 @@ Dodatkowo w mojej pracy opisuję proces integracji ze środowiskiem programistyc
 \englishabstract{%
 Algebraic effects are an increasingly popular technique of structuring computational effects.
 They allow for separation of an interface of a computation -- a set of operations it may perform, and their implementation -- handlers which respond to operation invocations.
-There are many calculi and languages that tackle the concept of algebraic effects, but they usually are either specialized and developed using heavy-weight formalization, or they strive to become full-fledged programming languages with their meta-theory and implementation becoming increasingly complex.
-In this thesis I set out to build a small calculus, that has just enough general purpose constructs to allow for exploration and experimentation with algebraic effects and handlers, without overburdening the user.
+There are many calculi and languages that tackle the concept of algebraic effects, but they are usually either specialized and developed with heavy-weight formalization, or they strive to become full-fledged programming languages with their meta-theory and implementation becoming increasingly complex.
+In this thesis I set out to build a small calculus that has just enough general purpose constructs to allow for exploration and experimentation with algebraic effects and handlers without overburdening the user.
 The meta-development consists of the Curry-style type system, the reduction semantics and the abstract-machine.
 The calculus is built using the \Redex{} library and allows the programmer to use operations and handlers, recursive functions, numbers, booleans, lists and conditional expressions.
-The implementation of the type system provides type inference for the calculus terms, while both the reduction relation and the abstract machine can be used to either fully evaluate the expressions or visualize the reductions step-by-step.
-Additionally I present the process of integrating this development with the \Racket{} environment, that allows for usage of the calculus as a lightweight programming language.
+The implementation of the type system provides type inference for the calculus terms while both the reduction relation and the abstract machine can be used to either fully evaluate the expressions or visualize the reductions step-by-step.
+Additionally I present the process of integrating this development with the \Racket{} environment that allows for usage of the calculus as a lightweight programming language.
 }
 %
 \author         {Maciej Buszka}
@@ -73,13 +73,13 @@ Additionally I present the process of integrating this development with the \Rac
 % What algebraic effects are, why are they interesting, why is it worth to experiment with different approaches/flavors
 Algebraic effects~\cite{Plotkin2003} are an increasingly popular technique of structuring computational effects.
 They allow for seamless composition of multiple effects, while retaining (unlike monads) applicative style of programs.
-Coupled with handlers~\cite{Plotkin2013} which give programmers ability to interpret effects, they provide a disciplined and flexible tool for abstracting over a set of operations which a program may perform and for separating this interface from the semantics of those operations, defined as effect handlers.
+Coupled with handlers~\cite{Plotkin2013} which give programmers ability to interpret effects, they provide a disciplined and flexible tool for abstracting over a set of operations which a program may perform as well as separating this interface from the semantics of those operations defined as effect handlers.
 
 % What are other approaches to algebraic effects
-As composability and separation of concerns are often sought after, many calculi and languages have been developed in order to get algebraic effects just right; most notable of them being: \emph{Koka}~\cite{Leijen2014} (featuring type inference, effect polymorphism with row-types and \emph{JavaScript}-like syntax), \emph{Links}~\cite{Hillerstrom2016} (featuring \emph{ML}-like syntax, row-typed effect polymorphism and ad-hoc effects), \emph{Helium}~\cite{Biernacki2019} (with abstract and local effects, \emph{ML}-style module system and principled approach to effect polymorphism), \emph{Eff}~\cite{Bauer2012} (with implicit effect checking and recent work on direct compilation to \emph{OCaml}~\cite{Kiselyov2018}) and \emph{Frank}~\cite{Lindley2017} (with bidirectional type and effect system requiring minimal amount of effect variables, and shallow effect handlers). 
+As composability and separation of concerns are sought after, many calculi and languages have been developed in order to get algebraic effects just right; most notable of them being: \emph{Koka}~\cite{Leijen2014} (featuring type inference, effect polymorphism with row-types and \emph{JavaScript}-like syntax), \emph{Links}~\cite{Hillerstrom2016} (featuring \emph{ML}-like syntax, row-typed effect polymorphism and ad-hoc effects), \emph{Helium}~\cite{Biernacki2019} (with abstract and local effects, \emph{ML}-style module system and principled approach to effect polymorphism), \emph{Eff}~\cite{Bauer2012} (with implicit effect checking and recent work on direct compilation to \emph{OCaml}~\cite{Kiselyov2018}) and \emph{Frank}~\cite{Lindley2017} (with shallow effect handlers and bidirectional type and effect system requiring minimal amount of effect variables). 
 
 On a more theoretical side, various approaches to semantics of algebraic effects can be spotted in the literature, both with respect to type systems and run-time semantics.
-Although most calculi use some form of row-types (with notable exception of \emph{Frank}~\cite{Lindley2017}) to track effects, there are differences in permitted shapes (at most one effect~\cite{Hillerstrom2016} of given type or many effects~\cite{Biernacki2017,Leijen2014}, whether effects must be defined before use~\cite{Biernacki2017,Lindley2017,Leijen2014,Bauer2012} or not~\cite{Hillerstrom2016}) and how effects interact with polymorphism and abstraction.
+Although most calculi use some form of row-types (with notable exception of \emph{Frank}~\cite{Lindley2017}) to track effects, there are differences in permitted shapes (at most one effect of given type~\cite{Hillerstrom2016} or many effects~\cite{Biernacki2017,Leijen2014}, whether effects must be defined before use~\cite{Biernacki2017,Lindley2017,Leijen2014,Bauer2012} or not~\cite{Hillerstrom2016}) and how effects interact with polymorphism and abstraction.
 At run-time handlers can wrap the captured continuation (giving so-called deep handlers~\cite{Biernacki2017,Hillerstrom2016,Leijen2014,Bauer2012}) or not (shallow handlers~\cite{Lindley2017}) and the very act of finding the right handler can be implemented in various ways, mainly depending on some constructs which skip handlers~\cite{Biernacki2017}. 
 
 % What am I implementing, what is interesting in this thesis, how it differs from other systems/languages (The main goal of the thesis)
@@ -91,30 +91,30 @@ At run-time handlers can wrap the captured continuation (giving so-called deep h
 %  language front-end facilitating ease of experimentation
 %  some lightweight machine checking (automatic tests)
 All this variety naturally invites us to experiment with different features and components of a calculus.
-An executable model would be excellent for everyone interested in understanding the inner workings of algebraic effects.
+An executable model would be excellent for anyone interested in understanding the inner workings of algebraic effects.
 In particular, the ability to perform and visualize reductions would be very helpful in grasping the dynamic semantics of operations and handlers.
-Such model should also contain a type system complementing the dynamic semantics and guiding the programmer with the usage of effects.
-In this thesis I build such a calculus, describing my choices and discussing the trade-offs I faced.
+Such model should contain a type system complementing the dynamic semantics as well as providing guidance for the programmer with the proper usage of effects.
+In this thesis I have built such a calculus, describing my choices and discussing the trade-offs encountered.
 
-The first goal of this thesis is the design of the calculus with effects and handlers, and its dynamic semantics.
+The first goal of this thesis is the design of the calculus with effects and handlers together with its dynamic semantics.
 Its implementation should be executable and allow for step-by-step reduction of calculus terms by a computer program.
-The second goal is the design and implementation of a sound type system for the calculus, preferably with type inference.
+The second goal is the design and implementation of a sound type system for the above mentioned calculus, preferably with type inference.
 The implementation should be able to type-check examples with minimal additional context and boilerplate.
-The third goal is the design and implementation of an abstract machine, which preserves the dynamic semantics of the calculus, yet is easier to translate into low-level virtual machine.
+The third goal is the design and implementation of an abstract machine, which preserves the dynamic semantics of the calculus yet is easier to translate into low-level virtual machine.
 It could also be used as a basis for compilation to native code.
 
-In order to rapidly iterate on the design and test the calculus, I decided to use the \Redex{} library which allows for building language model with executable type system judgments and reduction relation.
-It also provides facilities for visualizing rewriting of terms and typesetting all components of the development.
+In order to rapidly iterate on the design and test the calculus, I decided to use the \Redex{} library which allows for building a language model with executable type system judgments and reduction relation.
+It also provides facilities for visualization of rewriting of terms and typesetting all components of the development.
 
-The calculus is designed to be small enough to be easily understood, yet have general language features to allow experimentation with reasonably complex programs.
-The programmer can use $\lambda$-abstractions and recursive functions, numbers with addition, subtraction, multiplication and comparisons, booleans with conditional expressions, and lists.
-The algebraic effects are implemented with ad-hoc operations (that need not be defined earlier) which take one parameter and return a value, handlers which can handle multiple (different) operations at once and lifts which allow operations to skip handlers.
-The handler wraps captured continuation, giving the deep handling semantics~\cite{Leijen2014}.
-The type system for calculus is presented in Curry style, with the implementation inferring simple types for unannotated terms using unification algorithm.
+The calculus is designed to be small enough to be easily understood yet have general language features to allow experimentation with reasonably complex programs.
+A programmer can use $\lambda$-abstractions and recursive functions, numbers with addition, subtraction, multiplication and comparisons, booleans with conditional expressions as well as lists.
+Algebraic effects are implemented with ad-hoc operations (that need not be defined a priori) which take one parameter and return a single value, handlers which can handle multiple (different) operations at once and lifts which allow operations to skip handlers.
+A handler wraps captured continuation, giving the deep handling semantics~\cite{Leijen2014}.
+The type system for calculus is presented in Curry style with the implementation inferring simple types for unannotated terms using unification algorithm.
 Although there is no way to create and bind polymorphic values, the system infers most general (simple) type for an expression which may contain unsolved variables.
-The abstract machine is implemented with explicit stack of continuations and value environment.
-It is given deterministic transition system using \Redex{}'s reduction relation and meta-function transforming a calculus expression into initial configuration.
-Additionally to ease experimentation I implemented a language front-end which translates human-friendly programs to calculus terms, integrated with \Racket{} environment.
+The abstract machine is implemented with an explicit stack of continuations and value environment.
+The machine is given a deterministic transition system using \Redex{}'s reduction relation and meta-function transforming a calculus expression into an initial configuration.
+Additionally, I implemented a language front-end integrated with \Racket{} environment which translates human-friendly programs to calculus terms to facilitate user experimentation
 
 In brief summary, the development consists of:
 \begin{itemize}
@@ -124,7 +124,7 @@ In brief summary, the development consists of:
 \end{itemize}
 
 % Outline of the thesis
-The rest of this thesis is structured as follows: in the remainder of this chapter I introduce the main topics of this thesis, in \autoref{ch:calculus} I describe the calculus in greater detail, in \autoref{ch:implementation} I discuss technicalities of implementation and integration with the \Racket{} environment and \autoref{ch:manual} is user's manual.
+The rest of this thesis is structured as following: the remainder of this chapter introduces the main topics of this thesis; \autoref{ch:calculus} describes the calculus in greater detail; then in \autoref{ch:implementation} I discuss technicalities of implementation and integration with the \Racket{} environment and finally, \autoref{ch:manual} contains user's manual.
 
 \section{Algebraic effects and handlers}
 \begin{listing}[t]
@@ -132,27 +132,29 @@ The rest of this thesis is structured as follows: in the remainder of this chapt
   \caption{Exception-like usage of algebraic effects}
   \label{lst:exception-like}
 \end{listing}
-Algebraic effects and handlers are a language-level framework which allows for coherent presentation, abstraction, composition and reasoning about computational effects.
+Algebraic effects and handlers are a language-level framework which allows for a coherent presentation, abstraction, composition and reasoning about computational effects.
 The key idea is to separate invocation of an effectful operation in an expression from the meaning of such an operation.
 When one invokes an operation, the current continuation (up to the nearest handler) is captured and passed along with the operation's argument to the nearest handler.
-The handler in turn may execute arbitrary expression, using the continuation once, twice, returning a function which calls the continuation or simply ignoring it.
-This way many control structures can be modeled and generalized by algebraic effects and appropriate handlers.
+The handler in turn may execute an arbitrary expression which uses the continuation once or twice, returns a function that calls the continuation or simply ignores it.
+In this way many control structures can be modeled and generalized by algebraic effects and appropriate handlers.
 
-For example, in \autoref{lst:exception-like}, function \texttt{exists} returns \texttt{true} when the list contains an element that satisfies predicate \texttt{p}.
-It is implemented in terms of \texttt{map} and a helper function \texttt{f} which \texttt{Break}s normal control flow when the predicate returns true.
+For example, in \autoref{lst:exception-like}, function \texttt{exists} returns \texttt{true} when a list contains the element that satisfies predicate \texttt{p}.
+It is implemented in terms of \texttt{map} and a helper function \texttt{f} which \texttt{Break}s normal control flow when the predicate returns \texttt{true}.
 This map is then invoked inside the handler that returns \texttt{true} on \texttt{Break} and \texttt{false} otherwise.
 This usage of operation and its handler is similar to exceptions, as the resumption is discarded.
 Another example, with a handler for the state-like operations is presented in \autoref{lst:stateful-computation} in the next section.
 
-From the language design standpoint algebraic effects provide single implementation of various phenomena which may happen during execution of a program, for example mutable state, I/O, environment lookup, exceptions, etc., in a sense that every effect is treated the same, the typing rules are defined for invocation of any operation, and handling of any operation.
-Similarly the operational semantics is also quite simple and succinct thanks to uniform treatment of various effects.
+From the language design standpoint algebraic effects provide single implementation of various phenomena which may happen during execution of a program such as mutable state, I/O, environment lookup, exceptions, etc.
+With every effect being treated the same, the typing rules are defined for invocation of any operation, and handling of any operation.
+Consequently, the operational semantics is simpler and succinct thanks to uniform treatment of various effects.
 This framework is also extendable.
-With small extension it can handle built-in effects in addition to user-defined ones.
+With small changes it can handle built-in effects in addition to user-defined ones.
 
 From the language user perspective algebraic effects provide means of abstraction over effects used in a program.
-Thanks to easy creation of new effects, one can define special purpose operations and their handlers to better represent domain specific problems while simultaneously using well known effects, defined in the standard library.
-With effects being tracked by the type system, programmers can enforce purity or specific set of used effects at compile-time, or using effect polymorphism they can write reusable functions that abstract over effects which may happen.
-The separation of definition and implementation of effects allows for various interpretations of operations, for example simulating a database connection or file-system during testing.
+Thanks to simplicity of creation of new effects, one can define special purpose operations and their handlers to better represent domain specific problems while simultaneously using well known effects defined in the standard library.
+With effects being tracked by the type system, programmers can enforce purity or specific set of used effects at compile-time.
+Using effect polymorphism they can write reusable functions that abstract over effects which may happen.
+The separation of definition and implementation of effects allows for various interpretations of operations, e.g., simulating a database connection instead of connecting to a real one.
 % TODO anonymous vs defined effects, abstract effects, effect polymorphism
 
 \section{Types and type inference}\label{sec:types}
@@ -170,15 +172,16 @@ comp 37
   \caption{Stateful computation}
   \label{lst:stateful-computation}
 \end{listing}
-The most common approach to giving an effectful computation a type uses a type-level data-structure known as a row.
-Initially developed in order to structurally type records, rows come in two flavors: Remy-style~\cite{Remy1994} where they are treated as (finite) sets of label-type pairs, and Leijen-style~\cite{Leijen2005} where rows are treated as (finite) lists of label-type pairs that are equivalent up to permutation of different labels.
+The most common approach to give an effectful computation a type uses a type-level data-structure known as a row.
+Initially developed in order to structurally type records, rows come in two flavors: Remy-style~\cite{Remy1994} where they are treated as (finite) sets of label-type pairs and Leijen-style~\cite{Leijen2005} where rows are treated as (finite) lists of label-type pairs that are equivalent up to permutation of different labels.
 When polymorphism is present a row may have a concrete prefix (possibly empty) and a polymorphic tail denoted by a type variable.
-In effectful setting, the type system usually keeps a row of effects which an expression may perform, and suspended computations, e.g., functions must have types decorated with a row of operations that may be invoked when their body is evaluated.
+In effectful setting, the type system usually keeps a row of effects which an expression may perform.
+Suspended computations, e.g., functions must have types decorated with a row of operations that may be invoked when their body is evaluated.
 
 In \autoref{lst:stateful-computation}, the function \texttt{add} loads a number, sums it with the argument \texttt{x} and sets this sum, returning unit value.
 It contains two effectful sub-expressions: $Get \, : \, Unit \Rightarrow Num$ and $Set \, : \, Num \Rightarrow Unit$.
-The operation type $Get \, : \, Unit \Rightarrow Num$ means that the operation $Get$ expects an argument of type $Unit$, and when it is handled, the resumption will be given a value of type $Num$.
-As the \texttt{add} function uses both operations, their effects must be combined, giving it the following type: $Num \rightarrow (Get \, : \, Unit \Rightarrow Num , Set \, : \, Num \Rightarrow Unit) \, Unit$ where $Num$ is the type of input, $Unit$ is the type of output and $(Get \, \ldots)$ is the effect row.
+The operation type $Get \, : \, Unit \Rightarrow Num$ means that the operation $Get$ expects an argument of type $Unit$ and when it is handled the resumption will be given a value of type $Num$.
+As the \texttt{add} function uses both operations, their effects must be combined giving it the following type: $Num \rightarrow (Get \, : \, Unit \Rightarrow Num , Set \, : \, Num \Rightarrow Unit) \, Unit$ where $Num$ is the type of input, $Unit$ is the type of output and $(Get \, \ldots)$ is the effect row.
 The handler interpreting the operations is implemented as a state transforming function.
 The type system requires all handler bodies to be of the same type: $Num \rightarrow () \, Num$ which guides the implementation and ensures that operations do not escape the handler.
 When the \texttt{Set} operation is invoked, the handler returns a function.
@@ -222,8 +225,8 @@ There usually are two approaches to a definition of such a relation:
   which says that if we can primitively reduce some expression, then we can do it in any context.
   \item Or definition of $ \longrightarrow $ directly, with decomposition of terms on both sides: $ K[(\lambda x . e) v] \longrightarrow K[e\{v/x\}] $
 \end{itemize}
-where the syntax $ e\{v/x\} $ means term $ e $ with value $ v $ substituted for variable $ x $, and $ K[e] $ means some context $ K $ with expression $ e $ inserted into the hole.
-For both approaches it is important, that any term can be uniquely decomposed into redex and context, because when it is the case, then the relation is deterministic and gives good basis for formulation of abstract machines, interpreters or transformations to some other intermediate representations.
+where the syntax $ e\{v/x\} $ means term $ e $ with value $ v $ substituted for variable $ x $ and $ K[e] $ means some context $ K $ with expression $ e $ inserted into the hole.
+For both approaches it is important, that any term can be uniquely decomposed into redex and context, as if it is the case then the relation is deterministic and gives good basis for formulation of abstract machines, interpreters or transformations to some other intermediate representations.
 \begin{figure}
   \includegraphics{lc-red.pdf} 
   \caption{\LC{} reduction relation}
@@ -231,8 +234,8 @@ For both approaches it is important, that any term can be uniquely decomposed in
 \end{figure}
 
 Abstract machine is a mathematical construction, usually defined as a set of configurations with deterministic transformations, which are computationally simple.
-The goal for formulation of an abstract machine is to mechanize evaluation of terms while retaining semantics given in a more abstract format, e.g., reduction semantics, with the correspondence being provable~\cite{Felleisen2009}.
-As an example, \autoref{fig:lc-cek} shows a \emph{CEK}-machine for the \LC{} defined earlier.
+The goal for formulation of an abstract machine is to mechanize evaluation of terms while retaining semantics given in a more abstract format, e.g., reduction semantics with the correspondence being provable~\cite{Felleisen2009}.
+As an example, \autoref{fig:lc-cek} shows a \emph{CEK}-machine for the \LC{} defined above.
 The name \emph{CEK} comes from \emph{C}ommand, \emph{E}nvironment and \emph{K}ontinuation.
 The machine has two configurations.
 The first is a triple $ (e, \rho, \kappa) $ where $ e $ is an expression which is decomposed, $ \rho $ is an environment mapping variables to values, and the last component $ \kappa $ is a continuation stack.
@@ -261,8 +264,8 @@ Given an initial state, the machine can then repeatedly apply transition relatio
 The \Redex{}~\cite{Felleisen2009} library provides a comprehensive set of tools for the development of various calculi and language-like artifacts.
 The work begins with the definition of a language using a familiar BNF-like syntax.
 The library provides many options for defining patterns which describe the abstract syntax of the language, among them: meta-variables, symbols -- playing the role of markers, numbers, object language variables, repetitions of patterns using ellipsis and nonlinear patterns which can for example enforce that all variables in a binding are different.
-Besides the syntax, the language definition allows for specifying the variable binding structure of the object language, which will be used by built-in meta-functions for substitution.
-\autoref{lst:lc-typed-syntax-code} shows code extending the \LC{} defined earlier in \autoref{fig:lc-syntax} with typed terms $ E $, along with types $ t $ and typing contexts $ \Gamma $.
+Besides the syntax, the language definition allows for specification of a variable binding structure of the object language, which is used by the built-in meta-function for substitution.
+\autoref{lst:lc-typed-syntax-code} shows code which extends the \LC{} defined in \autoref{fig:lc-syntax} with typed terms $ E $, along with types $ t $ and typing contexts $ \Gamma $.
 \begin{listing}[t]
   \inputminted[firstline=26, lastline=32]{Racket}{../lc/lc.rkt}
   \caption{Typed \LC{} with numbers in \Redex{}}
@@ -284,14 +287,14 @@ The library enforces an invariant that inputs \texttt{I} of a judgment form must
 Under the hood the \Redex{} library will resolve the rules in depth-first order backtracking on failures and multiple pattern matches.
 
 The last component of a language that can be modeled using \Redex{} are reduction relations, usually used for specifying semantics.
-They are defined as a set of clauses, which should rewrite an input term into other term of the same syntactic category.
-In order to find a redex, the programmer can define evaluation contexts, and then the library will decompose the terms using \mintinline{Racket}{(in-hole K e)} pattern, as in \autoref{lst:lc-red-code}.
+They are defined as a set of clauses which should rewrite an input term into other term of the same syntactic category.
+In order to find a redex, the programmer can define evaluation contexts; then the library will decompose the terms using \mintinline{Racket}{(in-hole K e)} pattern, as in \autoref{lst:lc-red-code}.
 \begin{listing}[t]
   \inputminted[firstline=19,lastline=23]{Racket}{../lc/lc.rkt}
   \caption{Reduction relation for \LC{} in \Redex{}}
   \label{lst:lc-red-code}
 \end{listing}
-Finally \Redex{} provides features for automatic testing via term generation facilities and has ability to typeset every component of the calculus development.
+Finally \Redex{} provides features for automatic testing via term generation facilities. The library has as well the ability to typeset every component of the calculus development.
 Every figure in this thesis, which shows language grammar, reduction relation, meta-function or judgment has been generated using \Redex{}.
 
 \chapter{The calculus}\label{ch:calculus}
