@@ -300,9 +300,9 @@ Every figure in this thesis, which shows language grammar, reduction relation, m
 \chapter{The calculus}\label{ch:calculus}
 The calculus implemented in this thesis is based on \LC{} with call-by-value semantics.
 Its abstract syntax is presented in \autoref{fig:algeff-syntax}.
-Meta-variable $ x $ ranges over variables used in value binders and their references, while $ op $ ranges over operation names, which are distinct from normal variables.
-Meta-variable $ v $ ranges over values, which are one of: boolean $ b $, number $ m $, $ \lambda $-abstraction $(\lambda \, x \, e)$, recursive function $(rec \, x_f \, x_v \, e)$ or a list of values $(v \ldots)$.
-Meta-variable $ e $ ranges over expressions, which include values $ v $, forms standard to \LC{} -- variables $ x $, function applications $ (e \, e) $, conditionals $ (if \, e \,e \, e) $ and primitive operations $ (prim \, e \ldots) $; they also include three constructs specific to effects -- operation invocations $ (op \, e) $, lifts $ (lift \, op \, e) $ and handlers $ (handle \, e \, hs \, ret) $ where $ ret $ is return expression $ (return \, x \, e) $ and $ hs $ is a list of handler clauses.
+Meta-variable $ x $ ranges over variables used in value binders and their references, while $ op $ ranges over operation names which are distinct from normal variables.
+Meta-variable $ v $ ranges over values which are one of: boolean $ b $, number $ m $, $ \lambda $-abstraction $(\lambda \, x \, e)$, recursive function $(rec \, x_f \, x_v \, e)$ or a list of values $(v \ldots)$.
+Meta-variable $ e $ ranges over expressions which include values $ v $, forms standard to \LC{} -- variables $ x $, function applications $ (e \, e) $, conditionals $ (if \, e \,e \, e) $ and primitive operations $ (prim \, e \ldots) $; they also include three constructs specific to effects -- operation invocations $ (op \, e) $, lifts $ (lift \, op \, e) $ and handlers $ (handle \, e \, hs \, ret) $ where $ ret $ is return expression $ (return \, x \, e) $ and $ hs $ is a list of handler clauses.
 Each operation may occur at most once in the list and the clause $(x_{!\_1} \, x_{!\_1} \, e)$ for the operation requires bound variables to be distinct.
 
 To achieve call-by-value, left-to-right reduction order I use evaluation contexts $ E $; this choice follows other calculi which allow for computational effects~\cite{Biernacki2017, Leijen2014, Hillerstrom2016}.
@@ -334,7 +334,7 @@ Formally, when an operation $ op $ is invoked, it will be handled by lexically e
 
 The dynamic semantics is defined in the format of contextual reduction semantics in \autoref{fig:algeff-red}.
 All rules perform reduction in a context $ E $ leaving it unchanged.
-The first rule $\beta\mhyphen\lambda$ describes standard $ \beta $-reduction via substitution of argument value for variable in function body, while the second $\beta\mhyphen rec$ is the $ \beta $-reduction of recursive function, where first we substitute the function for function variable and then substitute the argument.
+The first rule $\beta\mhyphen\lambda$ describes standard $ \beta $-reduction via substitution of argument value for variable in function body while the second $\beta\mhyphen rec$ is the $ \beta $-reduction of recursive function where first we substitute the function for function variable and then substitute the argument.
 
 The rule \emph{prim-op} deals with built-in primitive operations using helper meta-function \textit{prim-apply} which pattern matches on $prim$ and performs the appropriate operation.
 Next two rules \emph{if-true} and \emph{if-false} perform a choice of the correct branch in a conditional expression depending on the value of the condition.
@@ -345,7 +345,7 @@ The rule \textit{handle-return} handles the case when the inner expression of a 
 The last rule \textit{handle-op} describes the behavior when an expression calls some operation.
 To handle an operation we must find a $0$-free inner context $ E_2 $ which is directly surrounded by a handle expression which has a case for $ op $.
 Then we substitute the value $ v $ for the first variable $x_1$ of the operation handler and the inner context $ E_2 $ surrounded with the very same handler (the continuation delimited by the handler) closed in a lambda for the second argument $x_2$.
-This wrapping gives deep handling semantics, as an operation call cannot escape from a handler in the resumption.
+This wrapping gives deep handling semantics as an operation call cannot escape from a handler in the resumption.
 The operation handler can resume the evaluation of the expression which invoked the handled operation using the function bound by $x_2$.
 
 \begin{figure}
@@ -358,25 +358,27 @@ The operation handler can resume the evaluation of the expression which invoked 
 \section{Static semantics}
 The type system is based on \emph{Koka}~\cite{Leijen2014} (Leijen's style of row types~\cite{Leijen2005}), \emph{Links}~\cite{Hillerstrom2016} (ad-hoc operations) and Biernacki et al's.~\cite{Biernacki2017} (lift construct) systems.
 Initially I implemented a variant of System F extended with row-types but it proved to be a bit of a mouthful to write in it even the simplest programs.
-Additionally the \Redex{}'s facilities for generation of terms were not able to generate sufficiently many well typed ones.
-As I intended on using the automated counterexample search to test assertions about the calculus, my goal was to minimize the amount of programs rejected by the type system.
-In order to accomplish this goal, type inference proved to be very helpful as it increased the amount of well typed terms tenfold.
+Additionally the \Redex{}'s facilities for generation of terms were not able to generate enough well typed ones.
+As I intended on using the automated counter-example search to test assertions about the calculus, my goal was to minimize the number of programs rejected by the type system.
+In order to accomplish this goal type inference proved to be very helpful as it increased the amount of well typed terms ten-fold.
 
-To limit the amount of work and keep the calculus reasonably simple, I decided to present the calculus in the Curry style, with the typing relation inferring the type for unannotated terms, instead of implementing a separate type system and an inference algorithm.
+To limit the amount of work and keep the calculus reasonably simple, I decided to present the calculus in the Curry style.
+The implmentation of typing relation infers the type for unannotated terms.
+In this way I avoided implementing a separate type system and inference algorithm.
 
 Building on well known foundations~\cite{Pierce2002}, types are inferred via first-order unification.
 While the actual algorithm is presented in \autoref{sec:unification}, the notion of unification is used extensively in the remainder of this chapter and as such I will present an intuitive definition here.
-Two types $t_1$ and $t_2$ \emph{unify} (written $t_1 \sim t_2$) if they are structurally the same, where variables can be substituted with any type.
+Two types $t_1$ and $t_2$ \emph{unify} (written $t_1 \sim t_2$) if they are structurally the same where variables can be substituted with any simple type.
 Two rows unify, if they are the same list of operation-type pairs, up to permutation of different operations.
 
 The system does not feature polymorphism in a first-class fashion, as no polymorphic functions can be bound, mainly because there is no rule where types are generalized, but I believe it to be a straightforward addition, following the \emph{Koka}~\cite{Leijen2014} calculus.
-Still, after inferring the type of an expression, we can see which unification variables are left abstract and could be generalized.
-There are two main features differentiating this system from \emph{Koka}'s; firstly effects need not be defined before use, their signature is inferred the same way as any other construction; secondly the system is algorithmic, with rules explicitly encoding a recursive function which can infer the type of an expression.
+Nevertheless, having inferred the type of an expression one can see which unification variables are left abstract and could be generalized.
+There are two main features differentiating this system from \emph{Koka}'s; firstly effects need not be defined before use as their signature is inferred the same way as any other construction; secondly the system is algorithmic with rules explicitly encoding a recursive function which can infer the type of an expression.
 
 \subsection{Type inference}
 The judgment $ \Gamma \mid [S_1 \, N_1] \vdash e \, : \, t \, ! \, row \mid [S_2 \, N_2] $ asserts that in a typing context $ \Gamma $ under a type substitution $ S_1 $, with name supply state $ N_1 $, expression $ e $ has type $ t $ with effects $ row $ under a type substitution $ S_2 $ and with a name supply state $ N_2 $.
-Algorithmically this judgment infers a type and an effect row, and calculates new substitution, given typing environment, current substitution and an expression.
-As in \emph{ML} languages only simple types can be inferred, along with effect rows.
+Algorithmically this judgment infers a type and an effect row, and calculates new substitution given typing environment, current substitution and an expression.
+As in \emph{ML} languages only simple types along with effect rows can be inferred.
 The judgment rules are presented in \autoref{fig:algeff-infer}.
 
 \begin{figure}
@@ -386,19 +388,19 @@ The judgment rules are presented in \autoref{fig:algeff-infer}.
   \label{fig:algeff-infer} 
 \end{figure}
 
-Base rules for constants (\emph{Bool} and \emph{Num}) check whether the value is of the appropriate category and the rule for variables \emph{var} looks the type up in the environment $\Gamma$, each introducing fresh effect row variable.
-To check $ \lambda $ expression with rule $\lambda$, we first introduce fresh type variable, and then check the body in the extended environment.
-The arrow gets annotated with effects which may occur during evaluation of the body and the $ \lambda $ abstraction itself is returned with fresh effect row.
+Base rules for constants (\emph{Bool} and \emph{Num}) check whether the value is of the appropriate category and the rule for variables \emph{var} looks the type up in the environment $\Gamma$ each introducing fresh effect row variable.
+To check $ \lambda $ expression with rule $\lambda$ we first introduce fresh type variable and then check the body in the extended environment.
+The arrow gets annotated with effects which may occur during evaluation of the body and the $ \lambda $ abstraction itself is returned with a fresh effect row.
 
 The recursive functions are checked using rule \emph{rec} in a fashion similar to normal functions.
-First variable $x_f$ denotes function itself, while second $x_a$ its argument.
-Accordingly, the environment $\Gamma$ gets extended with functional type $ t_1 \rightarrow row_1 t_2 $ for $x_f$ and argument type $ t_1 $ for $x_a$, to check the body of the function.
+First variable $x_f$ denotes function itself while second $x_a$ its argument.
+Accordingly, the environment $\Gamma$ gets extended with functional type $ t_1 \rightarrow row_1 t_2 $ for $x_f$ and argument type $ t_1 $ for $x_a$ to check the body of the function.
 Afterwards the result type of body $ t $ gets unified with the result type of function $ t_2 $, same with effect row.
 The whole function, as it is a value, is returned with a fresh effect row.
 
 The rule \emph{app} for application requires the expression $e_1$ at function position to be of functional type and the expression $e_2$ at argument position to have a type that unifies with the parameter type of the function. 
 All effect rows (from evaluation of $e_1$, $e_2$ and the body of the $\lambda$) must unify as well.
-Inference for primitive operation call in rule \emph{prim} is deferred to auxiliary judgment \emph{check-prim}, which checks arity and argument types, returning result type and usually fresh effect row.
+Inference for primitive operation call in rule \emph{prim} is deferred to auxiliary judgment \emph{check-prim} which checks arity and argument types returning result type and usually fresh effect row.
 The rule \emph{if} for conditional expression requires the condition to be of type $ Bool $ and types of two branches to unify.
 As usual all effect rows must also unify.
 
@@ -422,13 +424,13 @@ By unifying result row with return row and handled row with $row_1$ we ensure th
 List of effect handlers $ hs $ is processed right-to-left by the judgment 
 $$ infer\mhyphen handlers [\Gamma , \, SN_{in} , \, t_{ret} , \, hs , \, row_{out} , \, row_{handled} , \, SN_{out}] $$
 presented in \autoref{fig:algeff-infer-handlers}.
-The $ t_{ret} $ is the type of the return clause, $ row_{out} $ is the combined row of effects which may occur in any handler and $ row_{handled} $ is the row of handled operations, with appropriate types.
+The $ t_{ret} $ is the type of the return clause, $ row_{out} $ is the combined row of effects which may occur in any handler and $ row_{handled} $ is the row of handled operations with appropriate types.
 The base case of empty list initializes both rows with the same type variable.
 This way $ row_{handled} $ returned by the $infer\mhyphen handlers$ judgment will consist of all handled operations and its tail will be $ row_{out} $.
 The inductive case first calculates $ row_{out} $ and $ row_{handled} $ for the tail of the list.
-Then, two new fresh variables are created: $ t_v $ for the type of value passed to handler and $ t_r $ for the type of resumption parameter.
-Resumption's result type is the result type of return clause as it should eventually evaluate to a value, which will be transformed by that clause.
-Its effect row is the same as the result row of whole handle expression, which means that any subsequent uses of operations will be handled by this handler.
+Then two new fresh variables are created: $ t_v $ for the type of value passed to handler and $ t_r $ for the type of resumption parameter.
+Resumption's result type is the result type of return clause as it should eventually evaluate to a value which will be transformed by that clause.
+Its effect row is the same as the result row of whole handle expression which means that any subsequent uses of operations will be handled by this handler.
 With the environment extended with $ t_v $ for the first parameter -- an argument to the handler expression and $ t_r \rightarrow row_{out} \, t_{ret} $ for second parameter -- the resumption, we check the handler expression $ e $.
 We then unify the effects of evaluating $ e $ with all effects of handlers, and result type $ t_{h} $ with the return type $ t_{ret} $.
 Finally we extend the handled row with the current operation $(op (t_v \Rightarrow t_r))$.
@@ -449,7 +451,7 @@ Meta-variable $ C $ ranges over shapes of machine configurations, meta-variable 
 Additionally one of the possible values is a \emph{meta-stack} which one may think of as a continuation captured during operation invocation.
 Meta-variable $ \sigma $ defines normal (or pure) continuation frames and $ \Sigma $ denotes pure continuation \emph{stack}, while $ \phi $ ranges over effect frames -- \texttt{handle}, \texttt{lift} and \texttt{done} token which marks final continuation.
 Meta-variable $ \kappa $ denotes meta-frame which consists of a pure stack and one effect frame.
-Finally $ K $ ranges over stacks of meta-frames, which I will call \emph{meta-stack}s.
+Finally $ K $ ranges over stacks of meta-frames which I will call \emph{meta-stack}s.
 Meta-function \textit{initial-conf} in \autoref{fig:algeff-am-initial-conf} transforms an expression into initial configuration -- initializing machine with empty stack, \texttt{done} effect frame and empty meta-stack.
 
 \begin{figure}[t]
@@ -488,9 +490,9 @@ Last two transitions deal with effectful operations -- handle and lift; they bui
 
 The third group of transitions (\autoref{fig:algeff-am-c}) perform various reductions.
 The first rule looks up value of a variable in current environment, the second rule performs contraction of a normal function, by extending the environment with mapping from the function's formal parameter $ x $ to the calculated value $ V $.
-The third rule reduces recursive function, extending the environment with the argument value $ V $ and the function value, allowing for recursive calls.
+The third rule reduces recursive function, extending the environment with the argument value $ V $ and the function value allowing for recursive calls.
 The last rule handling application deals with continuation resumption, by pushing the current stack and the effect frame ($ [(\sigma \ldots) \, \phi_1] $) onto the meta-stack, installing the top ($ [\Sigma \, \phi_2] $) of captured meta-stack and prepending its tail ($ (\kappa_1 \ldots) $) to the meta-stack.
-The first of remaining rules applies the primitive operation to the arguments and the following rules perform the choice of the correct branch in a conditional expression.
+The first of the remaining rules applies the primitive operation to the arguments and the following rules perform the choice of the correct branch in a conditional expression.
 
 \begin{figure}[t]
   \centering
@@ -502,8 +504,8 @@ The first of remaining rules applies the primitive operation to the arguments an
 Transitions in the last group (\autoref{fig:algeff-am-e}) form the essence of this machine, performing all tasks related to effect handling.
 First four rules search for the appropriate handler for $ op $ by maintaining a counter $ n $ which is incremented by every lift for $ op $ and decremented by every handler for $ op $.
 The fifth rule matches when the counter is $ 0 $ and the handler has a case for the operation which was invoked. 
-In this situation, the machine must begin evaluation of the handling expression in the environment extended both with the passed argument, and the captured continuation with current meta-frame appended.
-The last two rules deal with returning values -- in case of a handler the return clause is installed, and in case of a lift its frame is simply discarded.
+In this situation, the machine must begin evaluation of the handling expression in the environment extended both with the passed argument and the captured continuation with current meta-frame appended.
+The last two rules deal with returning values -- in case of a handler the return clause is installed and in case of a lift its frame is simply discarded.
 
 \chapter{Implementation}\label{ch:implementation}
 This chapter discusses the implementation of the calculus and its surface language \emph{algeff}.
@@ -513,10 +515,11 @@ The unification algorithm used by the type inference judgment of \autoref{fig:al
 The surface syntax of \emph{algeff} and the instructions of use are presented in \autoref{ch:manual}.
 
 \section{Unification}\label{sec:unification}
-The unification algorithm is loosely based on~\cite{Pierce2002}, but instead of keeping a set of constraints to be solved, it solves sub-problems recursively.
-It is implemented as a \Redex{} judgment, which takes two types, the initial substitution and returns the substitution extended with their unifier.
+The unification algorithm is loosely based on~\cite{Pierce2002}.
+However, instead of keeping a set of constraints to be solved it solves sub-problems recursively.
+It is implemented as a \Redex{} judgment that takes two types and the initial substitution and returns the substitution extended with their unifier.
 This judgment must also pass around the name supply token -- a natural number which is incremented every time a new type variable is created.
-Variables in types are substituted lazily -- whenever algorithm encounters variable which is in domain of the substitution, it looks it up and continues unification.
+Variables in types are substituted lazily -- whenever algorithm encounters variable which is in the domain of the substitution it looks it up and continues unification.
 \autoref{fig:algeff-unify} shows the unification algorithm.
 
 \begin{figure}
@@ -534,30 +537,33 @@ Variables in types are substituted lazily -- whenever algorithm encounters varia
 \end{figure}
 
 Terminal rules \emph{refl-var} and \emph{refl-const} handle unification of equal variables and constants respectively.
-In a special case \emph{refl-var-lookup}, when both types are variables, the left variable $a_1$ is not in the domain of the substitution and the right variable $a_2$ is mapped to $a_3$ which is equal to $a_1$, then they are in fact the same variable and should unify.
+In a special case \emph{refl-var-lookup}, when both types are variables, the left variable $a_1$ is not in the domain of the substitution and the right variable $a_2$ is mapped to $a_3$ which is equal to $a_1$ then they are in fact the same variable and should unify.
 This corner-case arises due to lazy application of substitution to types.
 
-The rule \emph{ext} extends substitution, when the left-hand-side type is a variable which is not in the domain of substitution.
+The rule \emph{ext} extends substitution when the left-hand-side type is a variable which is not in the domain of substitution.
 It is important to note that the type which is inserted into substitution is fully substituted.
 This way we can maintain an invariant that every type in the substitution has only type variables which are not in the domain of the substitution.
-The last side condition, that $a$ is not a free type variable in $t$ is the occurs-check, which ensures that algorithm does not try to unify cyclic types, which would loop.
+The last side condition that $a$ is not a free type variable in $t$ is the occurs-check.
+It ensures that algorithm does not try to unify cyclic types which would cause the algorithm to loop.
 
-When the left type is a variable, in the domain of substitution, rule \emph{lookup} looks it up, and continues unification.
-When the left type is not a variable, and right type is, rule \emph{flip} flips them around and continues unification.
+When the left type is a variable in the domain of substitution, rule \emph{lookup} looks it up and continues unification.
+When the left type is not a variable and the right type is, rule \emph{flip} flips them around and continues unification.
 This rule is needed because the judgment performs extension and lookup only on left variable.
 The next three rules \texttt{->}, \texttt{=>} and \emph{List} decompose the type constructor and unify all respective sub-types.
 
 The last rule \emph{row} unifies two rows.
-It requires the left row to be non empty, and the right row not to be a variable (to ensure determinism with respect to the rule \emph{flip}).
-Then it uses helper judgment \emph{unify-row} which rewrites $row_2$ such that its head is $op \, \, t_2$ and rest is bound $row_r$.
-The side condition, requiring the variable at the end of (substituted) $row_1$ not to be in domain of substitution which was build by the rewriting ensures that algorithm does not try to unify rows with different labels, but the same type variable in the tail (similar to occurs-check in rule \emph{ext}).
+It requires the left row to be non empty and the right row not to be a variable (to ensure determinism with respect to the rule \emph{flip}).
+Then it uses helper judgment \emph{unify-row} which rewrites $row_2$ such that its head is $op \, \, t_2$ and the rest is bound to $row_r$.
+The end of the (substituted) $row_1$ is bound to the variable $a$ and the substitution which resulted from the rewriting of $row_2$ is bound to $S_2$.
+The side condition $a \notin dom\mhyphen S [\![S_2]\!] $ requires the variable $a$ not to be in the domain of $S_2$.
+It ensures that the algorithm does not try to unify rows with different labels but the same type variable in the tail (similarly to occurs-check in the rule \emph{ext}).
 
-The helper judgment \emph{unify-row}, shown in \autoref{fig:algeff-unify-row} rewrites the row such that it begins with desired label $op$.
+The helper judgment \emph{unify-row}, shown in \autoref{fig:algeff-unify-row}, rewrites the row such that it begins with desired label $op$.
 It is based on similar judgment in~\cite{Leijen2005}.
 There are two base cases: either the row already begins with $op$ (rule \emph{row-head}) and is decomposed and returned or the row is already a variable which is not bound by substitution (rule \emph{row-var}).
 In this case the substitution is extended with a row $(op \, t \, row)$ where both $t$ and $row$ are fresh variables.
 
-The third rule \emph{row-lookup} handles variables which are bound by the substitution, looking up the appropriate row and continuing row rewriting.
+The third rule \emph{row-lookup} handles variables which are bound by the substitution looking up the appropriate row and continuing row rewriting.
 The last rule \emph{row-swap} matches rows that have a label $op_1$ different from the desired label $op_2$.
 In this case, the rest of the row must be rewritten recursively yielding type $t_2$ for $op_2$ and a new tail.
 The type is returned and the tail is extended with the original head.
@@ -582,12 +588,12 @@ Finally, the file \texttt{render.rkt} renders the figures used throughout this t
 
 \section{Language front-end}\label{sec:front-end}
 The language front-end consists of a tokenizer and a parser.
-The tokenizer is implemented using \texttt{parser-tools} package, which provides a \texttt{lex} style lexer generator.
+The tokenizer is implemented using \texttt{parser-tools} package which provides a \texttt{lex} style lexer generator.
 It defines a set of tokens and then repeatedly partitions the input stream by matching it with regular expressions.
 The parser is implemented using \texttt{megaparsack} -- a library providing various parser combinators which allow for composing simple parsers together to build complex ones in monadic style.
 The parser desugars some surface expressions into simpler calculus terms.
 \begin{itemize}
-  \item Multiple applications, which are permitted by the \emph{algeff} language are rewritten into nested single applications -- \texttt{f e$_1$ e$_2$ ... e$_n$} becomes \texttt{(app (... (app (app f e$_1$) e$_2$) ...) e$_n$)}
+  \item Multiple applications which are permitted by the \emph{algeff} language are rewritten into nested single applications -- \texttt{f e$_1$ e$_2$ ... e$_n$} becomes \texttt{(app (... (app (app f e$_1$) e$_2$) ...) e$_n$)}
   \item Let-expressions \texttt{let x = exp in body} are transformed into an application: \texttt{(app (λ x body) exp)}.
   \item Letrec bindigs \texttt{letrec f x = exp in body} are similarly transformed: \texttt{(app (λ x body) (rec f x exp))}.
 \end{itemize}
@@ -615,14 +621,14 @@ It is shown in \autoref{lst:the-reader}.
 \end{listing}
 The expander is depicted in \autoref{lst:the-expander}.
 It first type checks the expression which was created by the reader (lines 4 and 5), and if it succeeds, it will create a \Racket{} module that binds several names and return the value of the reduced expression.
-To create bindings that will be visible when the generated module is opened in the \texttt{REPL}, one must transform regular racket symbols into syntax objects with proper scope (lines 7-12).
-It can be done using the \texttt{(datum->syntax ctx sym)} function which takes any syntax object and creates a new one from \texttt{sym}, inheriting the scope from \texttt{ctx}.
+To create bindings that will be visible when the generated module is opened in the \texttt{REPL} one must transform regular racket symbols into syntax objects with proper scope (lines 7-12).
+It can be done using the \texttt{(datum->syntax ctx sym)} function which takes any syntax object and creates a new one from \texttt{sym} inheriting the scope from \texttt{ctx}.
 The created module \texttt{require}s the \texttt{redex} package.
-This package contains the \texttt{traces} function and \texttt{term} syntax form, that are used in the module body.
+This package contains the \texttt{traces} function and \texttt{term} syntax form that are used in the module body.
 The module defines variables containing the expression and its type, functions that can trace the reduction of the expression and functions that calculate the final value.
-If the term does not typecheck, the expander will raise an exception.
+If the term does not typecheck the expander will raise an exception.
 \begin{listing}[t]
-  \inputminted[firstline=29,linenos=true,firstnumber=1,lastline=57]{Racket}{../algeff/main.rkt}
+  \inputminted[firstline=29,linenos=true,firstnumber=1,lastline=56]{Racket}{../algeff/main.rkt}
   \caption{The expander}
   \label{lst:the-expander}
 \end{listing}
@@ -637,11 +643,11 @@ The \emph{algeff} language and the implementation of the underlying calculus req
 \end{itemize}
 The libraries can be installed using either \texttt{raco} -- \Racket{}s package manager via the command \texttt{raco pkg install <library-name>} or with \texttt{DrRacket} graphical environment via \texttt{File > Install Package...} menu.
 
-To install the \emph{algeff} language, enter the \texttt{algeff} directory and run \texttt{raco pkg install}.
+To install the \emph{algeff} language enter the \texttt{algeff} directory and run \texttt{raco pkg install}.
 The \Racket{} environment should now recognize the \texttt{\#lang algeff} directive and interpret \emph{algeff} expressions.
 
 \section{Usage and example programs}
-To use the \emph{algeff} language, create a file with \texttt{.rkt} extension and change the first line to \texttt{\#lang algeff}.
+To use the \emph{algeff} language create a file with \texttt{.rkt} extension and change the first line to \texttt{\#lang algeff}.
 The file will be interpreted by the \emph{algeff} front-end inferring the type of the expression and producing a \Racket{} module containing following bindings:
 \begin{itemize}
   \item \texttt{expression} -- the source expression.
@@ -652,13 +658,13 @@ The file will be interpreted by the \emph{algeff} front-end inferring the type o
   \item \texttt{trace-machine} -- a procedure that traces the abstract-machine execution of the source expression.
 \end{itemize}
 
-An example program, calculating factorial of a number is presented in \autoref{lst:algeff-program}.
+An example program calculating factorial of a number is presented in \autoref{lst:algeff-program}.
 \begin{listing}[t]
   \VerbatimInput{../algeff/test/01.rkt}
   \caption{An \emph{algeff} program}
   \label{lst:algeff-program}
 \end{listing}
-After opening this program in the \texttt{DrRacket}'s definitions pane, it can be interpreted giving following output in the interactions pane:
+After opening this program in the \texttt{DrRacket}'s definitions pane it can be interpreted giving following output in the interactions pane:
 \begin{verbatim}
   Welcome to DrRacket, version 7.0 [3m].
   Language: Determine language from source; memory limit: 2048 MB.
@@ -694,7 +700,8 @@ It is also possible to show step-by-step reductions:
 \end{listing}
 
 An example program with algebraic effects is shown in \autoref{lst:algeff-algeff-program}.
-It defines the handler for state in the same style as described in \autoref{sec:types} with the difference that $0$ is used instead of the unit type, and uses it to handle a stateful computation.
+It defines the handler for state in the same style as described in \autoref{sec:types} with the difference that $0$ is used instead of the unit type.
+The program uses this handler with a delayed stateful computation.
 Evaluating this program should yield the result $24$ and the \texttt{type} field should contain the value \texttt{'Num}.
 
 More example programs are provided in the \texttt{algeff/test} directory.

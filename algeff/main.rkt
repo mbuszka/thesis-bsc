@@ -43,14 +43,13 @@
                 (require redex)
                 (define i-expr (quote tree))
                 (define i-type (quote #,t))
-                (define (i-trace)
-                  (traces red i-expr))
+                (define (i-trace) (traces red i-expr))
                 (define (i-trace-machine)
-                  (traces abstract-machine (term (initial-conf tree))))
-                (define (i-reduce)
-                  (reduce i-expr))
-                (define (i-reduce-machine)
-                  (am-reduce i-expr))
+                  (traces abstract-machine
+                          (term (initial-conf tree))))
+                (define (i-reduce) (reduce i-expr))
+                (define (i-reduce-machine) (am-reduce i-expr))
+
                 (i-reduce)
                 (provide (all-defined-out)))
              (raise 'does-not-typecheck))))]
