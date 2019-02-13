@@ -1,0 +1,302 @@
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{Warsaw}      % or try Darmstadt, Madrid, Warsaw, ...
+  \usecolortheme{default} % or try albatross, beaver, crane, ...
+  \usefonttheme{default}  % or try serif, structurebold, ...
+  \setbeamertemplate{navigation symbols}{}
+  \setbeamertemplate{caption}[numbered]
+} 
+\usepackage[polish]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{fancyvrb}
+\usepackage{fontspec}
+
+\setmonofont{CMU Typewriter Text}
+
+\newcommand{\Redex}{\texttt{PLT Redex}}
+\newcommand{\Racket}{\texttt{Racket}}
+\newcommand{\LC}{\(\lambda\)-calculus}
+
+\title[A calculus with algebraic effects and~handlers]{Implementation of static and~dynamic semantics for a calculus with algebraic effects and~handlers using \Redex}
+\author{Maciej Buszka}
+\institute{Instytut Informatyki UWr}
+\date{15.02.2019}
+
+\begin{document}
+
+\begin{frame}
+	\titlepage
+\end{frame}
+
+% Uncomment these lines for an automatically generated outline.
+% \begin{frame}{Outline}
+% 	\tableofcontents
+% \end{frame}
+
+\begin{frame}{Plan prezentacji}
+	\tableofcontents
+\end{frame}
+
+\section{Wstęp}
+\subsection{Efekty algebraiczne}
+\begin{frame}{Efekty algebraiczne}
+	\begin{itemize}
+		\pause
+		\item Na wysokim poziomie pozwalają na:
+		\begin{itemize}
+			\pause
+			\item Kompozycję wielu różnych efektów obliczeniowych
+			\pause
+			\item Definicję własnych efektów przez programistę
+			\pause
+			\item Rozdzielenie interfejsu i implementacji
+		\end{itemize}
+		\pause
+		\item W użyciu:
+		\begin{itemize}
+			\pause
+			\item Pisząc program/funkcję programista może użyć abstrakcyjnych operacji -- ich zbiór tworzy interfejs
+			\pause
+			\item Aby uruchomić taki program, musi on zostać umieszczony w wyrażeniu które te operacje obsłuży -- tworząc ich implementację
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Obsługa operacji}
+	\pause
+	W trakcie wykonania programu, gdy operacja zostaje wywołana:
+	\begin{itemize}
+		\pause
+		\item Normalny tok obliczeń zostaje przerwany
+		\pause
+		\item Odnalezione zostaje odpowiednie wyrażenie obsługujące
+		\pause
+		\item Ma ono dostęp do:
+		\begin{itemize}
+			\pause
+			\item Wartości przekazanej przy wywołaniu operacji
+			\pause
+			\item Funkcji reprezentującej resztę obliczenia które zostało przerwane
+		\end{itemize}
+		\pause
+		\item Wyrażenie obsługujące może użyć wznowienia dowolnie wiele razy
+	\end{itemize}
+\end{frame}
+
+\subsection{Przykład 1}
+\begin{frame}[fragile]{Przykład 1}
+  \pause
+\begin{Verbatim}[commandchars=\\\{\}]
+(handle
+  (+ (op:Magic (- 2 1)) 1)
+  ((op:Magic (v:x v:r (app v:r 42))))
+  (return v:x -(v:x, 1))
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład 1}
+\begin{Verbatim}[commandchars=\\\{\}]
+(handle
+  (+ (op:Magic \textcolor{orange}{(- 2 1)}) 1)
+  ((op:Magic (v:x v:r (app v:r 42))))
+  (return v:x -(v:x, 1))
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład 1}
+\begin{Verbatim}[commandchars=\\\{\}]
+(handle
+  (+ (op:Magic \textcolor{blue}{1}) 1)
+  ((op:Magic (v:x v:r (app v:r 42))))
+  (return v:x -(v:x, 1))
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład 1}
+\begin{Verbatim}[commandchars=\\\{\}]
+(handle
+  \textcolor{red}{(+} \textcolor{orange}{(op:Magic 1)} \textcolor{red}{1)}
+  ((op:Magic \textcolor{orange}{(v:x v:r (app v:r 42))}))
+  (return v:x -(v:x, 1))
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład 1}
+\begin{Verbatim}[commandchars=\\\{\}]
+\textcolor{blue}{(app}
+  \textcolor{blue}{(λ v:z}
+    \textcolor{blue}{(handle}
+      \textcolor{red}{(+ }\textcolor{blue}{v:z} \textcolor{red}{1)}
+      \textcolor{blue}{(...)}
+      \textcolor{blue}{(return v:x -(v:x, 1))))}
+  \textcolor{blue}{42)}
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład 1}
+\begin{Verbatim}[commandchars=\\\{\}]
+\textcolor{orange}{(app}
+  \textcolor{orange}{(λ v:z}
+    \textcolor{orange}{(handle}
+      \textcolor{orange}{(+ v:z 1)}
+      \textcolor{orange}{(...)}
+      \textcolor{orange}{(return v:x -(v:x, 1))))}
+  \textcolor{orange}{42)}
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład 1}
+\begin{Verbatim}[commandchars=\\\{\}]
+\textcolor{blue}{(handle}
+  \textcolor{blue}{(+ 42 1)}
+  \textcolor{blue}{( ... )}
+  \textcolor{blue}{(return v:x«38» -(v:x«38», 1)))}
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład 1}
+\begin{Verbatim}[commandchars=\\\{\}]
+(handle
+  \textcolor{orange}{(+ 42 1)}
+  ( ... )
+  (return v:x«38» -(v:x«38», 1)))
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład 1}
+\begin{Verbatim}[commandchars=\\\{\}]
+(handle
+  \textcolor{blue}{43}
+  ( ... )
+  (return v:x«38» -(v:x«38», 1)))
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład 1}
+  \begin{Verbatim}[commandchars=\\\{\}]
+  (handle
+    \textcolor{orange}{43}
+    ( ... )
+    \textcolor{orange}{(return v:x«38» -(v:x«38», 1))})
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład 1}
+\begin{Verbatim}[commandchars=\\\{\}]
+\textcolor{blue}{-(43, 1)}
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład 1}
+\begin{Verbatim}[commandchars=\\\{\}]
+\textcolor{orange}{-(43, 1)}
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład 1}
+\begin{Verbatim}[commandchars=\\\{\}]
+\textcolor{blue}{42}
+\end{Verbatim}
+\end{frame}
+
+\subsection{Motywacja}
+\begin{frame}{Motywacja}
+	\begin{itemize}
+		\pause
+		\item Efekty algebraiczne są stosunkowo nowym zagadnieniem
+		\pause
+		\item Ich implementacja oraz semantyka (zarówno statyczna jak i dynamiczna) są nietrywialne
+		\pause
+		\item Istnieje już kilka języków programowania z efektami algebraicznymi
+		\pause
+		\item Brakuje jednak interaktywnej implementacji modelowego rachunku
+	\end{itemize}
+\end{frame}
+
+\subsection{Cel}
+\begin{frame}{Cel}
+	Moim celem było zaprojektowanie oraz implementacja:
+	\begin{itemize}
+		\pause
+		\item Rachunku oraz jego semantyki dynamicznej
+		\pause
+		\item Semantyki statycznej -- systemu typów
+		\pause
+		\item Maszyny abstrakcyjnej zgodnej z semantyka dynamiczną
+	\end{itemize}
+\end{frame}
+
+\section{Rachunek oraz mikrojęzyk algeff}
+\subsection{Rachunek}
+\begin{frame}{Rachunek}
+	\pause
+	Rachunek który zaimplementowałem udostępnia:
+	\begin{itemize}
+		\pause
+		\item Wyrażenia liczbowe z podstawowymi operacjami
+		\pause
+		\item Wyrażenia logiczne i warunkowe
+		\pause
+		\item Homogeniczne listy (dla dowolnego typu)
+		\pause
+		\item Funkcje anonimowe oraz rekurencyjne
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Rachunek}
+	Efekty algebraiczne są realizowane przez:	
+	\begin{itemize}
+		\pause
+		\item Abstrakcyjne operacje
+		\begin{itemize}
+			\pause
+			\item Nie muszą być zdefiniowane a priori
+			\pause
+			\item Przyjmują jeden argument, zwracają (być może) jedną wartość
+		\end{itemize}
+		\pause
+		\item Wyrażenia obsługujące operacje
+		\begin{itemize}
+			\pause
+			\item Dostęp do wznowienia reifikowanego jako funkcja
+			\pause
+			\item Semantyka tzw. głębokiej obsługi
+			\pause
+			\item Obsługa wielu operacji naraz
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{System typów}
+	\begin{itemize}
+		\pause
+		\item Implementacja tworzy funkcję odtwarzającą typ wyrażenia
+		\pause
+		\item Inferowane są tylko typy proste oraz operacje
+		\pause
+		\item Nie ma możliwości stworzenia funkcji polimorficznych
+		\pause
+		\item Ale system znajduje najogólniejszy (prosty) typ wyrażenia
+	\end{itemize}
+\end{frame}
+
+\subsection{Przykład 2}
+\begin{frame}[fragile]{Przykład 2}
+	\pause
+	Wyrażenie:
+	\pause
+	\VerbatimInput[firstline=4,lastline=6]{02.rkt}
+	\pause
+	Ma typ:
+	\pause
+\begin{verbatim}
+(t:g0 -> (op:Set (Num => Num)
+          (op:Get (Num => Num) t:r14)) Num)
+\end{verbatim}
+\end{frame}
+
+
+\end{document}
