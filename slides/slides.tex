@@ -28,7 +28,7 @@
 \begin{document}
 
 \begin{frame}
-	\titlepage
+  \titlepage
 \end{frame}
 
 % Uncomment these lines for an automatically generated outline.
@@ -37,266 +37,680 @@
 % \end{frame}
 
 \begin{frame}{Plan prezentacji}
-	\tableofcontents
+  \tableofcontents
 \end{frame}
 
 \section{Wstęp}
+\subsection{Cel}
+\begin{frame}{Motywacja i cel pracy}
+  \begin{itemize}
+    \item Nowe, aktywnie rozwijane zagadnienie
+    \pause
+    \item Nietrywialna semantyka i implementacja
+    \pause
+    \item Brak interaktywnego modelu rachunku
+    \pause
+    \item Cel -- zaprojektowanie i implementacja:
+    \begin{itemize}
+      \pause
+      \item Rachunku oraz jego semantyki dynamicznej
+      \pause
+      \item Semantyki statycznej
+      \pause
+      \item Maszyny abstrakcyjnej
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
 \subsection{Efekty algebraiczne}
 \begin{frame}{Efekty algebraiczne}
-	\begin{itemize}
-		\pause
-		\item Na wysokim poziomie pozwalają na:
-		\begin{itemize}
-			\pause
-			\item Kompozycję wielu różnych efektów obliczeniowych
-			\pause
-			\item Definicję własnych efektów przez programistę
-			\pause
-			\item Rozdzielenie interfejsu i implementacji
-		\end{itemize}
-		\pause
-		\item W użyciu:
-		\begin{itemize}
-			\pause
-			\item Pisząc program/funkcję programista może użyć abstrakcyjnych operacji -- ich zbiór tworzy interfejs
-			\pause
-			\item Aby uruchomić taki program, musi on zostać umieszczony w wyrażeniu które te operacje obsłuży -- tworząc ich implementację
-		\end{itemize}
-	\end{itemize}
+  \begin{itemize}
+    \item Kompozycja wielu różnych efektów obliczeniowych
+    \pause
+    \item Definicja własnych efektów
+    \pause
+    \item Rozdzielenie interfejsu i implementacji
+    \pause
+    \item Program może używać abstrakcyjnych operacji -- interfejs
+    \pause
+    \item Wyrażenie obsługujące -- implementacja
+  \end{itemize}
 \end{frame}
 
-\begin{frame}{Obsługa operacji}
-	\pause
-	W trakcie wykonania programu, gdy operacja zostaje wywołana:
-	\begin{itemize}
-		\pause
-		\item Normalny tok obliczeń zostaje przerwany
-		\pause
-		\item Odnalezione zostaje odpowiednie wyrażenie obsługujące
-		\pause
-		\item Ma ono dostęp do:
-		\begin{itemize}
-			\pause
-			\item Wartości przekazanej przy wywołaniu operacji
-			\pause
-			\item Funkcji reprezentującej resztę obliczenia które zostało przerwane
-		\end{itemize}
-		\pause
-		\item Wyrażenie obsługujące może użyć wznowienia dowolnie wiele razy
-	\end{itemize}
-\end{frame}
+% \begin{frame}{Obsługa operacji}
+%   \begin{itemize}
+%     \item Normalny tok obliczeń jest przerwany
+%     \pause
+%     \item Odnalezione zostaje wyrażenie obsługujące (\emph{handler})
+%     \begin{itemize}
+%       \pause
+%       \item Wartość przekazana przy wywołaniu operacji
+%       \pause
+%       \item Funkcja reprezentująca resztę obliczenia które zostało przerwane
+%     \end{itemize}
+%     \pause
+%     \item Wznowienia może być użyte dowolnie wiele razy
+%   \end{itemize}
+% \end{frame}
 
-\subsection{Przykład 1}
-\begin{frame}[fragile]{Przykład 1}
-  \pause
-\begin{Verbatim}[commandchars=\\\{\}]
-(handle
-  (+ (op:Magic (- 2 1)) 1)
-  ((op:Magic (v:x v:r (app v:r 42))))
-  (return v:x -(v:x, 1))
-\end{Verbatim}
-\end{frame}
+% \subsection{Przykład 1}
+% \begin{frame}[fragile]{Przykład 1}
+%   \pause
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   (+ (op:Magic (- 2 1)) 1)
+%   ((op:Magic (v:x v:r (app v:r 42))))
+%   (return v:x -(v:x, 1))
+% \end{Verbatim}
+% \end{frame}
 
-\begin{frame}[fragile]{Przykład 1}
-\begin{Verbatim}[commandchars=\\\{\}]
-(handle
-  (+ (op:Magic \textcolor{orange}{(- 2 1)}) 1)
-  ((op:Magic (v:x v:r (app v:r 42))))
-  (return v:x -(v:x, 1))
-\end{Verbatim}
-\end{frame}
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   (+ (op:Magic \textcolor{orange}{(- 2 1)}) 1)
+%   ((op:Magic (v:x v:r (app v:r 42))))
+%   (return v:x -(v:x, 1))
+% \end{Verbatim}
+% \end{frame}
 
-\begin{frame}[fragile]{Przykład 1}
-\begin{Verbatim}[commandchars=\\\{\}]
-(handle
-  (+ (op:Magic \textcolor{blue}{1}) 1)
-  ((op:Magic (v:x v:r (app v:r 42))))
-  (return v:x -(v:x, 1))
-\end{Verbatim}
-\end{frame}
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   (+ (op:Magic \textcolor{blue}{1}) 1)
+%   ((op:Magic (v:x v:r (app v:r 42))))
+%   (return v:x -(v:x, 1))
+% \end{Verbatim}
+% \end{frame}
 
-\begin{frame}[fragile]{Przykład 1}
-\begin{Verbatim}[commandchars=\\\{\}]
-(handle
-  \textcolor{red}{(+} \textcolor{orange}{(op:Magic 1)} \textcolor{red}{1)}
-  ((op:Magic \textcolor{orange}{(v:x v:r (app v:r 42))}))
-  (return v:x -(v:x, 1))
-\end{Verbatim}
-\end{frame}
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   \textcolor{red}{(+} \textcolor{orange}{(op:Magic 1)} \textcolor{red}{1)}
+%   ((op:Magic \textcolor{orange}{(v:x v:r (app v:r 42))}))
+%   (return v:x -(v:x, 1))
+% \end{Verbatim}
+% \end{frame}
 
-\begin{frame}[fragile]{Przykład 1}
-\begin{Verbatim}[commandchars=\\\{\}]
-\textcolor{blue}{(app}
-  \textcolor{blue}{(λ v:z}
-    \textcolor{blue}{(handle}
-      \textcolor{red}{(+ }\textcolor{blue}{v:z} \textcolor{red}{1)}
-      \textcolor{blue}{(...)}
-      \textcolor{blue}{(return v:x -(v:x, 1))))}
-  \textcolor{blue}{42)}
-\end{Verbatim}
-\end{frame}
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% \textcolor{blue}{(app}
+%   \textcolor{blue}{(λ v:z}
+%     \textcolor{blue}{(handle}
+%       \textcolor{red}{(+ }\textcolor{blue}{v:z} \textcolor{red}{1)}
+%       \textcolor{blue}{(...)}
+%       \textcolor{blue}{(return v:x -(v:x, 1))))}
+%   \textcolor{blue}{42)}
+% \end{Verbatim}
+% \end{frame}
 
-\begin{frame}[fragile]{Przykład 1}
-\begin{Verbatim}[commandchars=\\\{\}]
-\textcolor{orange}{(app}
-  \textcolor{orange}{(λ v:z}
-    \textcolor{orange}{(handle}
-      \textcolor{orange}{(+ v:z 1)}
-      \textcolor{orange}{(...)}
-      \textcolor{orange}{(return v:x -(v:x, 1))))}
-  \textcolor{orange}{42)}
-\end{Verbatim}
-\end{frame}
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% \textcolor{orange}{(app}
+%   \textcolor{orange}{(λ v:z}
+%     \textcolor{orange}{(handle}
+%       \textcolor{orange}{(+ v:z 1)}
+%       \textcolor{orange}{(...)}
+%       \textcolor{orange}{(return v:x -(v:x, 1))))}
+%   \textcolor{orange}{42)}
+% \end{Verbatim}
+% \end{frame}
 
-\begin{frame}[fragile]{Przykład 1}
-\begin{Verbatim}[commandchars=\\\{\}]
-\textcolor{blue}{(handle}
-  \textcolor{blue}{(+ 42 1)}
-  \textcolor{blue}{( ... )}
-  \textcolor{blue}{(return v:x«38» -(v:x«38», 1)))}
-\end{Verbatim}
-\end{frame}
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% \textcolor{blue}{(handle}
+%   \textcolor{blue}{(+ 42 1)}
+%   \textcolor{blue}{( ... )}
+%   \textcolor{blue}{(return v:x«38» -(v:x«38», 1)))}
+% \end{Verbatim}
+% \end{frame}
 
-\begin{frame}[fragile]{Przykład 1}
-\begin{Verbatim}[commandchars=\\\{\}]
-(handle
-  \textcolor{orange}{(+ 42 1)}
-  ( ... )
-  (return v:x«38» -(v:x«38», 1)))
-\end{Verbatim}
-\end{frame}
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   \textcolor{orange}{(+ 42 1)}
+%   ( ... )
+%   (return v:x«38» -(v:x«38», 1)))
+% \end{Verbatim}
+% \end{frame}
 
-\begin{frame}[fragile]{Przykład 1}
-\begin{Verbatim}[commandchars=\\\{\}]
-(handle
-  \textcolor{blue}{43}
-  ( ... )
-  (return v:x«38» -(v:x«38», 1)))
-\end{Verbatim}
-\end{frame}
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   \textcolor{blue}{43}
+%   ( ... )
+%   (return v:x«38» -(v:x«38», 1)))
+% \end{Verbatim}
+% \end{frame}
 
-\begin{frame}[fragile]{Przykład 1}
-  \begin{Verbatim}[commandchars=\\\{\}]
-  (handle
-    \textcolor{orange}{43}
-    ( ... )
-    \textcolor{orange}{(return v:x«38» -(v:x«38», 1))})
-\end{Verbatim}
-\end{frame}
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   \textcolor{orange}{43}
+%   ( ... )
+%   \textcolor{orange}{(return v:x«38» -(v:x«38», 1))})
+% \end{Verbatim}
+% \end{frame}
 
-\begin{frame}[fragile]{Przykład 1}
-\begin{Verbatim}[commandchars=\\\{\}]
-\textcolor{blue}{-(43, 1)}
-\end{Verbatim}
-\end{frame}
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% \textcolor{blue}{-(43, 1)}
+% \end{Verbatim}
+% \end{frame}
 
-\begin{frame}[fragile]{Przykład 1}
-\begin{Verbatim}[commandchars=\\\{\}]
-\textcolor{orange}{-(43, 1)}
-\end{Verbatim}
-\end{frame}
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% \textcolor{orange}{-(43, 1)}
+% \end{Verbatim}
+% \end{frame}
 
-\begin{frame}[fragile]{Przykład 1}
-\begin{Verbatim}[commandchars=\\\{\}]
-\textcolor{blue}{42}
-\end{Verbatim}
-\end{frame}
-
-\subsection{Motywacja}
-\begin{frame}{Motywacja}
-	\begin{itemize}
-		\pause
-		\item Efekty algebraiczne są stosunkowo nowym zagadnieniem
-		\pause
-		\item Ich implementacja oraz semantyka (zarówno statyczna jak i dynamiczna) są nietrywialne
-		\pause
-		\item Istnieje już kilka języków programowania z efektami algebraicznymi
-		\pause
-		\item Brakuje jednak interaktywnej implementacji modelowego rachunku
-	\end{itemize}
-\end{frame}
-
-\subsection{Cel}
-\begin{frame}{Cel}
-	Moim celem było zaprojektowanie oraz implementacja:
-	\begin{itemize}
-		\pause
-		\item Rachunku oraz jego semantyki dynamicznej
-		\pause
-		\item Semantyki statycznej -- systemu typów
-		\pause
-		\item Maszyny abstrakcyjnej zgodnej z semantyka dynamiczną
-	\end{itemize}
-\end{frame}
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% \textcolor{blue}{42}
+% \end{Verbatim}
+% \end{frame}
 
 \section{Rachunek oraz mikrojęzyk algeff}
 \subsection{Rachunek}
-\begin{frame}{Rachunek}
-	\pause
-	Rachunek który zaimplementowałem udostępnia:
-	\begin{itemize}
-		\pause
-		\item Wyrażenia liczbowe z podstawowymi operacjami
-		\pause
-		\item Wyrażenia logiczne i warunkowe
-		\pause
-		\item Homogeniczne listy (dla dowolnego typu)
-		\pause
-		\item Funkcje anonimowe oraz rekurencyjne
-	\end{itemize}
-\end{frame}
+% \begin{frame}{Rachunek}
+%   \pause
+%   Rachunek który zaimplementowałem udostępnia:
+%   \begin{itemize}
+%     \pause
+%     \item Wyrażenia liczbowe z podstawowymi operacjami
+%     \pause
+%     \item Wyrażenia logiczne i warunkowe
+%     \pause
+%     \item Homogeniczne listy (dla dowolnego typu)
+%     \pause
+%     \item Funkcje anonimowe oraz rekurencyjne
+%   \end{itemize}
+% \end{frame}
 
 \begin{frame}{Rachunek}
-	Efekty algebraiczne są realizowane przez:	
-	\begin{itemize}
-		\pause
-		\item Abstrakcyjne operacje
-		\begin{itemize}
-			\pause
-			\item Nie muszą być zdefiniowane a priori
-			\pause
-			\item Przyjmują jeden argument, zwracają (być może) jedną wartość
-		\end{itemize}
-		\pause
-		\item Wyrażenia obsługujące operacje
-		\begin{itemize}
-			\pause
-			\item Dostęp do wznowienia reifikowanego jako funkcja
-			\pause
-			\item Semantyka tzw. głębokiej obsługi
-			\pause
-			\item Obsługa wielu operacji naraz
-		\end{itemize}
-	\end{itemize}
+  \begin{itemize}
+    \item Abstrakcyjne operacje
+    \begin{itemize}
+      \pause
+      \item Nie muszą być zdefiniowane a priori
+      \pause
+      \item Przyjmują jeden argument, zwracają jedną wartość
+    \end{itemize}
+    \pause
+    \item Wyrażenia obsługujące
+    \begin{itemize}
+      \pause
+      \item Dostęp do wznowienia
+      \pause
+      \item Semantyka tzw. głębokiej obsługi
+      \pause
+      \item Obsługa wielu operacji naraz
+      \pause
+      \item Klauzula \texttt{return}
+    \end{itemize}
+    \pause
+    \item Wyrażenia podnoszące (\emph{lift})
+    \begin{itemize}
+      \pause
+      \item 'przeskoczenie' najbliższego wyrażenia obsługującego
+    \end{itemize}
+    \pause
+    \item Wartości bazowe oraz operacje na nich
+  \end{itemize}
 \end{frame}
 
-\begin{frame}{System typów}
-	\begin{itemize}
-		\pause
-		\item Implementacja tworzy funkcję odtwarzającą typ wyrażenia
-		\pause
-		\item Inferowane są tylko typy proste oraz operacje
-		\pause
-		\item Nie ma możliwości stworzenia funkcji polimorficznych
-		\pause
-		\item Ale system znajduje najogólniejszy (prosty) typ wyrażenia
-	\end{itemize}
+\subsection{Model}
+\begin{frame}{Model}
+  \begin{itemize}
+    \item Składnia abstrakcyjna i semantyka dynamiczna
+    \pause
+    \item System typów
+    \begin{itemize}
+      \item Odtwarza typ i efekt wyrażenia
+      \pause
+      \item Inferowane są tylko typy proste
+      \pause
+      \item Polimorfizm nie jest wspierany
+      \pause
+      \item Najogólniejszy typ wyrażenia
+    \end{itemize}
+    \pause
+    \item Maszyna abstrakcyjna
+    \begin{itemize}
+      \pause
+      \item Wiele konfiguracji
+      \pause
+      \item Jawne środowisko
+      \pause
+      \item Stos i meta-stos
+    \end{itemize}
+  \end{itemize}
 \end{frame}
 
-\subsection{Przykład 2}
-\begin{frame}[fragile]{Przykład 2}
-	\pause
-	Wyrażenie:
-	\pause
-	\VerbatimInput[firstline=4,lastline=6]{02.rkt}
-	\pause
-	Ma typ:
-	\pause
+\subsection{Przykłady}
+\begin{frame}[fragile]{Przykład}
+  Program:
+  
+  \VerbatimInput[numbers=left]{02.rkt}
+  
+  \pause
+  Oczekiwany wynik:
+
+  \texttt{42}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+\begin{Verbatim}[numbers=left]
+(app
+  (handle
+    (+ (op:Get 0) (op:Get (op:Set 29)))
+    ((op:Get (v:i v:r (λ v:s (app (app v:r v:s) v:s))))
+     (op:Set (v:s v:r (λ v:i (app (app v:r 0) v:s)))))
+    (return v:x (λ v:s v:x)))
+  13)
+\end{Verbatim}
+\begin{itemize}
+  \item Składnia abstrakcyjna:
+  \pause
+  \begin{itemize}
+    \item linia 1. app -- aplikacja
+    \pause
+    \item linia 3. wyrażenie zagnieżdżone
+    \pause
+    \item linie 4. i 5. klauzule obsługujące
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+Wywołanie operacji \texttt{Get}
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+  (handle
+    \textcolor{red}{(+} \textcolor{orange}{(op:Get 0)} \textcolor{red}{(op:Get (op:Set 29)))}
+    ((op:Get \textcolor{orange}{(v:i v:r (λ v:s (app (app v:r v:s) v:s)))})
+     (op:Set (v:s v:r (λ v:i (app (app v:r 0) v:s)))))
+    (return v:x (λ v:s v:x)))
+  13)
+\end{Verbatim}
+\begin{itemize}
+  \pause
+  \item kolor \textcolor{orange}{pomarańczowy} -- operacja i jej handler
+  \pause
+  \item kolor \textcolor{red}{czerwony} -- przechwycony kontekst
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+  \textcolor{blue}{(λ v:s«312»}
+    \textcolor{blue}{(app} 
+      \textcolor{blue}{(app}
+        \textcolor{blue}{(λ v:z}
+          (handle
+            \textcolor{red}{(+} \textcolor{blue}{v:z} \textcolor{red}{(op:Get (op:Set 29)))}
+            ( ... )
+            (return v:x (λ v:s v:x)))\textcolor{blue}{)}
+        \textcolor{blue}{v:s«312»)}
+      \textcolor{blue}{v:s«312»))}
+  13)
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{red}{czerwony} -- przechwycony kontekst
+  \item kolor \textcolor{blue}{niebieski} -- wyrażenie stworzone przez redukcję
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+$\beta$-redukcja
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+\textcolor{orange}{(app}
+  \textcolor{orange}{(λ v:s«312»}
+    (app (app
+      (λ v:z
+        (handle
+          (+ v:z (op:Get (op:Set 29)))
+          ( ... )
+          (return v:x (λ v:s v:x))))
+      \textcolor{orange}{v:s«312»})
+      \textcolor{orange}{v:s«312»}))
+\textcolor{orange}{13)}
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{orange}{pomarańczowy} -- redeks
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app 
+  (app
+    (λ v:z«315»
+      (handle
+        (+ v:z«315» (op:Get (op:Set 29)))
+        ( ... )
+        (return v:x«318» (λ v:s«319» v:x«318»))))
+    \textcolor{blue}{13})
+  \textcolor{blue}{13})
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{blue}{niebieski} -- wartości podstawione za zmienną
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+$\beta$-redukcja
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+  \textcolor{orange}{(app}
+    \textcolor{orange}{(λ v:z«315»}
+      (handle
+        (+ \textcolor{orange}{v:z«315»} (op:Get (op:Set 29)))
+        ( ... )
+        (return v:x«318» (λ v:s«319» v:x«318»))))
+    \textcolor{orange}{13})
+  13)
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{orange}{pomarańczowy} -- redeks
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+  (handle
+    (+ \textcolor{blue}{13} (op:Get (op:Set 29)))
+    ( ... )
+    (return v:x«318» (λ v:s«319» v:x«318»))))
+  13)
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{blue}{niebieski} -- wartość podstawiona za zmienną
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+Wywołanie operacji \texttt{Set}
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+ (handle
+  \textcolor{red}{(+ 13 (op:Get} \textcolor{orange}{(op:Set 29)}\textcolor{red}{))}
+  ((op:Get ( ... ))
+   (op:Set \textcolor{orange}{(v:s v:r (λ v:i«331» (app (app v:r 0) v:s)))}))
+  (return v:x«332» (λ v:s«333» v:x«332»)))
+ 13)
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{orange}{pomarańczowy} -- operacja i jej handler
+  \item kolor \textcolor{red}{czerwony} -- przechwycony kontekst
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+  \textcolor{blue}{(λ v:i«343»}
+    \textcolor{blue}{(app}
+      \textcolor{blue}{(app}
+        \textcolor{blue}{(λ v:z}
+          (handle
+          \textcolor{red}{(+ 13 (op:Get} \textcolor{blue}{v:z}\textcolor{red}{))}
+          ( ... )
+          (return v:x«332» (λ v:s«333» v:x«332»)))\textcolor{blue}{)}
+        \textcolor{blue}{0)}
+      \textcolor{blue}{29))}
+  13)
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{red}{czerwony} -- przechwycony kontekst
+  \item kolor \textcolor{blue}{niebieski} -- wyrażenie stworzone przez redukcję
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+$\beta$-redukcja
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+\textcolor{orange}{(app}
+  \textcolor{orange}{(λ v:i«343»}
+    (app
+      (app
+        (λ v:z
+          (handle
+          (+ 13 (op:Get v:z))
+          ( ... )
+          (return v:x«332» (λ v:s«333» v:x«332»))))
+        0)
+      29))
+  \textcolor{orange}{13)}
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{orange}{pomarańczowy} -- redeks
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+  (app
+    (λ v:z
+      (handle
+      (+ 13 (op:Get v:z))
+      ( ... )
+      (return v:x«332» (λ v:s«333» v:x«332»))))
+    0)
+  29)
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+$\beta$-redukcja
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+  \textcolor{orange}{(app}
+    \textcolor{orange}{(λ v:z}
+      (handle
+      (+ 13 (op:Get \textcolor{orange}{v:z}))
+      ( ... )
+      (return v:x«332» (λ v:s«333» v:x«332»))))
+    \textcolor{orange}{0)}
+  29)
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{orange}{pomarańczowy} -- redeks
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+  (handle
+    (+ 13 (op:Get \textcolor{blue}{0}))
+    ( ... )
+    (return v:x«332» (λ v:s«333» v:x«332»)))
+  29)
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{blue}{niebieski} -- wartość podstawiona za zmienną
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+Wywołanie operacji \texttt{Get}
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+  (handle
+    \textcolor{red}{(+ 13} \textcolor{orange}{(op:Get 0)}\textcolor{red}{)}
+    ((op:Get \textcolor{orange}{(v:i v:r (λ v:s (app (app v:r v:s) v:s)))})
+     (op:Set ( ... ))
+    (return v:x«332» (λ v:s«333» v:x«332»)))
+  29)
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{orange}{pomarańczowy} -- operacja i jej handler
+  \item kolor \textcolor{red}{czerwony} -- przechwycony kontekst
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+  (handle
+    \textcolor{red}{(+ 13} \textcolor{blue}{29}\textcolor{red}{)}
+    ( ... )
+    (return v:x«332» (λ v:s«333» v:x«332»)))
+  29)
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{blue}{niebieski} -- wynik po trzech krokach redukcji
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+Operacja bazowa
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+  (handle
+    \textcolor{orange}{(+ 13 29)}
+    ( ... )
+    (return v:x«332» (λ v:s«333» v:x«332»)))
+  29)
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{orange}{pomarańczowy} -- operacja bazowa
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+  (handle
+    \textcolor{blue}{42}
+    ( ... )
+    (return v:x«332» (λ v:s«333» v:x«332»)))
+  29)
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{blue}{niebieski} -- wynik operacji
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+Obsługa wartości
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app
+  (handle
+    \textcolor{orange}{42}
+    ( ... )
+    \textcolor{orange}{(return v:x«332» (λ v:s«333» v:x«332»))})
+  29)
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{orange}{pomarańczowy} -- wartość i klauzula \texttt{return}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+(app 
+  \textcolor{blue}{(λ v:s«405» 42)}
+  29)
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{blue}{niebieski} -- wyrażenie stworzone przez redukcję
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+$\beta$-redukcja
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+\textcolor{orange}{(app}
+  \textcolor{orange}{(λ v:s«405»} 42\textcolor{orange}{)}
+  \textcolor{orange}{29)}
+\end{Verbatim}
+\begin{itemize}
+  \item kolor \textcolor{orange}{pomarańczowy} -- redeks
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+\begin{Verbatim}[commandchars=\\\{\},numbers=left]
+42
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]{Przykład}
+  Program:
+  \VerbatimInput{03.rkt}
+  \pause
+  Ma typ:
+  \pause
 \begin{verbatim}
 (t:g0 -> (op:Set (Num => Num)
           (op:Get (Num => Num) t:r14)) Num)
 \end{verbatim}
 \end{frame}
 
+\begin{frame}[fragile]{Przykład}
+Program:
+\VerbatimInput{../algeff/test/06.rkt}
+Oczekiwany wynik:
+\texttt{42}
+\end{frame}
+
+\section{Podsumowanie}
+\subsection{Sukcesy}
+\begin{frame}{Sukcesy}
+  \begin{itemize}
+    \item Rachunek wraz z semantyką redukcyjną
+    \begin{itemize}
+      \pause
+      \item Pełna redukcja wyrażeń
+      \pause
+      \item Wizualizacja krok po kroku
+    \end{itemize}
+    \pause
+    \item Inferencja typów
+    \pause
+    \item Maszyna abstrakcyjna
+    \begin{itemize}
+      \pause
+      \item Pełna redukcja wyrażeń
+      \pause
+      \item Wizualizacja krok po kroku
+    \end{itemize}
+    \pause
+    \item Front-end ułatwiający pisanie wyrażeń
+    \pause
+    \item Integracja ze środowiskiem \Racket{}
+  \end{itemize}
+\end{frame}
+
+\subsection{Wnioski i dalsza praca}
+\begin{frame}{Wnioski i dalsza praca}
+  Wnioski:
+  \begin{itemize}
+    \item Wizualizacja jest bardzo pomocna przy badaniu efektów algebraicznych
+    \pause
+    \item Biblioteka \Redex{} pozwala na rozwój rozbudowanego rachunku
+  \end{itemize}
+  \pause
+  Dalsza praca:
+  \begin{itemize}
+    \pause
+    \item Rozszerzenie rachunku o polimorfizm
+    \pause
+    \item Zbadanie własności rachunku za pomocą automatycznego generowania programów
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \centering
+  Dziękuję za uwagę
+\end{frame}
+
+\begin{frame}
+  \titlepage
+\end{frame}
 
 \end{document}
