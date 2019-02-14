@@ -50,14 +50,12 @@
     \pause
     \item Brak interaktywnego modelu rachunku
     \pause
-    \item Cel -- zaprojektowanie i implementacja:
+    \item Cele:
     \begin{itemize}
       \pause
-      \item Rachunku oraz jego semantyki dynamicznej
+      \item Zaprojektowanie rachunku oraz jego semantyki
       \pause
-      \item Semantyki statycznej
-      \pause
-      \item Maszyny abstrakcyjnej
+      \item Implementacja modelu
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -209,7 +207,7 @@
 % \end{Verbatim}
 % \end{frame}
 
-\section{Rachunek oraz mikrojęzyk algeff}
+\section{Rachunek oraz model}
 \subsection{Rachunek}
 % \begin{frame}{Rachunek}
 %   \pause
@@ -230,27 +228,20 @@
   \begin{itemize}
     \item Abstrakcyjne operacje
     \begin{itemize}
-      \pause
       \item Nie muszą być zdefiniowane a priori
-      \pause
       \item Przyjmują jeden argument, zwracają jedną wartość
     \end{itemize}
     \pause
-    \item Wyrażenia obsługujące
+    \item Wyrażenia obsługujące (\emph{handler})
     \begin{itemize}
-      \pause
       \item Dostęp do wznowienia
-      \pause
       \item Semantyka tzw. głębokiej obsługi
-      \pause
       \item Obsługa wielu operacji naraz
-      \pause
       \item Klauzula \texttt{return}
     \end{itemize}
     \pause
     \item Wyrażenia podnoszące (\emph{lift})
     \begin{itemize}
-      \pause
       \item 'przeskoczenie' najbliższego wyrażenia obsługującego
     \end{itemize}
     \pause
@@ -261,44 +252,34 @@
 \subsection{Model}
 \begin{frame}{Model}
   \begin{itemize}
-    \item Składnia abstrakcyjna i semantyka dynamiczna
+    \item Składnia abstrakcyjna
+    \item Semantyka redukcyjna
     \pause
     \item System typów
     \begin{itemize}
       \item Odtwarza typ i efekt wyrażenia
-      \pause
-      \item Inferowane są tylko typy proste
-      \pause
       \item Polimorfizm nie jest wspierany
-      \pause
       \item Najogólniejszy typ wyrażenia
     \end{itemize}
     \pause
     \item Maszyna abstrakcyjna
     \begin{itemize}
-      \pause
-      \item Wiele konfiguracji
-      \pause
       \item Jawne środowisko
-      \pause
       \item Stos i meta-stos
     \end{itemize}
   \end{itemize}
 \end{frame}
 
-\subsection{Przykłady}
-\begin{frame}[fragile]{Przykład}
-  Program:
-  
-  \VerbatimInput[numbers=left]{02.rkt}
-  
-  \pause
-  Oczekiwany wynik:
-
-  \texttt{42}
+\begin{frame}[fragile]{Działanie modelu}
+  \begin{itemize}
+    \item Wizualizacja redukcji
+    \item Przykładowy program
+    \VerbatimInput[numbers=left]{02.rkt}
+    \item Oczekiwany wynik: \texttt{42}
+  \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 \begin{Verbatim}[numbers=left]
 (app
   (handle
@@ -310,18 +291,15 @@
 \end{Verbatim}
 \begin{itemize}
   \item Składnia abstrakcyjna:
-  \pause
   \begin{itemize}
     \item linia 1. app -- aplikacja
-    \pause
     \item linia 3. wyrażenie zagnieżdżone
-    \pause
     \item linie 4. i 5. klauzule obsługujące
   \end{itemize}
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 Wywołanie operacji \texttt{Get}
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
@@ -333,14 +311,12 @@ Wywołanie operacji \texttt{Get}
   13)
 \end{Verbatim}
 \begin{itemize}
-  \pause
   \item kolor \textcolor{orange}{pomarańczowy} -- operacja i jej handler
-  \pause
   \item kolor \textcolor{red}{czerwony} -- przechwycony kontekst
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
   \textcolor{blue}{(λ v:s«312»}
@@ -361,7 +337,7 @@ Wywołanie operacji \texttt{Get}
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 $\beta$-redukcja
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 \textcolor{orange}{(app}
@@ -381,7 +357,7 @@ $\beta$-redukcja
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app 
   (app
@@ -398,7 +374,7 @@ $\beta$-redukcja
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 $\beta$-redukcja
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
@@ -416,7 +392,7 @@ $\beta$-redukcja
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
   (handle
@@ -430,7 +406,7 @@ $\beta$-redukcja
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 Wywołanie operacji \texttt{Set}
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
@@ -447,7 +423,7 @@ Wywołanie operacji \texttt{Set}
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
   \textcolor{blue}{(λ v:i«343»}
@@ -468,7 +444,7 @@ Wywołanie operacji \texttt{Set}
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 $\beta$-redukcja
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 \textcolor{orange}{(app}
@@ -489,7 +465,7 @@ $\beta$-redukcja
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
   (app
@@ -503,7 +479,7 @@ $\beta$-redukcja
 \end{Verbatim}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 $\beta$-redukcja
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
@@ -521,7 +497,7 @@ $\beta$-redukcja
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
   (handle
@@ -535,7 +511,7 @@ $\beta$-redukcja
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 Wywołanie operacji \texttt{Get}
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
@@ -552,7 +528,7 @@ Wywołanie operacji \texttt{Get}
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
   (handle
@@ -566,7 +542,7 @@ Wywołanie operacji \texttt{Get}
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 Operacja bazowa
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
@@ -581,7 +557,7 @@ Operacja bazowa
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
   (handle
@@ -595,7 +571,7 @@ Operacja bazowa
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 Obsługa wartości
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app
@@ -610,7 +586,7 @@ Obsługa wartości
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 (app 
   \textcolor{blue}{(λ v:s«405» 42)}
@@ -621,7 +597,7 @@ Obsługa wartości
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
+\begin{frame}[fragile]{Działanie modelu}
 $\beta$-redukcja
 \begin{Verbatim}[commandchars=\\\{\},numbers=left]
 \textcolor{orange}{(app}
@@ -633,70 +609,54 @@ $\beta$-redukcja
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
-\begin{Verbatim}[commandchars=\\\{\},numbers=left]
-42
-\end{Verbatim}
+\begin{frame}[fragile]{Działanie modelu}
+\begin{itemize}
+  \item Ostateczny wynik: \texttt{42}
+  \item Redukcja w 13 krokach
+\end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Przykład}
-  Program:
-  \VerbatimInput{03.rkt}
-  \pause
-  Ma typ:
-  \pause
-\begin{verbatim}
-(t:g0 -> (op:Set (Num => Num)
-          (op:Get (Num => Num) t:r14)) Num)
-\end{verbatim}
-\end{frame}
 
-\begin{frame}[fragile]{Przykład}
-Program:
-\VerbatimInput{../algeff/test/06.rkt}
-Oczekiwany wynik:
-\texttt{42}
-\end{frame}
-
-\section{Podsumowanie}
-\subsection{Sukcesy}
-\begin{frame}{Sukcesy}
+\begin{frame}[fragile]{Działanie modelu}
   \begin{itemize}
-    \item Rachunek wraz z semantyką redukcyjną
-    \begin{itemize}
-      \pause
-      \item Pełna redukcja wyrażeń
-      \pause
-      \item Wizualizacja krok po kroku
-    \end{itemize}
-    \pause
     \item Inferencja typów
     \pause
-    \item Maszyna abstrakcyjna
-    \begin{itemize}
-      \pause
-      \item Pełna redukcja wyrażeń
-      \pause
-      \item Wizualizacja krok po kroku
-    \end{itemize}
+    \item Program:
+    \VerbatimInput{03.rkt}
     \pause
-    \item Front-end ułatwiający pisanie wyrażeń
-    \pause
-    \item Integracja ze środowiskiem \Racket{}
+    \item Typ:
+    \begin{verbatim}
+(t:g0 -> (op:Set (Num => Num)
+          (op:Get (Num => Num) t:r14)) Num)
+    \end{verbatim}
   \end{itemize}
 \end{frame}
 
-\subsection{Wnioski i dalsza praca}
-\begin{frame}{Wnioski i dalsza praca}
-  Wnioski:
+% \begin{frame}[fragile]{Przykład}
+% Program:
+% \VerbatimInput{../algeff/test/06.rkt}
+% Oczekiwany wynik:
+% \texttt{42}
+% \end{frame}
+
+\section{Podsumowanie}
+\begin{frame}{Podsumowanie}
   \begin{itemize}
-    \item Wizualizacja jest bardzo pomocna przy badaniu efektów algebraicznych
+    \item Rachunek z efektami algebraicznymi
+    \begin{itemize}
+      \item Operacje, wyrażenia obsługujące i podnoszące
+      \item Wyrażenia ogólnego zastosowania
+    \end{itemize}
     \pause
-    \item Biblioteka \Redex{} pozwala na rozwój rozbudowanego rachunku
-  \end{itemize}
-  \pause
-  Dalsza praca:
-  \begin{itemize}
+    \item Implementacja modelu
+    \begin{itemize}
+      \item Inferencja typu i efektu
+      \item Pełna redukcja wyrażeń
+      \item Wizualizacja krok po kroku
+      \pause
+      \item Front-end -- \emph{algeff}
+      \item Integracja ze środowiskiem \Racket{}
+    \end{itemize}
     \pause
     \item Rozszerzenie rachunku o polimorfizm
     \pause
