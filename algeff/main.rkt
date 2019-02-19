@@ -44,16 +44,16 @@
                 (require redex racket/base)
                 (define i-expr (quote tree))
                 (define i-type (quote #,t))
-                (define (i-trace) (traces red i-expr #:y-spacing 60 #:x-spacing 60))
+                (define (i-trace) (traces red i-expr ))
                 (define (i-trace-machine)
                   (traces abstract-machine
                           (term (initial-conf tree))))
                 (define (i-reduce) (reduce i-expr))
                 (define (i-reduce-machine) (am-reduce i-expr))
                 (define (i-step) (stepper red i-expr))
-
                 (i-reduce)
-                (provide (all-defined-out) (all-from-out racket/base)))
+                (provide (all-defined-out)
+                         (all-from-out racket/base)))
              (raise 'does-not-typecheck))))]
     ))
 

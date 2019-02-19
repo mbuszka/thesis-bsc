@@ -41,7 +41,7 @@ Additionally I present the process of integrating this development with the \Rac
 \usepackage[xetex]{graphicx}
 \usepackage[backend=biber,style=numeric,sorting=nty,language=english]{biblatex}
 \addbibresource{mybib.bib}
-% \DeclareFieldFormat[article,inproceedings]{title}{#1}
+\DeclareFieldFormat[article,inproceedings,incollection,book,misc,report]{title}{#1}
 %
 \floatstyle{boxed} 
 \restylefloat{figure}
@@ -56,6 +56,10 @@ Additionally I present the process of integrating this development with the \Rac
   \renewcommand{\sectionautorefname}{Section}%
 }
 %
+\AtEveryBibitem{%
+  \clearfield{month}
+  \clearfield{url}
+}
 \begin{document}
 %
 \chapter{Introduction}
@@ -120,7 +124,7 @@ In brief summary, the development consists of:
 \begin{itemize}
   \item Executable reduction semantics most similar to the system of~\cite{Biernacki2017}.
   \item Curry style type system with ad-hoc effects in the style of \emph{Links}, effect rows based on \emph{Koka} and \emph{lift} construct of~\cite{Biernacki2017}, implemented as a unification-based type inference algorithm.
-  \item CEK style abstract machine with stack and \emph{meta}-stack of handlers, based on~\cite{Hillerstrom2016}
+  \item CEK style abstract machine with stack and \emph{meta}-stack of handlers, based on~\cite{Hillerstrom2016}.
 \end{itemize}
 
 % Outline of the thesis
@@ -159,7 +163,7 @@ The separation of definition and implementation of effects allows for various in
 
 \section{Types and type inference}\label{sec:types}
 \begin{listing}[t]
-  \begin{verbatim}
+  \begin{Verbatim}
 let add = λ x Set +(Get (), x) in
 let comp = 
   handle add 5 with
@@ -168,7 +172,7 @@ let comp =
   | return _ -> λ s s
   end in
 comp 37
-  \end{verbatim}
+  \end{Verbatim}
   \caption{Stateful computation}
   \label{lst:stateful-computation}
 \end{listing}
