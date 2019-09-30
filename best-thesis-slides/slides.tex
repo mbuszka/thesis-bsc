@@ -1,0 +1,863 @@
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{Warsaw}      % or try Darmstadt, Madrid, Warsaw, ...
+  \usecolortheme{default} % or try albatross, beaver, crane, ...
+  \usefonttheme{default}  % or try serif, structurebold, ...
+  \setbeamertemplate{navigation symbols}{}
+  \setbeamertemplate{caption}[numbered]
+} 
+\usepackage[polish]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{fancyvrb}
+\usepackage{fontspec}
+
+\setmonofont{CMU Typewriter Text}
+
+\newcommand{\Redex}{\texttt{PLT Redex}}
+\newcommand{\Racket}{\texttt{Racket}}
+\newcommand{\LC}{\(\lambda\)-calculus}
+
+\title[A calculus with algebraic effects and~handlers]{Implementation of static and~dynamic semantics for a calculus with algebraic effects and~handlers using \Redex}
+\author{Maciej Buszka}
+\institute{Instytut Informatyki UWr}
+\date{04.10.2019}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% Na początek sformułuję cel mojej pracy.
+% Następnie opiszę kontekst który pozwoli zrozumieć efekty tej pracy oraz motywacje ku jej powstaniu.
+% Następnie przedstawię wyniki mej pracy, a na koniec podsumuję.
+\begin{frame}{Plan prezentacji}
+  \tableofcontents
+\end{frame}
+
+
+
+\section{Cel}
+
+% Pierwszym celem mojej pracy było zaprojektowanie rachunku oraz zdefiniowanie jego semantyki.
+% Rachunek ten powinien zawierać konstrukcje pozwalające na pracę z efektami algebraicznymi oraz standardowe elementy umożliwiające konstruowanie programów.
+% Dodatkowo zależało mi na stworzeniu systemu typów który będzie pomocny w zrozumieniu działania efektów algebraicznych.
+% Drugim celem była implementacja modelu tego rachunku.
+% Implementacja systemu typów powinna pozwolić na algorytmiczną inferencję typu wyrażenia, natomiast ewaluator powinien umożliwić obserwację dynamicznego zachowania efektów algebraicznych krok po kroku.
+\begin{frame}{Cel pracy}
+  \begin{itemize}
+    \item Rachunek oraz jego semantyka
+    % \pause
+    \begin{itemize}
+      \item Efekty algebraiczne
+      \item Pomocny system typów
+    \end{itemize}
+    % \pause
+    \item Implementacja modelu
+    \begin{itemize}
+      \item Algorytmiczna inferencja typu
+      \item Ewaluator wyrażeń rachunku
+      \begin{itemize}
+        \item Obrazowanie wykonania krok po kroku
+        \item Redukcja do wyniku końcowego
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+
+\section{Kontekst}
+
+\subsection{Formalizacja języków programowania}
+
+
+% Stworzenie rachunku i implementacja jego modelu były celem mojej pracy, jednakże na czym to właściwie polega?
+% Formalizacja rachunku rozpoczyna się od zdefiniowania składni abstrakcyjnej - reguł pisania programów.
+% Właściwości tych programów, które można zbadać bez ich uruchamiania są opisywane przez semantykę statyczną, najczęściej jest to system typów.
+% Natomiast ich zachowanie w trakcie wykonania jest opisywane przez semantykę dynamiczną, np relację redukcji albo maszynę abstrakcyjną.
+% Taka formalizacja wymusza rozważenie zachowania wszystkich elementów składni a także interakcji między nimi.
+% Dodatkowo gdy już mamy określoną składnię rachunku oraz jej zachowanie, można zacząć badać właściwości tego rachunku i udowadniać obecność pożądanych cech oraz brak niepożądanych
+\begin{frame}{Formalizacja rachunku}
+  \begin{itemize}
+    \item Składnia abstrakcyjna
+    \item Semantyka statyczna (głównie systemy typów)
+    \item Semantyka dynamiczna (definiuje wykonanie programu)
+    \item Ujawnia interakcje między różnymi elementami rachunku
+    \item Pozwala na udowodnienie właściwości
+  \end{itemize}
+\end{frame}
+
+
+% Sformalizowany rachunek ma wiele zastosowań.
+% Można rozbudować go do pełnego języka programowania, poprzez translację między programami w docelowym języku a wyrażeniami rachunku.
+% Dzięki temu nie traci się gwarancji które udowodniono o rachunku, a także nadaje się semantykę językowi, co stanowi stanowi początek udanej implementacji języka.
+% Dodatkowo, semantyka rachunku stanowi dobrą podstawę do wnioskowania o programach w docelowym języku i ułatwia wytworzenie intuicji o ich zachowaniu.
+% Języki które u swego źródła mają dobrze zaprojektowany i sformalizowany rachunek są na ogół spójniejsze i bardziej przewidywalne, co przenosi się na łatwiejsze utrzymanie i rozwój programów w nich napisanych.
+\begin{frame}{Formalizacja rachunku - zastosowania}
+  \begin{itemize}
+    \item Rozbudowanie do języka programowania
+    \item Podstawa do wnioskowania o programach
+    \item Rozwijanie nowych rozwiązań językowych
+    \item Języki o dobrych podstawach formalnych są:
+    \begin{itemize}
+      \item Spójniejsze
+      \item Bardziej przewidywalne
+      \item Łatwiejsze w utrzymaniu i rozwoju
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+
+% Biblioteka PLT Redex z której korzystałem, jest jednym z narzędzi do rozwijania rachunków, a także do tworzenia interaktywnych modeli.
+% Pozwala ona na zdefiniowanie składni rachunku, zadanie systemu typów w postaci reguł wnioskowania, który może zostać uruchomiony aby sprawdzić typ zadanego wyrażenia, a także relacji redukcji która pozwala na wykonanie programu.
+% Dzięki temu, że wszystkie elementy modelu są wykonywalne, dużo łatwiej jest sprawdzić zachowanie semantyki, co przekłada na się na możliwość pracy iteracyjnej i łatwiejsze doskonalenie rachunku.
+% Dodatkowo powstały model pozwala na zrozumienie semantyki i interakcji fragmentów składni innym osobom, poprzez bezpośrednią obserwację wykonania programu krok po kroku.
+% Co prawda taki sposób formalizacji nie pozwala na maszynowo sprawdzalne dowodzenie własności rachunku ale jest dużo szybszy, a własności rachunku dalej mogą zostać udowodnione ręcznie.
+% Sam model zaś może być podstawą do formalizacji w asystencie dowodzenia.
+\subsection{\Redex}
+\begin{frame}{\Redex}
+  \begin{itemize}
+    \item Biblioteka do języka \Racket
+    \item Modelowanie rachunku i jego semantyki
+    \begin{itemize}
+      \item Wykonywalne relacje
+      \item Czytelny opis tych relacji
+    \end{itemize}
+    \item Ułatwia testowanie semantyki
+    \item Pozwala na iteracyjne zmiany    
+  \end{itemize}
+\end{frame}
+
+
+% Głównym zagadnieniem poruszanym w mojej pracy są efekty obliczeniowe.
+% Jest to zjawisko z którym programiści zmagają się od początków istnienia języków programowania.
+% Źródło wielu błędów, frustracji i nieporozumień odbiera im podstawowe narzędzie do wnioskowania, czyli możliwość podzielenia programu na mniejsze części i zrozumienia ich oddzielnie, a następnie połączenia ich działań.
+% Wynika to bezpośrednio z bardzo ogólnej definicji czym są efekty obliczeniowe, czyli wpływ programu czy też funkcji na otoczenie inne niż zwrócenie wyniku lub zależność programu od otoczenia inna niż przekazane argumenty.
+% Niejawne zależności między fragmentami większego systemu na ogół można przypisać do dwóch kategorii.
+% Pierwszą z nich jest modyfikacja jakiegoś stanu lub jego sprawdzenie.
+% Wpadają tutaj problemy wejścia-wyjścia, komunikacji z bazą danych, generacją liczb pseudolosowych, czy też wykorzystaniem zmiennych.
+% Dodatkową komplikacją przy efektach związanych ze stanem jest zachowanie programów współbieżnych, czy też działających asynchronicznie.
+% Drugą kategorią tworzą zmiany przepływu sterowania, na przykład wyjątki.
+% Często związane z nimi są błędy polegające na nie zwolnieniu jakiegoś zasobu.
+\subsection{Efekty obliczeniowe}
+\begin{frame}{Efekty obliczeniowe}
+  \begin{itemize}
+    \item Zjawisko powszechne i znane każdemu programiście
+    \item Zrozumienie działania programu wymaga nielokalnego wnioskowania
+    \item Wpływ programu na otoczenie (inne niż zwrócenie wyniku)
+    \item Lub zależność programu od otoczenia (inna niż przekazane argumenty)
+    \item Dwie ogólne kategorie:
+    \begin{itemize}
+      \item Modyfikacja lub odczytanie stanu 
+      % IO, baza danych, stan globalny programu, stan lokalny w językach funkcyjnych, generator liczb pseudolosowych)
+      \item Alternatywne ścieżki sterowania 
+      % wyjątki, manipulacja kontynuacją
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+
+% Teraz przedstawię dwa konwencjonalne podejścia do efektów obliczeniowych, które może zaobserwować w systemach typów różnych języków programowania.
+% Pierwsze z nich, jest względnie najprostsze z punktu widzenia implementacji a zarazem najpowszechniejsze.
+% Jest to oczywiście ignorowanie problemu.
+% Systemy typów języków zarówno imperatywnych takich jak C, C++, obiektowych jak Java oraz funkcyjnych jak OCaml i Scala nie dają żadnej wskazówki programistom na temat efektów które mogą zostać spowodowane przez funkcje czy metody.
+% Programiście pozostaje uważne czytanie dokumentacji i podejrzliwość wobec funkcji nie zwracających żadnych wartości.
+% (tutaj nie jestem pewien) (przypadek funkcji mapValues w Scali)
+% Drugie podejście, znane z języka Haskell, to uznanie, że większość języka będzie czysta, a część funkcji które muszą spowodować efekty będą zwracały specjalny typ.
+% Programiści mają do dyspozycji specjalne operacje pozwalające łączyć takie funkcje oraz dedykowaną składnię, która ułatwia pisanie programów z efektami.
+% To rozwiązanie też nie jest bez problemów, istotniejsze z nich to specjalna składnia dla programów z efektami, skomplikowane rozwiązania problemu łączenia różnych efektów, a także bardzo uciążliwe dodanie efektów (choćby logowania) do czystego wyrażenia.
+\begin{frame}{Efekty obliczeniowe - podejścia konwencjonalne}
+  \begin{itemize}
+    \item Program może mieć dowolne efekty, a system typów się nimi nie interesuje (C, C++, Java ..., OCaml, Scala)
+    \begin{itemize}
+      \item Brak pewności co do zachowania funkcji
+      \item Niemożliwość wnioskowania równościowego
+      \item Niejawne zależności między programami
+    \end{itemize}
+    \item Język jest czysty, a programy z efektami są modelowane za pomocą monad (Haskell, PureScript)
+    \begin{itemize}
+      \item Osobna składnia dla programów z efektami
+      \item Łączenie różnych efektów jest skomplikowane (np transformatory monad)
+      \item Problem z dodaniem efektów \textit{post-factum}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+
+% Jedną z odpowiedzi na problemy klasycznych rozwiązań są tak zwane efekty algebraiczne.
+% Zapewniają one jednolitą składnię dla programów zarówno z jak i bez efektów.
+% Pozwalają na stworzenie systemu typów który informuje programistę jakie efekty mogą zostać wywołane przez dany program, a także może zagwarantować, że dana funkcja nie wywołuje żadnych efektów obliczeniowych.
+% Umożliwiają one także bezproblemowe łączenie różnych efektów i mogą zostać użyte do modelowania obu wymienionych wcześniej kategorii efektów.
+% Dodatkowo efekty algebraiczne umożliwiają nadanie różnych interpretacji jednemu programowi, opis problemu za pomocą wyspecjalizowanych efektów i umożliwiają większą kontrolę nad przepływem sterowania w programie.
+\begin{frame}{Efekty algebraiczne - możliwości}
+  \begin{itemize}
+    \item Jednolita składnia dla programów z efektami i bez nich
+    \item Kompozycja wielu różnych efektów obliczeniowych
+    \item Modelowanie obu wymienionych rodzajów efektów
+    % \pause
+    \item Definicja własnych efektów
+    % \pause
+  \end{itemize}
+\end{frame}
+
+
+% (Może należy usunąć)
+\begin{frame}{Efekty algebraiczne - dzałanie}
+  \begin{itemize}
+    \item Podstawowe założenie: rozdzielenie operacji i ich znaczenia
+    % Zbiór operacji użytych w wyrażeniu definiuje interfejs którego wymaga ono od środowiska
+    \item Zbiór operacji -- wymagany interfejs
+    % Wyrażenia obsługujące dostarczają konkretnej implementacji dla operacji używanych przez zagnieżdżone wyrażenie
+    \item Wyrażenia obsługujące -- konkretna implementacja
+  \end{itemize}
+\end{frame}
+
+
+% Języki z efektami algebraicznymi mają na razie status eksperymentalny, a biblioteki do istniejących języków borykają się z różnymi problemami z modelowaniem.
+% Jest tak, ponieważ efekty algebraiczne są wciąż nowym zagadnieniem, które jest aktywnie rozwijane przez wiele zespołów.
+% W literaturze jest wiele pomysłów i rozwiązań zarówno w zakresie semantyki statycznej jak i dynamicznej.
+% Różne połączenia tych elementów potrafią dać bardzo różne zachowania programów.
+% Jednocześnie pomimo istnienia wielu języków, oraz formalnych rachunków na których bazie są zbudowane, nie jest łatwo zaobserwować i dokładnie zrozumieć jak wybory semantyczne przekładają się na zachowanie danego rachunku jako, że ich formalizacje nie są interaktywne.
+% Wobec tego postanowiłem stworzyć przykładowy rachunek, a także zaimplementować jego model, tak aby można było bezpośrednio obserwować zachowanie efektów algebraicznych i ułatwić eksperymentowanie z nowymi kombinacjami rozwiązań.
+\begin{frame}{Efekty algebraiczne - wyzwania}
+  \begin{itemize}
+    \item Nowe, aktualnie rozwijane zagadnienie
+    \item Dość skomplikowana semantyka, ważne niuanse 
+    \item Różne podejścia w literaturze:
+    \begin{itemize}
+      \item Semantyka statyczna: row-types, capabilities, abstract effects
+      \item Semantyka dynamiczna: shallow/deep handlers, effect lifting
+    \end{itemize}
+    \item Wiele rozbudowanych języków eksperymentalnych: Koka, Helium, Eff, Frank, Links
+  \end{itemize}
+\end{frame}
+
+
+% \section{Motywacja}
+% TODO Przenieść i wpleść w kontekst
+% \begin{frame}{Motywacja}
+%   \begin{itemize}
+%     \item Nowe, aktywnie rozwijane zagadnienie
+%     % \pause
+%     \item Nietrywialna semantyka i implementacja
+%     % \pause
+%     \item Skomplikowane ciągi redukcji
+%     % \pause
+%     \item Brak interaktywnego modelu rachunku
+%     % \pause
+%   \end{itemize}
+% \end{frame}
+
+
+\section{Wynik}
+
+\subsection{Rachunek}
+\begin{frame}{Rachunek}
+  \begin{itemize}
+    \item Abstrakcyjne operacje
+    \begin{itemize}
+      \item Nie muszą być zdefiniowane a priori
+      \item Przyjmują jeden argument, zwracają jedną wartość
+    \end{itemize}
+    % \pause
+    \item Wyrażenia obsługujące (\emph{handler})
+    \begin{itemize}
+      \item Dostęp do wznowienia
+      \item Semantyka tzw. głębokiej obsługi
+      \item Obsługa wielu operacji naraz
+      \item Klauzula \texttt{return}
+    \end{itemize}
+    % \pause
+    \item Wyrażenia podnoszące (\emph{lift})
+    \begin{itemize}
+      \item 'przeskoczenie' najbliższego wyrażenia obsługującego
+    \end{itemize}
+    % \pause
+    \item Wartości bazowe oraz operacje na nich
+  \end{itemize}
+\end{frame}
+
+
+\subsection{Model}
+\begin{frame}{Model}
+  \begin{itemize}
+    \item Składnia abstrakcyjna
+    \item Relacja redukcji
+    % \pause
+    \item System typów
+    \begin{itemize}
+      \item Odtwarza typ i efekt wyrażenia
+      \item Polimorfizm nie jest wspierany
+      \item Najogólniejszy typ wyrażenia
+    \end{itemize}
+    % \pause
+    \item Maszyna abstrakcyjna
+    \begin{itemize}
+      \item Jawne środowisko
+      \item Stos i meta-stos
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+
+% \begin{frame}[fragile]{Działanie modelu}
+%   \begin{itemize}
+%     \item Inferencja typów
+%     % \pause
+%     \item Program:
+%     \VerbatimInput{03.rkt}
+%     % \pause
+%     \item Typ:
+%     \begin{verbatim}
+% (t:g0 -> (op:Set (Num => Num)
+%           (op:Get (Num => Num) t:r14)) Num)
+%     \end{verbatim}
+%   \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Przykład}
+% Program:
+% \VerbatimInput{../algeff/test/06.rkt}
+% Oczekiwany wynik:
+% \texttt{42}
+% \end{frame}
+
+\section{Podsumowanie}
+\begin{frame}{Podsumowanie}
+  \begin{itemize}
+    \item Rachunek z efektami algebraicznymi
+    \begin{itemize}
+      \item Operacje, wyrażenia obsługujące i podnoszące
+      \item Wyrażenia ogólnego zastosowania
+    \end{itemize}
+    % \pause
+    \item Implementacja modelu
+    \begin{itemize}
+      \item Inferencja typu i efektu
+      \item Pełna redukcja wyrażeń
+      \item Wizualizacja krok po kroku
+      % \pause
+      \item Front-end -- \emph{algeff}
+      \item Integracja ze środowiskiem \Racket{}
+    \end{itemize}
+    % \pause
+    \item Rozszerzenie rachunku o polimorfizm
+    % \pause
+    \item Zbadanie własności rachunku za pomocą automatycznego generowania programów
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \centering
+  Dziękuję za uwagę
+\end{frame}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% \begin{frame}{Obsługa operacji}
+%   \begin{itemize}
+%     \item Normalny tok obliczeń jest przerwany
+%     \pause
+%     \item Odnalezione zostaje wyrażenie obsługujące (\emph{handler})
+%     \begin{itemize}
+%       \pause
+%       \item Wartość przekazana przy wywołaniu operacji
+%       \pause
+%       \item Funkcja reprezentująca resztę obliczenia które zostało przerwane
+%     \end{itemize}
+%     \pause
+%     \item Wznowienia może być użyte dowolnie wiele razy
+%   \end{itemize}
+% \end{frame}
+
+% \subsection{Przykład 1}
+% \begin{frame}[fragile]{Przykład 1}
+%   \pause
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   (+ (op:Magic (- 2 1)) 1)
+%   ((op:Magic (v:x v:r (app v:r 42))))
+%   (return v:x -(v:x, 1))
+% \end{Verbatim}
+% \end{frame}
+
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   (+ (op:Magic \textcolor{orange}{(- 2 1)}) 1)
+%   ((op:Magic (v:x v:r (app v:r 42))))
+%   (return v:x -(v:x, 1))
+% \end{Verbatim}
+% \end{frame}
+
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   (+ (op:Magic \textcolor{blue}{1}) 1)
+%   ((op:Magic (v:x v:r (app v:r 42))))
+%   (return v:x -(v:x, 1))
+% \end{Verbatim}
+% \end{frame}
+
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   \textcolor{red}{(+} \textcolor{orange}{(op:Magic 1)} \textcolor{red}{1)}
+%   ((op:Magic \textcolor{orange}{(v:x v:r (app v:r 42))}))
+%   (return v:x -(v:x, 1))
+% \end{Verbatim}
+% \end{frame}
+
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% \textcolor{blue}{(app}
+%   \textcolor{blue}{(λ v:z}
+%     \textcolor{blue}{(handle}
+%       \textcolor{red}{(+ }\textcolor{blue}{v:z} \textcolor{red}{1)}
+%       \textcolor{blue}{(...)}
+%       \textcolor{blue}{(return v:x -(v:x, 1))))}
+%   \textcolor{blue}{42)}
+% \end{Verbatim}
+% \end{frame}
+
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% \textcolor{orange}{(app}
+%   \textcolor{orange}{(λ v:z}
+%     \textcolor{orange}{(handle}
+%       \textcolor{orange}{(+ v:z 1)}
+%       \textcolor{orange}{(...)}
+%       \textcolor{orange}{(return v:x -(v:x, 1))))}
+%   \textcolor{orange}{42)}
+% \end{Verbatim}
+% \end{frame}
+
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% \textcolor{blue}{(handle}
+%   \textcolor{blue}{(+ 42 1)}
+%   \textcolor{blue}{( ... )}
+%   \textcolor{blue}{(return v:x«38» -(v:x«38», 1)))}
+% \end{Verbatim}
+% \end{frame}
+
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   \textcolor{orange}{(+ 42 1)}
+%   ( ... )
+%   (return v:x«38» -(v:x«38», 1)))
+% \end{Verbatim}
+% \end{frame}
+
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   \textcolor{blue}{43}
+%   ( ... )
+%   (return v:x«38» -(v:x«38», 1)))
+% \end{Verbatim}
+% \end{frame}
+
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% (handle
+%   \textcolor{orange}{43}
+%   ( ... )
+%   \textcolor{orange}{(return v:x«38» -(v:x«38», 1))})
+% \end{Verbatim}
+% \end{frame}
+
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% \textcolor{blue}{-(43, 1)}
+% \end{Verbatim}
+% \end{frame}
+
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% \textcolor{orange}{-(43, 1)}
+% \end{Verbatim}
+% \end{frame}
+
+% \begin{frame}[fragile]{Przykład 1}
+% \begin{Verbatim}[commandchars=\\\{\}]
+% \textcolor{blue}{42}
+% \end{Verbatim}
+% \end{frame}
+
+
+
+
+% \begin{frame}{Rachunek}
+%   \pause
+%   Rachunek który zaimplementowałem udostępnia:
+%   \begin{itemize}
+%     \pause
+%     \item Wyrażenia liczbowe z podstawowymi operacjami
+%     \pause
+%     \item Wyrażenia logiczne i warunkowe
+%     \pause
+%     \item Homogeniczne listy (dla dowolnego typu)
+%     \pause
+%     \item Funkcje anonimowe oraz rekurencyjne
+%   \end{itemize}
+% \end{frame}
+
+
+
+% \begin{frame}[fragile]{Działanie modelu}
+%   \begin{itemize}
+%     \item Wizualizacja redukcji
+%     \item Przykładowy program
+%     \VerbatimInput[numbers=left]{02.rkt}
+%     \item Oczekiwany wynik: \texttt{42}
+%   \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% \begin{Verbatim}[numbers=left]
+% (app
+%   (handle
+%     (+ (op:Get 0) (op:Get (op:Set 29)))
+%     ((op:Get (v:i v:r (λ v:s (app (app v:r v:s) v:s))))
+%      (op:Set (v:s v:r (λ v:i (app (app v:r 0) v:s)))))
+%     (return v:x (λ v:s v:x)))
+%   13)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item Składnia abstrakcyjna:
+%   \begin{itemize}
+%     \item linia 1. app -- aplikacja
+%     \item linia 3. wyrażenie zagnieżdżone
+%     \item linie 4. i 5. klauzule obsługujące
+%   \end{itemize}
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% Wywołanie operacji \texttt{Get}
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%   (handle
+%     \textcolor{red}{(+} \textcolor{orange}{(op:Get 0)} \textcolor{red}{(op:Get (op:Set 29)))}
+%     ((op:Get \textcolor{orange}{(v:i v:r (λ v:s (app (app v:r v:s) v:s)))})
+%      (op:Set (v:s v:r (λ v:i (app (app v:r 0) v:s)))))
+%     (return v:x (λ v:s v:x)))
+%   13)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{orange}{pomarańczowy} -- operacja i jej handler
+%   \item kolor \textcolor{red}{czerwony} -- przechwycony kontekst
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%   \textcolor{blue}{(λ v:s«312»}
+%     \textcolor{blue}{(app} 
+%       \textcolor{blue}{(app}
+%         \textcolor{blue}{(λ v:z}
+%           (handle
+%             \textcolor{red}{(+} \textcolor{blue}{v:z} \textcolor{red}{(op:Get (op:Set 29)))}
+%             ( ... )
+%             (return v:x (λ v:s v:x)))\textcolor{blue}{)}
+%         \textcolor{blue}{v:s«312»)}
+%       \textcolor{blue}{v:s«312»))}
+%   13)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{red}{czerwony} -- przechwycony kontekst
+%   \item kolor \textcolor{blue}{niebieski} -- wyrażenie stworzone przez redukcję
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% $\beta$-redukcja
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% \textcolor{orange}{(app}
+%   \textcolor{orange}{(λ v:s«312»}
+%     (app (app
+%       (λ v:z
+%         (handle
+%           (+ v:z (op:Get (op:Set 29)))
+%           ( ... )
+%           (return v:x (λ v:s v:x))))
+%       \textcolor{orange}{v:s«312»})
+%       \textcolor{orange}{v:s«312»}))
+% \textcolor{orange}{13)}
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{orange}{pomarańczowy} -- redeks
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app 
+%   (app
+%     (λ v:z«315»
+%       (handle
+%         (+ v:z«315» (op:Get (op:Set 29)))
+%         ( ... )
+%         (return v:x«318» (λ v:s«319» v:x«318»))))
+%     \textcolor{blue}{13})
+%   \textcolor{blue}{13})
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{blue}{niebieski} -- wartości podstawione za zmienną
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% $\beta$-redukcja
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%   \textcolor{orange}{(app}
+%     \textcolor{orange}{(λ v:z«315»}
+%       (handle
+%         (+ \textcolor{orange}{v:z«315»} (op:Get (op:Set 29)))
+%         ( ... )
+%         (return v:x«318» (λ v:s«319» v:x«318»))))
+%     \textcolor{orange}{13})
+%   13)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{orange}{pomarańczowy} -- redeks
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%   (handle
+%     (+ \textcolor{blue}{13} (op:Get (op:Set 29)))
+%     ( ... )
+%     (return v:x«318» (λ v:s«319» v:x«318»))))
+%   13)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{blue}{niebieski} -- wartość podstawiona za zmienną
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% Wywołanie operacji \texttt{Set}
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%  (handle
+%   \textcolor{red}{(+ 13 (op:Get} \textcolor{orange}{(op:Set 29)}\textcolor{red}{))}
+%   ((op:Get ( ... ))
+%    (op:Set \textcolor{orange}{(v:s v:r (λ v:i«331» (app (app v:r 0) v:s)))}))
+%   (return v:x«332» (λ v:s«333» v:x«332»)))
+%  13)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{orange}{pomarańczowy} -- operacja i jej handler
+%   \item kolor \textcolor{red}{czerwony} -- przechwycony kontekst
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%   \textcolor{blue}{(λ v:i«343»}
+%     \textcolor{blue}{(app}
+%       \textcolor{blue}{(app}
+%         \textcolor{blue}{(λ v:z}
+%           (handle
+%           \textcolor{red}{(+ 13 (op:Get} \textcolor{blue}{v:z}\textcolor{red}{))}
+%           ( ... )
+%           (return v:x«332» (λ v:s«333» v:x«332»)))\textcolor{blue}{)}
+%         \textcolor{blue}{0)}
+%       \textcolor{blue}{29))}
+%   13)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{red}{czerwony} -- przechwycony kontekst
+%   \item kolor \textcolor{blue}{niebieski} -- wyrażenie stworzone przez redukcję
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% $\beta$-redukcja
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% \textcolor{orange}{(app}
+%   \textcolor{orange}{(λ v:i«343»}
+%     (app
+%       (app
+%         (λ v:z
+%           (handle
+%           (+ 13 (op:Get v:z))
+%           ( ... )
+%           (return v:x«332» (λ v:s«333» v:x«332»))))
+%         0)
+%       29))
+%   \textcolor{orange}{13)}
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{orange}{pomarańczowy} -- redeks
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%   (app
+%     (λ v:z
+%       (handle
+%       (+ 13 (op:Get v:z))
+%       ( ... )
+%       (return v:x«332» (λ v:s«333» v:x«332»))))
+%     0)
+%   29)
+% \end{Verbatim}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% $\beta$-redukcja
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%   \textcolor{orange}{(app}
+%     \textcolor{orange}{(λ v:z}
+%       (handle
+%       (+ 13 (op:Get \textcolor{orange}{v:z}))
+%       ( ... )
+%       (return v:x«332» (λ v:s«333» v:x«332»))))
+%     \textcolor{orange}{0)}
+%   29)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{orange}{pomarańczowy} -- redeks
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%   (handle
+%     (+ 13 (op:Get \textcolor{blue}{0}))
+%     ( ... )
+%     (return v:x«332» (λ v:s«333» v:x«332»)))
+%   29)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{blue}{niebieski} -- wartość podstawiona za zmienną
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% Wywołanie operacji \texttt{Get}
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%   (handle
+%     \textcolor{red}{(+ 13} \textcolor{orange}{(op:Get 0)}\textcolor{red}{)}
+%     ((op:Get \textcolor{orange}{(v:i v:r (λ v:s (app (app v:r v:s) v:s)))})
+%      (op:Set ( ... ))
+%     (return v:x«332» (λ v:s«333» v:x«332»)))
+%   29)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{orange}{pomarańczowy} -- operacja i jej handler
+%   \item kolor \textcolor{red}{czerwony} -- przechwycony kontekst
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%   (handle
+%     \textcolor{red}{(+ 13} \textcolor{blue}{29}\textcolor{red}{)}
+%     ( ... )
+%     (return v:x«332» (λ v:s«333» v:x«332»)))
+%   29)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{blue}{niebieski} -- wynik po trzech krokach redukcji
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% Operacja bazowa
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%   (handle
+%     \textcolor{orange}{(+ 13 29)}
+%     ( ... )
+%     (return v:x«332» (λ v:s«333» v:x«332»)))
+%   29)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{orange}{pomarańczowy} -- operacja bazowa
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%   (handle
+%     \textcolor{blue}{42}
+%     ( ... )
+%     (return v:x«332» (λ v:s«333» v:x«332»)))
+%   29)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{blue}{niebieski} -- wynik operacji
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% Obsługa wartości
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app
+%   (handle
+%     \textcolor{orange}{42}
+%     ( ... )
+%     \textcolor{orange}{(return v:x«332» (λ v:s«333» v:x«332»))})
+%   29)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{orange}{pomarańczowy} -- wartość i klauzula \texttt{return}
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% (app 
+%   \textcolor{blue}{(λ v:s«405» 42)}
+%   29)
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{blue}{niebieski} -- wyrażenie stworzone przez redukcję
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% $\beta$-redukcja
+% \begin{Verbatim}[commandchars=\\\{\},numbers=left]
+% \textcolor{orange}{(app}
+%   \textcolor{orange}{(λ v:s«405»} 42\textcolor{orange}{)}
+%   \textcolor{orange}{29)}
+% \end{Verbatim}
+% \begin{itemize}
+%   \item kolor \textcolor{orange}{pomarańczowy} -- redeks
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}[fragile]{Działanie modelu}
+% \begin{itemize}
+%   \item Ostateczny wynik: \texttt{42}
+%   \item Redukcja w 13 krokach
+% \end{itemize}
+% \end{frame}
+
+
+
+
+\end{document}

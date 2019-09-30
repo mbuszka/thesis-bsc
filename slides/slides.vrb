@@ -1,0 +1,13 @@
+\frametitle{Działanie modelu}
+\begin{itemize}
+    \item Inferencja typów
+    \pause
+    \item Program:
+    \VerbatimInput{03.rkt}
+    \pause
+    \item Typ:
+    \begin{verbatim}
+(t:g0 -> (op:Set (Num => Num)
+          (op:Get (Num => Num) t:r14)) Num)
+    \end{verbatim}
+  \end{itemize}
