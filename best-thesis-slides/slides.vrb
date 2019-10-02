@@ -1,13 +1,17 @@
-\frametitle{Działanie modelu}
+\frametitle{Efekty algebraiczne - możliwości}
 \begin{itemize}
-    \item Inferencja typów
+    \item Jednolita składnia
+    \item Pomocny system typów: \\
+    Program
+    \begin{Verbatim}
+      let x = Get 0 in
+      let y = Get 1 in
+      5 + (Put (x + y))
+    \end{Verbatim}
+    Ma typ \texttt{Num} i korzysta z efektów \texttt{Get} oraz \texttt{Put}
+    \item Kompozycja efektów
+    \item Modelowanie obu kategorii
     % \pause
-    \item Program:
-    \VerbatimInput{03.rkt}
+    \item Definicja własnych efektów
     % \pause
-    \item Typ:
-    \begin{verbatim}
-(t:g0 -> (op:Set (Num => Num)
-          (op:Get (Num => Num) t:r14)) Num)
-    \end{verbatim}
   \end{itemize}
