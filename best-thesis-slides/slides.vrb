@@ -1,17 +1,18 @@
-\frametitle{Efekty algebraiczne - możliwości}
+\frametitle{Efekty algebraiczne}
 \begin{itemize}
     \item Jednolita składnia
-    \item Pomocny system typów: \\
-    Program
-    \begin{Verbatim}
-      let x = Get 0 in
-      let y = Get 1 in
-      5 + (Put (x + y))
-    \end{Verbatim}
-    Ma typ \texttt{Num} i korzysta z efektów \texttt{Get} oraz \texttt{Put}
+    \item Pomocny system typów% : \\
+    % Program
+    % \begin{Verbatim}
+    %   let x = Get 0
+    %   let y = Get 1
+    %   5 + (Put (x + y))
+    % \end{Verbatim}
+    % Korzysta z efektów \texttt{Get} oraz \texttt{Put}
     \item Kompozycja efektów
     \item Modelowanie obu kategorii
     % \pause
     \item Definicja własnych efektów
     % \pause
+    \item Nowe, aktualnie rozwijane zagadnienie
   \end{itemize}

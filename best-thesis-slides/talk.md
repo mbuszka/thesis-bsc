@@ -1,117 +1,152 @@
 # Plan prezentacji
+Na początek przedstawię kontekst mojej pracy, wyjaśniając niektóre słowa z tytułu, a także motywacje ku jej powstaniu.
 
-- Na początku przedstawię cele mojej pracy, oraz przybliżę efekty algebraiczne które są głównym zagadnieniem w niej poruszanym.
+Następnie sformułuję cele które sobie postawiłem, a później opiszę wyniki które osiągnąłem.
 
-- w drugiej części omówię rachunek który zaprojektowałem oraz mikrojęzyk który zbudowałem na jego bazie, ilustrując go kilkoma przykładami.
-
-- Na koniec podsumuję i sformułuję wnioski.
-
-# Efekty algebraiczne
-
-- kompozycję ... np. mutowalny stan, niedeterminizm, porażki
-- definicję ... aby wyrazić specyfikę problemu, np. wyspecjalizowane efekty opisujące dostęp do bazy danych
-- rozdzielają one interfejs od implementacji, co pozwala na różną interpretację tych samych programów np. program niedeterministyczny może zostać wykonany z nawrotami tak aby znaleźć pierwszy wynik, listę wszystkich wyników, lub też, korzystając z generatora liczb pseudolosowych sprawdzić jedno możliwe wykonanie.
-
-W użyciu:
-- pisząc program czy funkcję, programista może użyć abstrakcyjnych operacji, które są interfejsem wobec którego program jest stworzony
-- ...
-Gdy już mamy program osadzony w wyrażeniu obsługującym, możemy zacząć jego wykonanie.
-
-Semantyka dynamiczna jest moim zdaniem najciekawszą, ale zarazem najtrudniejszą częścią rachunku z efektami algebraicznymi.
-Omówię teraz intuicyjnie semantykę operacyjną wywołania operacji.
-# Obsługa
-W trakcie wykonania ...
-- normalny tok ... ale kontekst jest zachowany
-- odnalezione ...
-- ma ono dostęp do:
-  * wartości ...
-  * oraz funkcji ... czyli do kontynuacji, ograniczonej przez wyrażenie obsługujące
-- wyrażenie ... może także być zwrócone jako funkcja
-
-# Przykład 1
-Pierwszy przykład obrazuje redukcję wyrażenia wywołującego operację Magic, która jest obsługiwana poprzez wznowienie wykonania z wartością 42.
-A na koniec wynik zagnieżdżonego wyrażenia zmniejszany jest o 1.
-Kolorem pomarańczowym oznaczony jest redeks.
-1. - Najpierw wykonujemy zagnieżdżone odejmowanie.
-   - Redukuje się ono do 1.
-2. - Następnie wywoływana jest operacja Magic, jest ona oznaczona na pomarańczowo, wraz z wyrażeniem ją obsługującym.     
-     Kolorem czerwonym oznaczony jest zapamiętany kontekst -- ograniczona kontynuacja.
-     W wyrażeniu obsługującym `v:r` jest nazwą zmiennej dla wznowienia.
-   - Po redukcji zewnętrznym wyrażeniem jest obsługujące ciało, natomiast za `v:r` został podstawiony kontekst, opakowany w to samo wyrażenie obsługujące, reifikowany jako funkcja.
-3. - Teraz wykonujemy beta redukcję wznowienia i 42.
-   - Otrzymujemy dodawanie osadzone w tym samym wyrażeniu obsługującym.
-4. Dodajemy 42 i 1.
-5. Jako, że wyrażenie zagnieżdżone zredukowało się do wartości wywołujemy klauzulę `return`
-6. Na koniec odejmujemy 1 od 43 i otrzymujemy 42
+Na koniec podsumuję.
 
 
-# Motywacja
-Efekty algebraiczne są stosunkowo nowym zagadnieniem, aktywnie rozwijanym.
-Jak widzieliśmy na przykładzie, podczas wywołania operacji dzieje naprawdę wiele.
-Nic dziwnego zatem, że ich implementacja ...
-Powstało już kilka języków z efektami algebraicznymi, za pomocą których można eksperymentować.
-Jednakże dla osoby zainteresowanej precyzyjnym opisem semantyki i zachowania programów z efektami algebraicznymi pozostają tylko opisy rachunków w artykułach naukowych oraz zgadywanie jak będą się one zachowywać.
-Brakuje modelowej implementacji rachunku, która pozwoliłaby na zbadanie i zaznajomienie się z działaniem programów z efektami przez pryzmat semantyki operacyjnej, pozwalając na obserwację redukcji krok po kroku, jak w przykładzie pierwszym.
+# Formalizacja języków programowania
+Dlaczego formalizować?
+
+Formalizacja wymusza dokładne zastanowienie się nad każdym elementem języka i zdefiniowanie jego zachowania.
+
+Trzeba rozważyć czy nie duplikuje funkcji innego elementu.
+
+Jednocześnie, sprawdzenie wzajemnego oddziaływania wszystkich elementów, zapewnia spójność ich działania.
+
+Te cechy języka przekładają się na łatwiejsze utrzymanie i rozwój programów w nim napisanych.
+
+Narzędziem do formalizacji języków są rachunki formalne.
+
+
+# Efekty obliczeniowe
+Efekty obliczeniowe, z angielskiego side effects to główne zagadnienie poruszane w mojej pracy.
+
+Zjawisko z którym programiści zmagają się od początków istnienia języków programowania.
+
+Jest to źródło wielu błędów, frustracji i nieporozumień, gdyż odbiera im podstawowe narzędzie do wnioskowania, czyli możliwość podzielenia problemu na mniejsze części i zrozumienia ich oddzielnie, a następnie połączenia ich działania.
+
+Wynika to bezpośrednio z bardzo ogólnej definicji czym są efekty obliczeniowe, czyli interakcji z otoczeniem.
+
+Niejawne zależności między fragmentami większego systemu na ogół można przypisać do dwóch kategorii.
+
+Pierwszą z nich jest modyfikacja jakiegoś stanu lub jego sprawdzenie.
+
+Przykładami są tutaj problemy wejścia-wyjścia, komunikacji z bazą danych, generacją liczb pseudolosowych, czy też wykorzystania zmiennych.
+
+Dodatkową komplikacją przy efektach związanych ze stanem jest zachowanie programów współbieżnych, czy też działających asynchronicznie.
+
+Drugą kategorię stanowią efekty zmieniające przepływ sterowania programu, na przykład wyjątki.
+
+
+# Efekty obliczeniowe - podejścia konwencjonalne
+Konwencjonalne podejścia do traktowania efektów obliczeniowych przez systemy typów pozostawiają wiele do życzenia.
+
+Pierwsze z nich, najprostsze i najpopularniejsze to oczywiście ignorowanie problemu.
+
+Systemy typów języków zarówno imperatywnych takich jak C, C++, obiektowych jak Java oraz funkcyjnych takich jak OCaml i Scala nie dają programistom żadnej wskazówki na temat efektów które mogą zostać spowodowane przez funkcję czy metodę.
+
+Ten brak informacji sprawia, często objawia się w postaci subtelnych, ale poważnych błędów wynikających z efektów ubocznych.
+
+Ignorowanie efektów uniemożliwia także wnioskowanie równościowe, czyli zamianę wywołania funkcji na jej wynik.
+
+Dodatkowo, takie systemy typów pozwalają na niejawne zależności między modułami.
+
+Drugie podejście, znane z języka Haskell, polega na podzieleniu języka na dwie części, pierwszą czystą, a drugą na wywołującą efekty.
+
+Funkcje wywołujące efekty zwracają specjalny typ, a programiści mają do dyspozycji operacje pozwalające je łączyć, a także dedykowaną składnię do pisania programów z efektami.
+
+Dwie składnie i specjalne typy stanowią duży problem dla nowych programistów i utrudniają naukę języka.
+
+Jednocześnie łączenie różnych efektów obliczeniowych jest dość skomplikowane i wymaga zaawansowanych technik, takich jak transformatory monad.
+
+Na koniec, takie rozwiązanie sprawia, że dodanie efektów do czystej funkcji jest bardzo frustrujące dla programisty.
+
+
+# Efekty algebraiczne - możliwości
+Jedną z odpowiedzi na problemy klasycznych rozwiązań są tak zwane efekty algebraiczne.
+
+Zapewniają one jednolitą składnię dla programów zarówno z jak i bez efektów.
+
+Pozwalają na stworzenie systemu typów który informuje programistę jakie efekty mogą zostać wywołane przez dany program, a także może zagwarantować, że dana funkcja nie wywołuje żadnych efektów obliczeniowych.
+
+Przykładowo, dla podanego programu algorytm wykryje, że korzysta on z dwóch operacji, get i put, które obie przyjmują i zwracają liczbę
+
+Efekty algebraiczne umożliwiają także bezproblemowe łączenie różnych efektów i mogą zostać użyte do modelowania obu wymienionych wcześniej kategorii.
+
+Dodatkowo umożliwiają one nadanie różnych interpretacji jednemu programowi, a także opis problemu z dziedziny za pomocą zbioru operacji.
+
 
 # Cel
-Co prowadzi nas do celu mojej pracy, czyli zaprojektowania oraz implementacji:
-- rachunku oraz jego semantyki dynamicznej w formacie operacyjnym
-- semantyki statycznej, czyli systemu typów
-- a także, maszyny abstrakcyjnej która opisuje obliczenia na niższym poziomie.
-Oczywiście wszystkie elementy muszą być gotowe do uruchomienia i badania programów z efektami algebraicznymi.
+Wobec tego postanowiłem stworzyć przykładowy rachunek zawierający konstrukcje pozwalające na pracę z efektami algebraicznymi.
+
+Oprócz nich rachunek powinien zawierać także zwykłe konstrukcje językowe umożliwiające wygodne budowanie programów.
+
+Aby rachunek był użyteczny zaimplementowałem także jego model.
+
+Zależało mi na tym aby był on wykonywalny i pozwalał na inferencję typu i efektów wyrażenia oraz obserwację jego wykonania krok po kroku.
 
 # Rachunek
-Rachunek, który zaimplementowałem udostępnia programiście:
-- wyrażenia liczbowe z podstawowymi operacjami - dodawanie, odejmowanie, mnożenie oraz porównywanie liczb
-- wyrażenia logiczne i warunkowe
-- homogeniczne listy (dla dowolnego typu) ze standardowymi operacjami (hd, tl, cons, nil)
-- funkcje anonimowe oraz rekurencyjne
+Rachunek umożliwia programiście korzystanie z efektów algebraicznych za pomocą trzech konstrukcji językowych.
 
-Efekty algebraiczne są realizowane przez:
-- Abstrakcyjne operacje, które
-  * nie muszą być zdefiniowane a priori
-  * przyjmują jeden argument i zwracają być może jedną wartość
-- Wyrażenia je obsługujące, które
-  * mają dostęp do wznowienia reifikowanego jako funkcja
-  * realizują semantykę głębokiej obsługi, czyli w funkcji wznowienia przechwycony kontekst jest zagnieżdżony w tym samym wyrażeniu obsługującym
-  * potrafią obsłużyć wiele operacji naraz
-  * mają klauzulę `return` która jest wywoływana gdy zagnieżdżone wyrażenie zredukuje się do wartości.
-- oraz wyrażenia 'podnoszące' które pozwalają operacji przeskoczyć nad najbliższym w trakcie wykonania wyrażeniem obsługującym
+Pierwsza z nich to abstrakcyjne operacje.
 
-# Przykład 2
-Drugi przykład pokazuje działanie głębokiej obsługi.
-Przedstawiony program odczytuje stan początkowy, nadpisuje stan przez 29, po czym znów odczytuje stan.
-Jako wynik zwraca sumę obu odczytów.
-Obsługa takiego wyrażenia odbywa się poprzez stworzenie funkcji przekazującej stan a następnie zaaplikowania do niej stanu początkowego czyli 13.
-Wyrażenia obsługujące obie operacje zwracają funkcje modyfikujące stan, natomiast klauzula `return` zwraca funkcję która zjada stan i zwraca ostateczny wynik.
-- wykonanie zaczyna się od wywołania operacji Get, w wyniku tego wywołania powstaje funkcja oczekująca na stan, której ciało zaaplikuje go zarówno do wznowienia jak i jego wyniku.
-  Kluczowe dla działania tego wyrażenia obsługującego jest opakowanie wznowienia w to wyrażenie, co zapewni, że wynik wznowienia będzie funkcją.
-- Następnie wykonywane są dwie aplikacje:
-  + najpierw najbardziej zewnętrzna, otrzymanej funkcji do stanu początkowego
-  + później najbardziej wewnętrzna, wznowienia do stanu początkowego.
-  Zauważmy, że w ten sposób pod pierwsze wywołanie Get podstawiliśmy 13, natomiast reszta wyrażenia jest opakowana w ten sam handler.
-- Teraz wywoływana jest operacja Set. Podobnie jak wcześniej tworzona jest funkcja oczekująca na stary stan, który zostanie zignorowany.
-  Jej ciało zawiera dwie aplikacje: Wznowienia do pustej wartości 0 oraz wyniku wznowienia do nowego stanu, czyli 29.
-- Znów wykonujemy dwie redukcje, otrzymując sytuację w której Set zostało zastąpione przez pustą wartość, natomiast stan został zamieniony na nowy.
-- 
+Nie muszą być one zdefiniowane przed użyciem, a z punktu widzenia używającego ich wyrażenia przyjmują jeden argument i zwracają jedną wartość.
+
+Zbiór operacji użytych w danym wyrażeniu tworzy interfejs, którego implementacji dostarczają wyrażenia obsługujące, z angielskiego handler.
+
+Mają one dostęp do wznowienia przerwanego obliczenia i realizują semantykę głębokiej obsługi, a więc będą także obsługiwać operacje użyte we wznowieniu.
+
+Umożliwiają obsługę wielu operacji na raz, a także zmianę wartości końcowej dzięki klauzuli return.
+
+Trzecim składnikiem są wyrażenia podnoszące, z angielskiego lift które pozwalają na przeskoczenie najbliższego w trakcie wykonania wyrażenia obsługującego daną operację.
+
+W rachunku znajdują się także typy bazowe takie jak liczby, wartości boolowskie i listy, oraz operacje na nich.
+
+Dla tego rachunku stworzyłem także model, korzystając z biblioteki PLT Redex.
+
+# Model
+Model implementuje składnię abstrakcyjną rachunku, ale dodatkowo zbudowałem parser który pozwala pisać programy w przyjaznej składni podobnej do MLa.
+
+Implementacja semantyki statycznej, czyli systemu typów, pozwala na algorytmiczną inferencję typu a także efektów wyrażenia, natomiast relacja redukcji definiująca semantykę dynamiczną umożliwia zarówno pełną ewaluację wyrażeń, jak i obserwację każdego przekształcenia.
+
+Dodatkowo rozszerzyłem rachunek o maszynę abstrakcyjną, a model o jej implementację w postaci deterministycznego systemu przejść.
+
+Operuje ona na jawnym środowisku, a przepływ sterowania realizuje za pomocą stosu i meta-stosu.
+
+Zgodność maszyny abstrakcyjnej z relacją redukcji sprawdziłem za pomocą testów.
+
+Dodatkowo w trakcie implementacji modelu i rozwoju rachunku korzystałem z automatycznego generowania kontrprzykładów przez bibliotekę Redex, co pozwoliło mi wykryć i poprawić błędy.
 
 
-System typów dla rachunku jest przedstawiony w stylu Curry'ego, natomiast
-- jego implementacja tworzy funkcję odtwarzającą typ wyrażenia oraz efekty z których ono korzysta.
-- System inferuje typy proste dla wyrażeń, a typowanie efektów korzysta z tzw. rzędów.
-- Niestety system nie wspiera polimorfizmu
-- ale znajduje najogólniejszy prosty typ wyrażenia który może zawierać nieukonkretnione zmienne.
 
-# Przykład 3
-Przykład 3 obrazuje działanie inferencji typów
-Przedstawiony program jest odroczonym obliczeniem z przykładu 2.
-Jako, że jest to funkcja otrzymuje on typ funkcyjny.
-Typem argumentu jest nieukonkretniona zmienna, jako, że jest on ignorowany.
-Typem wynikowym, jest liczba.
-Jako, że ciało tej funkcji korzysta z dwóch operacji Get i Set, jest to odzwierciedlone w 
+# Podsumowanie
+Podsumowując, w mojej pracy stworzyłem formalny rachunek, oraz niewielki język programowania na nim bazujący.
 
-# Przykład
-Przy ostatnim przykładzie chciałbym pokazać działanie modelu na żywo.
-Przedstawiony program korzysta z wyrażenia lift, które sprawia, że operacja Tock zostanie obsłużona przez zewnętrzny handler.
-Po uruchomieniu modułu, możemy zobaczyć wyrażenie oraz jego typ.
-Możemy także użyć maszyny abstrakcyjnej by zredukować program do wartości końcowej, lub zobaczyć przekształcenia po kolei.
+Rachunek ten bada zachowanie efektów algebraicznych, czyli nowego i obiecującego rozwiązania problemów związanych z efektami obliczeniowymi.
+
+Wykonywalny model tego rachunku pozwala na zrozumienie działania efektów algebraicznych dzięki obrazowaniu wykonania krok po kroku oraz inferencji typu i efektów wyrażenia.
+
+
+
+Dalsza praca nad tym rachunkiem mogłaby objąć rozszerzenie go o polimorfizm, ale już teraz model pokazuje potencjał rozwiązania jakim są efekty algebraiczne.
+
+
+
+
+
+
+
+# Efekty algebraiczne - wyzwania
+Efekty algebraiczne są nowym, aktywnie rozwijanym zagadnieniem.
+
+W literaturze można znaleźć wiele pomysłów i rozwiązań zarówno w zakresie semantyki statycznej jak i dynamicznej.
+
+Różne połączenia tych elementów potrafią dać bardzo różne zachowania programów.
+
+Wynika to ze skomplikowanej semantyki i wzajemnych oddziaływań elementów rachunku.
+
+Istnieje wielu języków, oraz formalnych rachunków na bazie których są one zbudowane.
+
+Nie pozwalają one jednak zaobserwować i dokładnie zrozumieć jak wybory semantyczne przekładają się na zachowanie danego rachunku jako, że ich formalizacje nie są interaktywne.

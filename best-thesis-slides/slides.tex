@@ -31,13 +31,12 @@
   \titlepage
 \end{frame}
 
-% Na początek wyjaśnię słowa które znalazły się w tytule tej prezentacji i co się za nimi kryje.
-% Zarysowując kontekst mojej pracy, przedstawię także motywacje ku jej powstaniu.
+% Na początek przedstawię kontekst mojej pracy, wyjaśniając niektóre słowa z tytułu, a także motywacje ku jej powstaniu.
 % Następnie sformułuję cele które sobie postawiłem, a później opiszę wyniki które osiągnąłem.
 % Na koniec podsumuję.
-\begin{frame}{Plan prezentacji}
-  \tableofcontents
-\end{frame}
+% \begin{frame}{Plan prezentacji}
+%   \tableofcontents
+% \end{frame}
 
 
 \section{Kontekst}
@@ -50,31 +49,23 @@
 % W ten sposób otrzymujemy język którego składowe mają dobrze zdefiniowane i przewidywalne zachowanie, są do siebie ortogonalne, a jednocześnie ich połączenie daje spójny wynik.
 % Te cechy języka przekładają się na łatwiejsze utrzymanie i rozwój programów w nim napisanych.
 % Narzędziem do formalizacji języków są rachunki formalne.
-% % Umożliwiają one także dowodzenie własności języka, a co za tym idzie programów własności programów w nim napisanych.
 \begin{frame}{Formalizacja języków programowania}
   Wspiera:
   \begin{itemize}
-    \item Ortogonalność
     \item Przewidywalność
+    \item Ortogonalność
     \item Spójność
   \end{itemize} 
   \vspace{\baselineskip}
   \textbf{Wynik}: łatwiejsze utrzymanie i rozwój programów \\ % systemów
-  % \textbf{Dodatkowo}: udowodnienie własności
+  \vspace{\baselineskip}
+  Narzędzie: rachunki formalne
 \end{frame}
 
 
 % % Znając narzędzia, przejdziemy do głównego zagadnienia poruszanego w mojej pracy, czyli efektów obliczeniowych.
 
-% Efekty obliczeniowe, z angielskiego side effects to główne zagadnienie poruszane w mojej pracy.
-% Jest to zjawisko z którym programiści zmagają się od początków istnienia języków programowania.
-% Źródło wielu błędów, frustracji i nieporozumień odbiera im podstawowe narzędzie do wnioskowania, czyli możliwość podzielenia programu na mniejsze części i zrozumienia ich oddzielnie, a następnie połączenia ich działań.
-% Wynika to bezpośrednio z bardzo ogólnej definicji czym są efekty obliczeniowe, czyli interakcji z otoczeniem.
-% Niejawne zależności między fragmentami większego systemu na ogół można przypisać do dwóch kategorii.
-% Pierwszą z nich jest modyfikacja jakiegoś stanu lub jego sprawdzenie.
-% Przykładami są tutaj problemy wejścia-wyjścia, komunikacji z bazą danych, generacją liczb pseudolosowych, czy też wykorzystania zmiennych.
-% Dodatkową komplikacją przy efektach związanych ze stanem jest zachowanie programów współbieżnych, czy też działających asynchronicznie.
-% Drugą kategorię tworzą zmiany przepływu sterowania, na przykład wyjątki.
+
 \subsection{Efekty obliczeniowe}
 \begin{frame}{Efekty obliczeniowe (\textit{side effects})}
   \begin{itemize}
@@ -86,6 +77,7 @@
     \begin{itemize}
       \item Modyfikacja lub odczytanie stanu 
       % IO, baza danych, stan globalny programu, stan lokalny w językach funkcyjnych, generator liczb pseudolosowych)
+      \pause
       \item Alternatywne ścieżki sterowania 
       % wyjątki, manipulacja kontynuacją
     \end{itemize}
@@ -93,26 +85,20 @@
 \end{frame}
 
 
-% Dwa konwencjonalne podejścia do efektów obliczeniowych, które można zaobserwować w systemach typów różnych języków programowania pozostawiają wiele do życzenia.
-% Pierwsze z nich, jest względnie najprostsze z punktu widzenia implementacji a zarazem najpowszechniejsze.
-% Jest to oczywiście ignorowanie problemu.
-% Systemy typów języków zarówno imperatywnych takich jak C, C++, obiektowych jak Java oraz funkcyjnych jak OCaml i Scala nie dają żadnej wskazówki programistom na temat efektów które mogą zostać spowodowane przez funkcje czy metody.
-% Programiście pozostaje uważne czytanie dokumentacji i podejrzliwość wobec funkcji nie zwracających żadnych wartości.
-% (tutaj nie jestem pewien) (przypadek funkcji mapValues w Scali)
-% Drugie podejście, znane z języka Haskell, to uznanie, że większość języka będzie czysta, a część funkcji które muszą spowodować efekty będą zwracały specjalny typ.
-% Programiści mają do dyspozycji specjalne operacje pozwalające łączyć takie funkcje oraz dedykowaną składnię, która ułatwia pisanie programów z efektami.
-% To rozwiązanie też nie jest bez wad, istotniejsze z nich to specjalna składnia dla programów z efektami, skomplikowane rozwiązania problemu łączenia różnych efektów, a także bardzo uciążliwe dodawanie efektów do czystego wyrażenia post-factum.
+
 \begin{frame}{Efekty obliczeniowe - podejścia konwencjonalne}
   \begin{itemize}
-    \item Program może mieć dowolne efekty, a system typów się nimi nie interesuje (C, C++, Java ..., OCaml, Scala)
+    \item Ignorowanie efektów
     \begin{itemize}
-      \item Brak pewności co do zachowania funkcji
+      \item C, C++, Java, OCaml, Scala
+      \item Poważne błędy programów
       \item Niemożliwość wnioskowania równościowego
-      \item Niejawne zależności między programami
+      \item Niejawne zależności między modułami
     \end{itemize}
-    \item Język jest czysty, a programy z efektami są modelowane za pomocą monad (Haskell, PureScript)
+    \pause
+    \item Podzielenie języka na dwie części
     \begin{itemize}
-      \item Osobna składnia dla programów z efektami
+      \item Nieprzyjazne dla nowych programistów
       \item Łączenie różnych efektów jest skomplikowane (np transformatory monad)
       \item Problem z dodaniem efektów \textit{post-factum}
     \end{itemize}
@@ -120,49 +106,41 @@
 \end{frame}
 
 
-% Jedną z odpowiedzi na problemy klasycznych rozwiązań są tak zwane efekty algebraiczne.
-% Zapewniają one jednolitą składnię dla programów zarówno z jak i bez efektów.
-% Pozwalają na stworzenie systemu typów który informuje programistę jakie efekty mogą zostać wywołane przez dany program, a także może zagwarantować, że dana funkcja nie wywołuje żadnych efektów obliczeniowych.
-% Przykładowo, dla podanego programu algorytm wykryje, że korzysta on z dwóch operacji, get i put, które obie przyjmują i zwracają liczbę, a wynikiem całego programu także jest liczba.
-% Efekty algebraiczne umożliwiają także bezproblemowe łączenie różnych efektów i mogą zostać użyte do modelowania obu wymienionych wcześniej kategorii.
-% Dodatkowo umożliwiają one nadanie różnych interpretacji jednemu programowi, a także opis problemu z dziedziny za pomocą zbioru operacji.
-\begin{frame}[fragile]{Efekty algebraiczne - możliwości}
+
+\begin{frame}[fragile]{Efekty algebraiczne}
   \begin{itemize}
     \item Jednolita składnia
-    \item Pomocny system typów: \\
-    Program
-    \begin{Verbatim}
-      let x = Get 0 in
-      let y = Get 1 in
-      5 + (Put (x + y))
-    \end{Verbatim}
-    Ma typ \texttt{Num} i korzysta z efektów \texttt{Get} oraz \texttt{Put}
+    \item Pomocny system typów% : \\
+    % Program
+    % \begin{Verbatim}
+    %   let x = Get 0
+    %   let y = Get 1
+    %   5 + (Put (x + y))
+    % \end{Verbatim}
+    % Korzysta z efektów \texttt{Get} oraz \texttt{Put}
     \item Kompozycja efektów
     \item Modelowanie obu kategorii
     % \pause
     \item Definicja własnych efektów
     % \pause
-  \end{itemize}
-\end{frame}
-
-
-% Języki z efektami algebraicznymi mają na razie status eksperymentalny, a biblioteki do istniejących języków borykają się z różnymi problemami z modelowaniem.
-% Jest tak, ponieważ efekty algebraiczne są wciąż nowym zagadnieniem, które jest aktywnie rozwijane przez wiele zespołów.
-% W literaturze można znaleźć wiele pomysłów i rozwiązań zarówno w zakresie semantyki statycznej jak i dynamicznej.
-% Różne połączenia tych elementów potrafią dać bardzo różne zachowania programów.
-% Jednocześnie pomimo istnienia wielu języków, oraz formalnych rachunków na których bazie są zbudowane, nie jest łatwo zaobserwować i dokładnie zrozumieć jak wybory semantyczne przekładają się na zachowanie danego rachunku jako, że ich formalizacje nie są interaktywne.
-\begin{frame}{Efekty algebraiczne - wyzwania}
-  \begin{itemize}
     \item Nowe, aktualnie rozwijane zagadnienie
-    \item Dość skomplikowana semantyka, ważne niuanse 
-    \item Różne podejścia w literaturze:
-    \begin{itemize}
-      \item Semantyka statyczna: row-types, capabilities, abstract effects
-      \item Semantyka dynamiczna: shallow/deep handlers, effect lifting
-    \end{itemize}
-    \item Wiele rozbudowanych języków eksperymentalnych: Koka, Helium, Eff, Frank, Links
   \end{itemize}
 \end{frame}
+
+
+
+% \begin{frame}{Efekty algebraiczne - wyzwania}
+%   \begin{itemize}
+%     \item Nowe, aktualnie rozwijane zagadnienie
+%     \item Różne podejścia w literaturze:
+%     \begin{itemize}
+%       \item Semantyka statyczna: row-types, capabilities, abstract effects
+%       \item Semantyka dynamiczna: shallow/deep handlers, effect lifting
+%     \end{itemize}
+%     \item Skomplikowana semantyka, ważne niuanse
+%     \item Wiele rozbudowanych języków eksperymentalnych: Koka, Helium, Eff, Frank, Links
+%   \end{itemize}
+% \end{frame}
 
 
 % \section{Motywacja}
@@ -181,28 +159,19 @@
 % \end{frame}
 
 \section{Cel}
-% Wobec tego postanowiłem stworzyć przykładowy rachunek zawierający konstrukcje pozwalające na pracę z efektami algebraicznymi.
-% W jego skład wchodzi system typów ułatwiający zarówno pracę z efektami jak i ich zrozumienie oraz relacja redukcji nadająca semantykę dynamiczną.
-% Aby rachunek był użyteczny zaimplementowałem także jego model.
-% Implementacja systemu typów pozwala na algorytmiczną inferencję typu i efektu wyrażenia, natomiast ewaluator umożliwia obserwację dynamicznego zachowania efektów algebraicznych krok po kroku.
 \begin{frame}{Cel pracy}
   \begin{itemize}
-    \item Stworzenie formalnego rachunku:
+    \item Stworzenie formalnego rachunku
     % \pause
     \begin{itemize}
       \item Efekty algebraiczne
-      \item Pomocny system typów
-      \item Relacja redukcji
+      \item Konstrukcje bazowe
     \end{itemize}
     % \pause
     \item Implementacja modelu
     \begin{itemize}
-      \item Algorytmiczna inferencja typu i efektu
-      \item Ewaluator wyrażeń rachunku
-      \begin{itemize}
-        \item Obrazowanie wykonania krok po kroku
-        \item Redukcja do wyniku końcowego
-      \end{itemize}
+      \item Algorytmiczna inferencja typu i efektów
+      \item Obrazowanie wykonania krok po kroku
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -210,15 +179,7 @@
 
 \section{Wynik}
 
-% Rachunek umożliwia programiście korzystanie z efektów algebraicznych za pomocą trzech konstrukcji językowych.
-% Pierwsza z nich to abstrakcyjne operacje.
-% Nie muszą być one zdefiniowane przed użyciem, a z punktu widzenia używającego ich wyrażenia przyjmują jeden argument i zwracają jedną wartość.
-% Zbiór operacji użytych w danym wyrażeniu tworzy interfejs, którego implementacji dostarczają wyrażenia obsługujące, z angielskiego handler.
-% Mają one dostęp do wznowienia przerwanego obliczenia i realizują semantykę głębokiej obsługi, a więc będą także obsługiwać operacje użyte we wznowieniu.
-% Umożliwiają obsługę wielu operacji na raz, a także zmianę wartości końcowej dzięki klauzuli return.
-% Trzecim składnikiem są wyrażenia podnoszące, z angielskiego lift które pozwalają na przeskoczenie najbliższego w trakcie wykonania wyrażenia obsługującego daną operację.
-% W rachunku znajdują się także typy bazowe takie jak liczby, wartości boolowskie i listy, oraz operacje na nich.
-% Dla tego rachunku stworzyłem także model, korzystając z biblioteki PLT Redex.
+
 \subsection{Rachunek}
 \begin{frame}{Rachunek}
   \begin{itemize}
@@ -246,15 +207,10 @@
 \end{frame}
 
 
-% Model implementuje składnię abstrakcyjną rachunku, ale dodatkowo zbudowałem parser który pozwala pisać programy w przyjaznej składni podobnej do MLa.
-% Implementacja semantyki statycznej, czyli systemu typów, rachunku pozwala na algorytmiczną inferencję typu a także efektów wyrażenia, natomiast relacja redukcji definiująca semantykę dynamiczną umożliwia zarówno pełną ewaluację wyrażeń, jak i obserwację każdego przekształcenia.
-% Dodatkowo rozszerzyłem rachunek o maszynę abstrakcyjną, a model o jej implementację w postaci deterministycznego systemu przejść.
-% Operuje ona na jawnym środowisku, a przepływ sterowania realizuje za pomocą stosu i meta-stosu.
-% Zgodność maszyny abstrakcyjnej z relacją redukcji sprawdziłem za pomocą testów.
-% Dodatkowo w trakcie implementacji modelu i rozwoju rachunku korzystałem z automatycznego generowania kontrprzykładów przez bibliotekę Redex, co pozwoliło mi wykryć i poprawić błędy.
 \subsection{Model}
 \begin{frame}{Model}
   \begin{itemize}
+    \item Zaimplementowany za pomocą biblioteki \Redex
     \item Składnia abstrakcyjna
     \begin{itemize}
       \item Dodatkowo: przyjazny język
@@ -271,6 +227,7 @@
     \item Maszyna abstrakcyjna
     \begin{itemize}
       \item Jawne środowisko
+      \item Zgodność z relacją redukcji
     \end{itemize}
     \item Testy
   \end{itemize}
@@ -279,33 +236,24 @@
 % Raczej opisać jak można wykorzystać model, co daje, pod innym kątem, coś o testowaniu, potencjalne perspektywy, co można by rozwinąć
 % Zrobić prawdziwe podsumowanie albo zmienić tytuł
 
-% Podsumowując, w mojej pracy stworzyłem formalny rachunek, oraz niewielki język programowania na nim bazujący.
-% Rachunek ten bada zachowanie efektów algebraicznych, czyli nowego i obiecującego rozwiązania problemów związanych z efektami obliczeniowymi.
-% Wykonywalny model tego rachunku pozwala na zrozumienie działania efektów algebraicznych dzięki obrazowaniu wykonania krok po kroku.
-% Ukazuje potencjał tego rozwiązania dzięki algorytmicznej inferencji typów i efektów, a także może stanowić podstawę do dalszych badań dzięki łatwiejszej pracy iteracyjnej i możliwości testowania.
-% Dalsza praca nad tym rachunkiem mogłaby objąć rozszerzenie go o polimorfizm.
+
 \section{Podsumowanie}
 \begin{frame}{Podsumowanie}
   Wynik:
   \begin{itemize}
     \item Formalny rachunek z efektami algebraicznymi
     \item Wykonywalny model rachunku
+    \begin{itemize}
+      \item Wizualizacja przekształceń
+      \item Inferencja typu i efektów
+    \end{itemize}
   \end{itemize}
   \vspace{\baselineskip}
-  Zastosowania:
+  Możliwości modelu:
   \begin{itemize}
-    \item Edukacja
-    \begin{itemize}
-      \item Inferencja typu i efektów
-      \item Wizualizacja przekształceń
-    \end{itemize}
-    \item Eksploracja
-    \begin{itemize}
-      \item Iteracyjna rozbudowa
-      \item Testy
-    \end{itemize}
+    \item Iteracyjna rozbudowa rachunku
+    \item Testowanie semantyki
   \end{itemize}
-  Dalsza praca: rozszerzenie o polimorfizm
 \end{frame}
 
 \begin{frame}
